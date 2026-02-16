@@ -16,13 +16,13 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 10
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install deps
         run: pnpm install --frozen-lockfile
@@ -38,3 +38,56 @@ jobs:
 
       - name: Lint (web)
         run: pnpm -F web lint
+
+  db-sanity:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: nurseconnect
+          POSTGRES_USER: nurseconnect
+          POSTGRES_PASSWORD: nurseconnect
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nurseconnect -d nurseconnect"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://nurseconnect:nurseconnect@127.0.0.1:5432/nurseconnect
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        run: pnpm db:migrate
+
+      - name: Health check (SELECT 1)
+        run: |
+          node -e "
+            const { Pool } = require('pg');
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+            pool.query('SELECT 1 AS ok')
+              .then(r => { console.log('✅ DB healthy:', r.rows[0]); process.exit(0); })
+              .catch(e => { console.error('❌ DB check failed:', e.message); process.exit(1); });
+          "
