@@ -1,4 +1,5 @@
-import { pgTable, uuid, text, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, index, uniqueIndex, check } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const users = pgTable(
   "users",
@@ -13,6 +14,7 @@ export const users = pgTable(
   },
   (t) => ({
     emailIdx: index("users_email_idx").on(t.email),
-    firebaseUidIdx: index("users_firebase_uid_idx").on(t.firebaseUid),
+    firebaseUidIdx: uniqueIndex("users_firebase_uid_idx").on(t.firebaseUid),
+    roleCheck: check("users_role_check", sql`${t.role} IN ('admin', 'nurse', 'patient')`),
   })
 );

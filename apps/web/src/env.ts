@@ -50,6 +50,9 @@ export const env = createEnv({
     FEATURE_BACKEND_SERVICE_REQUEST: z.literal("postgres").default("postgres"),
     FEATURE_BACKEND_ASSIGNMENT: z.literal("postgres").default("postgres"),
     FEATURE_BACKEND_VISIT: z.literal("postgres").default("postgres"),
+
+    // Auth Provider Cutover (Phase 2.2.4)
+    FEATURE_AUTH_PROVIDER: z.enum(["nextauth", "betterauth"]).default("nextauth"),
   },
   client: {
     // V3 has no client-side env vars yet. Add as needed.
@@ -61,8 +64,11 @@ export const env = createEnv({
     FEATURE_BACKEND_NURSE_PROFILE: process.env.FEATURE_BACKEND_NURSE_PROFILE,
     FEATURE_BACKEND_PATIENT_PROFILE: process.env.FEATURE_BACKEND_PATIENT_PROFILE,
     FEATURE_BACKEND_SERVICE_REQUEST: process.env.FEATURE_BACKEND_SERVICE_REQUEST,
-    FEATURE_BACKEND_ASSIGNMENT: process.env.FEATURE_BACKEND_ASSIGNMENT,
+     FEATURE_BACKEND_ASSIGNMENT: process.env.FEATURE_BACKEND_ASSIGNMENT,
     FEATURE_BACKEND_VISIT: process.env.FEATURE_BACKEND_VISIT,
+
+    // Auth Provider Cutover
+    FEATURE_AUTH_PROVIDER: process.env.FEATURE_AUTH_PROVIDER,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
