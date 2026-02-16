@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { adminAuth } from "@/legacy/firebase/admin";
-import { db } from "@/legacy/firebase/db-admin";
+import { db as firestore } from "@/legacy/firebase/db-admin";
+import { upsertUser } from "@/lib/user-service";
 
 // Input validation
 const SignupSchema = z.object({
@@ -16,6 +17,7 @@ async function ensureProfileDoc(
   uid: string,
   data: { email: string; displayName?: string | null; role?: "patient" | "nurse" }
 ) {
+  // Sync to Firestore (Legacy)
   const profile = {
     id: uid,
     email: data.email,
@@ -23,7 +25,16 @@ async function ensureProfileDoc(
     role: data.role ?? "patient",
     updatedAt: new Date().toISOString(),
   } as const;
-  await db.collection("users").doc(uid).set(profile, { merge: true });
+  await firestore.collection("users").doc(uid).set(profile, { merge: true });
+
+  // Sync to Postgres (V3 Source of Truth)
+  await upsertUser({
+    firebaseUid: uid,
+    email: data.email,
+    name: data.displayName,
+    role: data.role,
+  });
+
   return profile;
 }
 
