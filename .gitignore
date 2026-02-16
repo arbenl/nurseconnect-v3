@@ -77,3 +77,7 @@ apps/web/firebase-export-*/
 
 # Drizzle local artifacts (keep migrations, ignore generated cache if any)
 packages/database/drizzle/meta/
+
+# Backfill artifacts
+tmp/
+*.export.json
