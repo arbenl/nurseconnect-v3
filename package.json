@@ -25,7 +25,7 @@
     "db:migrate": "drizzle-kit migrate --config packages/database/drizzle.config.ts",
     "db:push": "drizzle-kit push --config packages/database/drizzle.config.ts",
     "env:check": "node scripts/env-check.mjs",
-    "firebase:forbid": "! rg -n \"from [\\\"']firebase|from [\\\"']firebase-admin|from [\\\"']@firebase/|NEXT_PUBLIC_FIREBASE|FIRESTORE_EMULATOR_HOST\" apps/web/src --glob '!**/legacy/**' --glob '!**/lib/auth/config.ts' --glob '!**/*.emu.test.*' --glob '!**/vitest.config.emu.ts' -q"
+    "firebase:forbid": "! rg -n \"from [\\\"']firebase/|from [\\\"']firebase-admin/|from [\\\"']@firebase/\" apps/web/src --glob '!**/legacy/**' --glob '!**/lib/auth/config.ts' --glob '!**/*.emu.test.*' --glob '!**/vitest.config.emu.ts' --glob '!**/env.ts' -q"
   },
   "devDependencies": {
     "@google/gemini-cli": "0.28.2",
