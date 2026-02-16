@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nurseconnect_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: nurseconnect
+      POSTGRES_USER: nurseconnect
+      POSTGRES_PASSWORD: nurseconnect
+    volumes:
+      - nurseconnect_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nurseconnect -d nurseconnect"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  nurseconnect_pgdata:

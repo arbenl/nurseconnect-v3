@@ -70,3 +70,10 @@ nurseconnect_ecosystem_git/
 *.plan.md
 .env.test
 .turbo/
+
+# Firebase emulator exports / local seeds
+apps/web/.seed/
+apps/web/firebase-export-*/
+
+# Drizzle local artifacts (keep migrations, ignore generated cache if any)
+packages/database/drizzle/meta/
