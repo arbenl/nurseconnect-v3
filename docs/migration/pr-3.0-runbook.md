@@ -33,6 +33,13 @@ This runbook guides the transition from `NextAuth` to `Better-Auth` as the prima
     echo "NextAuth Uses: $(rg -n "next-auth" apps/web/src | wc -l)"
     echo "Firebase Uses: $(rg -n "firebase" apps/web/src | wc -l)"
     ```
+7.  **Route Collision Check (Gotcha)**:
+    Ensure no NextAuth route conflicts with Better-Auth's prefix.
+    ```bash
+    rg -n "\/api\/auth" apps/web/src/app/api | head
+    rg -n "better-auth" apps/web/src/app/api -S
+    # Ensure they don't fight for the same base path.
+    ```
 
 ## 1. Backfill Execution
 **Goal**: Populate Postgres `users` table with identity data from Firebase.
@@ -92,30 +99,49 @@ Pause feature work. Execute this runbook locally. Return with this exact templat
 ```markdown
 ### PR-3.0 Verification Outcomes
 
-**Pre-Flight:**
-- Type Check: ✅/❌
-- Env Check: ✅/❌
-- DB Health: ✅/❌
+**A) Pre-flight gates**
+- pnpm install ✅/❌ (if ❌, paste error)
+- pnpm type-check ✅/❌
+- pnpm env:check ✅/❌
+- curl -s http://localhost:3000/api/health/db → (paste output)
+- pnpm db:generate ✅/❌
+- pnpm db:migrate ✅/❌
 
-**Backfill Report:**
-- Inserted: ?
-- Linked: ?
-- Updated: ?
-- Skipped: ?
-- Conflicts: ?
-- Errors: ?
+**B) Baseline counts (before backfill & flip)**
+- `rg -n "next-auth" apps/web/src | wc -l` → _____
+- `rg -n "firebase" apps/web/src | wc -l` → _____
 
-**Better-Auth Verification:**
-- `/api/me` (Logged In): <JSON>
-- `/api/admin/ping` (Admin): <Status> <JSON>
-- Role Change (Promote/Demote): ✅/❌
+**C) Backfill**
+- Command used:
+  - dry-run: _____
+  - apply: _____
+- Report summary:
+  - inserted: _____
+  - linked: _____
+  - updated: _____
+  - skipped: _____
+  - conflicts: _____
+  - errors: _____
+  - Notes on conflicts/errors (if any): _____
 
-**Rollback Drill:**
-- NextAuth -> BetterAuth -> NextAuth Works: ✅/❌
+**D) NextAuth mode verification (FEATURE_AUTH_PROVIDER=nextauth)**
+- `/smoke/auth` ✅/❌
+- `/api/me` (paste JSON): _____
+- `/api/admin/ping` (status + JSON): _____
+- `/admin` loads as admin ✅/❌
+- Promote/demote role works ✅/❌
 
-**Baselines:**
-- NextAuth Count: ?
-- Firebase Count: ?
+**E) Better-Auth mode verification (FEATURE_AUTH_PROVIDER=betterauth)**
+- `/smoke/auth` ✅/❌
+- `/api/me` (paste JSON): _____
+- `/api/admin/ping` (status + JSON): _____
+- `/admin` loads as admin ✅/❌
+- Promote/demote role works ✅/❌
+
+**F) Rollback drill**
+- Flip nextauth → betterauth → nextauth works ✅/❌
+- After rollback, `/admin` still works ✅/❌
+- Any regressions noticed: _____
 ```
 
 When verified, we proceed to **PR-3.1A: Remove NextAuth**.

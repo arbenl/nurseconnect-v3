@@ -5,6 +5,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/legacy/firebase/firebaseClient"; // for callbacks
 import { adminDb, adminAuth } from "@/legacy/firebase/admin"; // for adapter
 
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -30,6 +31,7 @@ export const authOptions: NextAuthOptions = {
           return {
             id: userRecord.uid,
             email: userRecord.email,
+            name: userRecord.displayName,
           };
         } catch (error: any) {
           if (error.code === "auth/user-not-found") {
@@ -54,6 +56,8 @@ export const authOptions: NextAuthOptions = {
         const userData = userDoc.data();
         token.id = user.id;
         token.role = userData?.role || "nurse";
+
+
       }
       return token;
     },
