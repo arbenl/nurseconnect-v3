@@ -1,76 +1,56 @@
-# Project Architecture: NurseConnect v2 Monorepo
+# Project Architecture: NurseConnect V3 Monorepo
 
-This document outlines the proposed project structure and architectural considerations for the `nurseconnect-v3` monorepo. The goal is to establish a clear, scalable, and maintainable setup leveraging modern JavaScript/TypeScript tooling.
+This document outlines the project structure and architectural state of the `nurseconnect-v3` monorepo.
 
-## 1. Monorepo Benefits
+## 1. Current State (Post-Hardening)
 
-Utilizing a monorepo approach for `nurseconnect-v3` offers several advantages:
-- **Shared Code:** Easily share common utilities, UI components, and type definitions across different applications and packages.
-- **Atomic Changes:** Make changes across multiple related projects in a single commit, simplifying coordination and deployment.
-- **Consistent Tooling:** Enforce consistent build processes, linting rules, and testing methodologies across the entire codebase.
-- **Simplified Dependency Management:** Centralized dependency management with `pnpm` ensures efficient disk space usage and faster installations.
+- **Internal packages**: `@nurseconnect/contracts`, `@nurseconnect/ui`, `@nurseconnect/tsconfig`, `@nurseconnect/database`
+- **Auth**: NextAuth (legacy, Phase 2 target: Better-Auth + Postgres)
+- **Database**: PostgreSQL via Drizzle ORM (`packages/database`)
+- **Firebase**: Env vars rejected at boot by `apps/web/src/env.ts`; runtime Firebase code still exists in legacy files (Phase 3 removal target)
+- **Feature flags**: `FEATURE_BACKEND_*` locked to `postgres` only
 
 ## 2. Core Structure
 
-The monorepo is organized into several key directories:
+- **`apps/web/`**: Next.js application (main UI)
+- **`packages/contracts/`**: Shared Zod schemas and types
+- **`packages/database/`**: Drizzle ORM schema, migrations, and DB client (Postgres)
+- **`packages/tsconfig/`**: Shared TypeScript configurations
+- **`packages/ui/`**: Shared UI component library
+- **`scripts/`**: Utility scripts (`env-check.mjs`, `seedUser.js`, etc.)
+- **`docs/migration/`**: Migration planning docs (`data-sources.md`)
 
-- **`apps/`**: Contains independent applications that are deployed and run separately.
-  - `apps/functions/`: Likely a serverless function application (e.g., Firebase Functions, AWS Lambda) handling backend logic.
-  - `apps/web/`: The main web application (e.g., React, Next.js) providing the user interface.
+## 3. Key Tooling
 
-- **`packages/`**: Houses reusable packages that can be consumed by applications or other packages within the monorepo.
-  - `packages/contracts/`: Defines shared interfaces, data structures, or API contracts used across the frontend and backend.
-  - `packages/testing/`: Contains shared testing utilities, mocks, or test configurations.
-  - `packages/tsconfig/`: Centralized TypeScript configurations (`base.json`, `nextjs.json`, `node20.json`) to ensure consistency across all TypeScript projects.
-  - `packages/ui/`: A shared UI component library (e.g., React components) to maintain a consistent look and feel.
+- **pnpm + Turborepo**: Workspace management and task orchestration
+- **TypeScript 5.x**: Strict type-checking
+- **Vitest**: Unit + emulator tests (split configs)
+- **Drizzle ORM**: Schema definition, migrations, Postgres client
+- **@t3-oss/env-nextjs**: Runtime environment validation
 
-- **`components/`**: (Potentially for smaller, more granular UI components or shared logic that doesn't warrant a full package).
+## 4. Known Issues
 
-- **`helpers/`**: General utility functions or helper modules that can be used across different parts of the monorepo.
+| Issue | Impact | Resolution |
+|---|---|---|
+| Dual Zod versions (root `^3.25.76`, web `^4.0.17`) | Type-check errors in `env.ts` | Unify on Zod 4 monorepo-wide |
+| `better-auth` not installed | Type errors on `auth.ts`, `auth-client.ts` | Install in Phase 2 |
+| Legacy Firebase code in `src/lib/firebase*` | Dead code, won't execute (env rejected) | Remove in Phase 3 |
+| NextAuth still active in middleware + pages | Cannot remove NEXTAUTH_* env vars yet | Replace in Phase 2 |
+| `next@14` + `react@19` peer dep mismatch | Warnings only, builds succeed | Upgrade Next.js |
 
-- **`shared/`**: For code that is broadly shared but might not fit neatly into `packages/` (e.g., constants, enums, common types).
+## 5. Firebase Status
 
-- **`types/`**: Centralized declaration files for global types or external modules.
+**Firebase is not supported in V3.** The env validation (`apps/web/src/env.ts`) rejects 13 Firebase-related environment variables at boot time. Legacy Firebase runtime code still exists but cannot execute without configuration. Files to remove in Phase 3:
 
-- **`utilities/`**: Similar to `helpers/`, but potentially for more specialized or domain-specific utility functions.
+- `src/lib/firebaseClient.ts`
+- `src/lib/firebase/client.ts`
+- `src/lib/firebase/auth-events.ts`
+- `src/lib/auth/config.ts` (FirestoreAdapter)
+- `vitest.config.emu.ts` (Firebase emulator test config)
 
-- **`schemas/`**: Likely contains data validation schemas (e.g., Zod schemas) for API requests/responses or data models.
+## 6. Configuration
 
-- **`prompts/`**: Stores prompt templates or configurations, possibly for AI interactions or code generation.
-
-- **`scripts/`**: Contains various utility scripts for development, build, deployment, or maintenance tasks (e.g., `run-phase.sh`).
-
-- **`output/`**: Generated output files, build artifacts, or documentation.
-
-- **`test/`**: Top-level directory for integration or end-to-end tests that span multiple applications/packages.
-
-- **`emulator/`**: Configuration or setup for local emulators (e.g., Firebase Emulator Suite).
-
-## 3. Key Tooling & Configuration
-
-- **`pnpm` (Package Manager)**:
-  - **`pnpm-workspace.yaml`**: Defines the workspaces within the monorepo, allowing `pnpm` to manage dependencies and link packages efficiently.
-  - **`package.json` (Root)**: Contains monorepo-wide scripts and dependencies.
-  - **`package.json` (Workspace)**: Each `app` and `package` has its own `package.json` to declare its specific dependencies and scripts.
-
-- **`Turbo` (Build System)**:
-  - **`turbo.json`**: Configures `Turbo` to orchestrate builds, tests, and other tasks across the monorepo. It enables caching and parallel execution for faster development cycles.
-
-- **`TypeScript` (Language)**:
-  - **`tsconfig.json` (Root)**: Base TypeScript configuration.
-  - **`packages/tsconfig/`**: Centralized and extendable `tsconfig` files (`base.json`, `nextjs.json`, `node20.json`) that are extended by individual `tsconfig.json` files in `apps/` and `packages/`.
-  - **`tsconfig.json` (Workspace)**: Each TypeScript project (`app` or `package`) extends from the shared `tsconfig` files, ensuring consistent compiler options.
-
-- **`.gitignore`**: Specifies files and directories to be ignored by Git, including `node_modules`, build outputs, and temporary files.
-
-- **`.env.test`**: Environment variables specific to the test environment.
-
-## 4. Configuration Best Practices
-
-- **Dependency Management**: Always add dependencies to the specific `package.json` of the `app` or `package` that uses them. Use `pnpm add -w <package-name>` for root-level dependencies or `pnpm add <package-name> --filter <workspace-name>` for workspace-specific dependencies.
-- **Scripting**: Define common scripts in the root `package.json` and workspace-specific scripts in their respective `package.json` files. Leverage `Turbo` for task orchestration.
-- **TypeScript Paths**: Configure `paths` in `tsconfig.json` files to allow absolute imports for internal packages (e.g., `@nurseconnect/contracts`).
-- **Linting & Formatting**: Implement consistent linting (e.g., ESLint) and formatting (e.g., Prettier) rules across the entire monorepo, potentially as a shared `package`.
-- **Testing**: Define a clear testing strategy, including unit, integration, and end-to-end tests, and configure `Turbo` to run them efficiently.
-
-This architecture provides a solid foundation for developing and maintaining the `nurseconnect-v3` project as a scalable monorepo.
+- **Dependency Management**: Use `pnpm add --filter <workspace>` for workspace-specific deps
+- **TypeScript Paths**: `@nurseconnect/*` packages resolve via workspace protocol
+- **Env Validation**: All server env vars validated by `apps/web/src/env.ts` at import time
+- **CI**: `unit` job (type-check, build, tests) + `db-sanity` job (Postgres migrations + health check)
