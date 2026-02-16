@@ -23,7 +23,8 @@
     "test:ci": "pnpm test:web && pnpm test:contracts",
     "db:generate": "drizzle-kit generate --config packages/database/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config packages/database/drizzle.config.ts",
-    "db:push": "drizzle-kit push --config packages/database/drizzle.config.ts"
+    "db:push": "drizzle-kit push --config packages/database/drizzle.config.ts",
+    "env:check": "node scripts/env-check.mjs"
   },
   "devDependencies": {
     "@google/gemini-cli": "0.28.2",
