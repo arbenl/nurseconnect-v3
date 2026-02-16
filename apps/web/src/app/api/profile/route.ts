@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 // import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { db } from "@/lib/firebase/db-admin";
+import { db } from "@/legacy/firebase/db-admin";
 import { z } from "zod";
 import { isRole, type Role } from "../../../types/role";
 

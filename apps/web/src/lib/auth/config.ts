@@ -2,8 +2,8 @@ import { FirestoreAdapter } from "@next-auth/firebase-adapter";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient"; // for callbacks
-import { adminDb, adminAuth } from "@/lib/firebase/admin"; // for adapter
+import { db } from "@/legacy/firebase/firebaseClient"; // for callbacks
+import { adminDb, adminAuth } from "@/legacy/firebase/admin"; // for adapter
 
 export const authOptions: NextAuthOptions = {
   providers: [
