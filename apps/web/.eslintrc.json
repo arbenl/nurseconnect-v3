@@ -1,5 +1,34 @@
 {
   "extends": ["next/core-web-vitals"],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["firebase/*", "firebase-admin/*", "@firebase/*"],
+            "message": "Firebase is quarantined. Import from @/legacy/firebase/ if truly needed, or use @nurseconnect/database."
+          },
+          {
+            "group": ["@/lib/firebase*", "@/lib/firebaseClient*"],
+            "message": "Firebase files moved to @/legacy/firebase/. Update your import path."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/legacy/**/*",
+        "src/lib/auth/config.ts",
+        "vitest.config.emu.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
   "settings": {
     "import/resolver": {
       "typescript": {

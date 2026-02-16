@@ -6,7 +6,7 @@ import type { NextRequest } from "next/server";
  * We import route handlers AFTER mocks to avoid hoisting issues.
  */
 
-vi.mock("@/lib/firebase/db-admin", () => {
+vi.mock("@/legacy/firebase/db-admin", () => {
   const setMock = vi.fn();
   const getMock = vi.fn();
   const docMock = vi.fn(() => ({ set: setMock, get: getMock }));
@@ -19,7 +19,7 @@ vi.mock("next-auth", () => ({
 }));
 
 // Lazy imports after mocks are set
-const { db } = await import("@/lib/firebase/db-admin");
+const { db } = await import("@/legacy/firebase/db-admin");
 const { getServerSession } = await import("next-auth");
 
 function makeReq(url: string, method: "GET" | "PUT", body?: any): NextRequest {
@@ -35,7 +35,7 @@ function makeReq(url: string, method: "GET" | "PUT", body?: any): NextRequest {
 }
 
 // convenience access to inner mock fns for assertions
-const getCollectionMock = (db.collection as unknown as jest.Mock | vi.Mock);
+const getCollectionMock = (db.collection as ReturnType<typeof vi.fn>);
 const getDocMock = getCollectionMock().doc as any;
 const getSetMock = getDocMock().set as any;
 const getGetMock = getDocMock().get as any;
