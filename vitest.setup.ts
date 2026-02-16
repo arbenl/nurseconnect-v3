@@ -7,7 +7,7 @@ import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 const app = initializeApp({
   apiKey: "fake-api-key",
   authDomain: "localhost",
-  projectId: "nurseconnect-v2", // must match your emulator
+  projectId: "nurseconnect-v2", // must match your emulator project ID (demo-nurseconnect)
 });
 
 // Auth

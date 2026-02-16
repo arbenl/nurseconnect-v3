@@ -1,5 +1,5 @@
 {
-  "name": "nurseconnect-v2",
+  "name": "nurseconnect-v3",
   "private": true,
   "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b",
   "engines": {
@@ -20,9 +20,13 @@
     "test:web": "pnpm --filter web test",
     "test:contracts": "pnpm --filter contracts test",
     "web:test:emu": "pnpm --filter web run test:emu",
-    "test:ci": "pnpm test:web && pnpm test:contracts"
+    "test:ci": "pnpm test:web && pnpm test:contracts",
+    "db:generate": "drizzle-kit generate --config packages/database/drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config packages/database/drizzle.config.ts",
+    "db:push": "drizzle-kit push --config packages/database/drizzle.config.ts"
   },
   "devDependencies": {
+    "@google/gemini-cli": "0.28.2",
     "@testing-library/jest-dom": "^6.4.6",
     "@types/node": "^20.12.12",
     "@vitejs/plugin-react": "^4.3.1",

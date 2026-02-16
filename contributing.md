@@ -1,7 +1,7 @@
 cat > CONTRIBUTING.md <<'MD'
 # Contributing & Local Dev Guide
 
-This doc is your quick-reference for running type checks, tests, and emulators in **nurseconnect-v2**. Follow these steps after small code edits to avoid accidental runtime errors.
+This doc is your quick-reference for running type checks, tests, and emulators in **nurseconnect-v3**. Follow these steps after small code edits to avoid accidental runtime errors.
 
 ---
 

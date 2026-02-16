@@ -1,5 +1,5 @@
 {
-  "name": "@nurseconnect-v2/contracts",
+  "name": "@nurseconnect/contracts",
   "version": "0.1.0",
   "private": true,
   "type": "module",

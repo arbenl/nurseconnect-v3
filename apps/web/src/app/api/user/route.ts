@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { zodToFieldErrors } from "@nurseconnect-v2/ui/lib/utils";
-import { UserProfile, Role as RoleSchema } from "@nurseconnect-v2/contracts";
+import { zodToFieldErrors } from "@nurseconnect/ui/lib/utils";
+import { UserProfile, Role as RoleSchema } from "@nurseconnect/contracts";
 import { adminAuth as auth } from "@/lib/firebase/admin";
 // import { authOptions } from '@/lib/auth/config'; // if you want to gate with NextAuth
 // import { getServerSession } from 'next-auth';

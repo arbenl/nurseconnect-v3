@@ -1,10 +1,10 @@
 # Project Architecture: NurseConnect v2 Monorepo
 
-This document outlines the proposed project structure and architectural considerations for the `nurseconnect-v2` monorepo. The goal is to establish a clear, scalable, and maintainable setup leveraging modern JavaScript/TypeScript tooling.
+This document outlines the proposed project structure and architectural considerations for the `nurseconnect-v3` monorepo. The goal is to establish a clear, scalable, and maintainable setup leveraging modern JavaScript/TypeScript tooling.
 
 ## 1. Monorepo Benefits
 
-Utilizing a monorepo approach for `nurseconnect-v2` offers several advantages:
+Utilizing a monorepo approach for `nurseconnect-v3` offers several advantages:
 - **Shared Code:** Easily share common utilities, UI components, and type definitions across different applications and packages.
 - **Atomic Changes:** Make changes across multiple related projects in a single commit, simplifying coordination and deployment.
 - **Consistent Tooling:** Enforce consistent build processes, linting rules, and testing methodologies across the entire codebase.
@@ -73,4 +73,4 @@ The monorepo is organized into several key directories:
 - **Linting & Formatting**: Implement consistent linting (e.g., ESLint) and formatting (e.g., Prettier) rules across the entire monorepo, potentially as a shared `package`.
 - **Testing**: Define a clear testing strategy, including unit, integration, and end-to-end tests, and configure `Turbo` to run them efficiently.
 
-This architecture provides a solid foundation for developing and maintaining the `nurseconnect-v2` project as a scalable monorepo.
+This architecture provides a solid foundation for developing and maintaining the `nurseconnect-v3` project as a scalable monorepo.
