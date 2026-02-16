@@ -20,7 +20,7 @@
     "test:emu": "vitest run --config vitest.config.emu.ts"
   },
   "dependencies": {
-    "zod": "^3.23.8"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^3.0.0",
