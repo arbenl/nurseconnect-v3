@@ -82,7 +82,7 @@ export function BecomeNurseCard() {
   }
 
   return (
-    <Card>
+    <Card data-testid="become-nurse-card">
       <CardHeader>
         <CardTitle>Become a Nurse</CardTitle>
         <CardDescription>

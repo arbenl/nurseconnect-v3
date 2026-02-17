@@ -11,11 +11,11 @@ export default function DashboardClientPage() {
 
   const { user, isLoading, error } = useUserProfile();
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div data-testid="dashboard-loading">Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
 
   return (
-    <div className="p-8">
+    <div className="p-8" data-testid="dashboard-ready">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
       </div>

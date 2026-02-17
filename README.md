@@ -59,18 +59,44 @@ NurseConnect is a healthcare platform connecting patients with local nurses for 
    - Expected response: `{"ok":true,"db":"ok"}`
 
 ## Commands
-- `pnpm type-check`: Run TypeScript validation across the monorepo.
-- `pnpm lint`: Run ESLint.
-- `pnpm test:ci`: Run unit tests.
+
+- `pnpm gate:fast`: Comprehensive fast gate (Type-check + Lint + Unit tests).
+- `pnpm gate:e2e`: Primary E2E gate (API-first tests).
 - `pnpm db:generate`: Generate Drizzle migrations.
-- `pnpm db:migrate`: Run migrations (Production/Staging).
-- `pnpm db:push`: Push Drizzle schema to DB (Prototyping).
+- `pnpm db:migrate`: Run migrations.
+- `pnpm type-check`: Run TypeScript validation.
+- `pnpm lint`: Run ESLint.
+
+## Testing Strategy
+
+We use a split strategy to ensure both speed and reliability:
+
+### 1. API E2E Tests (Primary Gate)
+
+Fast (~20s) and covering critical business logic. These are the main gates for CI.
+
+- **Run all**: `pnpm gate:e2e`
+- **Logic**: `apps/web/tests/e2e-api`
+
+### 2. UI E2E Tests (Quarantined)
+
+Browser-heavy Playwright tests. Quarantined in CI to prevent flakiness from blocking main builds.
+
+- **Run locally**: `pnpm --filter web test:e2e:ui`
+- **Source**: `apps/web/tests/e2e-ui`
+
+### 3. Integration & Unit
+
+- **DB/API**: `pnpm --filter web test:api`
+- **Unit**: `pnpm test:ci`
 
 ## Architecture
+
 - `apps/web`: Main Next.js application.
 - `packages/database`: Drizzle ORM schema and client.
 - `packages/ui`: Shared UI components.
 - `packages/contracts`: Shared Zod schemas and types.
 
 ## License
+
 MIT

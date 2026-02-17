@@ -1,34 +1,16 @@
-name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
-  build:
-    name: Build & Lint
+  quality:
+    name: Type Check & Lint
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: nurseconnect_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres -d nurseconnect_test"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
-
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_test
 
     steps:
       - name: Checkout repo
@@ -68,58 +50,57 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: DB Migrate
-        run: pnpm db:migrate
-
-      - name: Verify Migrations Applied
-        run: |
-          echo "DATABASE_URL=$DATABASE_URL"
-          echo "Verifying migrations applied to correct database..."
-          cd apps/web && pnpm exec node -e "
-          const { Client } = require('pg');
-          (async () => {
-            const c = new Client({ connectionString: process.env.DATABASE_URL });
-            await c.connect();
-            const r = await c.query(\`
-              SELECT 
-                to_regclass('public.nurse_locations') as nurse_locations,
-                to_regclass('public.service_requests') as service_requests,
-                to_regclass('public.users') as users,
-                to_regclass('public.nurses') as nurses
-            \`);
-            console.log('Tables found:', r.rows[0]);
-            if (!r.rows[0].nurse_locations) {
-              console.error('❌ FATAL: nurse_locations table not found after migration!');
-              process.exit(2);
-            }
-            if (!r.rows[0].service_requests) {
-              console.error('❌ FATAL: service_requests table not found after migration!');
-              process.exit(2);
-            }
-            console.log('✅ All critical tables exist');
-            await c.end();
-          })();
-          "
-
       - name: Type Check
         run: pnpm -w type-check
 
       - name: Lint
         run: pnpm lint
 
-      - name: Unit Tests
+  unit:
+    name: Unit Tests (jsdom)
+    runs-on: ubuntu-latest
+    needs: quality
+    env:
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Unit Tests
         run: pnpm test:ci
 
-      - name: API/DB Integration Tests
-        run: |
-          echo "DB TEST DATABASE_URL=$DATABASE_URL"
-          test -n "$DATABASE_URL" || (echo "❌ DATABASE_URL not set for DB tests!" && exit 1)
-          pnpm --filter web test:api
-
-  e2e:
-    name: E2E Tests
+  db-integration:
+    name: DB Integration Tests (node)
     runs-on: ubuntu-latest
-    needs: build
+    needs: quality
 
     services:
       postgres:
@@ -127,19 +108,188 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: nurseconnect_test
+          POSTGRES_DB: nurseconnect_ci
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres -d nurseconnect_test"
+          --health-cmd="pg_isready -U postgres -d nurseconnect_ci"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=20
 
     env:
       NODE_ENV: test
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_ci
+      BETTER_AUTH_SECRET: ci_better_auth_secret_32_chars_minimum_123456
+      FIRST_ADMIN_EMAILS: admin.bootstrap@test.com
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: DB Migrate
+        run: pnpm db:migrate
+
+      - name: Verify Migrations Applied
+        run: |
+          cd apps/web && pnpm exec node -e "
+          const { Client } = require('pg');
+          (async () => {
+            const c = new Client({ connectionString: process.env.DATABASE_URL });
+            await c.connect();
+            const r = await c.query(\`
+              SELECT
+                to_regclass('public.nurse_locations') as nurse_locations,
+                to_regclass('public.service_requests') as service_requests,
+                to_regclass('public.users') as users,
+                to_regclass('public.nurses') as nurses
+            \`);
+            if (!r.rows[0].nurse_locations || !r.rows[0].service_requests) {
+              console.error('Missing required tables after migration');
+              process.exit(2);
+            }
+            await c.end();
+          })();
+          "
+
+      - name: Run DB/API Integration Tests
+        run: pnpm test:api
+
+  e2e-api:
+    name: E2E API Tests
+    runs-on: ubuntu-latest
+    needs: [quality, db-integration]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nurseconnect_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d nurseconnect_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_ci
       E2E_TEST_MODE: "1"
+      APP_URL: http://localhost:3010
+      BETTER_AUTH_URL: http://localhost:3010
+      BETTER_AUTH_SECRET: ci_better_auth_secret_32_chars_minimum_123456
+      FIRST_ADMIN_EMAILS: admin.bootstrap@test.com
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: DB Migrate
+        run: pnpm db:migrate
+
+      - name: Build Contracts Package
+        run: pnpm --filter @nurseconnect/contracts build
+
+      - name: Run E2E API Tests
+        run: pnpm gate:e2e-api
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-api
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 30
+
+  e2e-ui:
+    name: E2E UI Tests
+    runs-on: ubuntu-latest
+    needs: quality
+    if: github.event_name == 'workflow_dispatch'
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nurseconnect_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d nurseconnect_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_ci
+      E2E_TEST_MODE: "1"
+      APP_URL: http://localhost:3010
+      BETTER_AUTH_URL: http://localhost:3010
+      BETTER_AUTH_SECRET: ci_better_auth_secret_32_chars_minimum_123456
+      FIRST_ADMIN_EMAILS: admin.bootstrap@test.com
 
     steps:
       - name: Checkout repo
@@ -178,13 +328,18 @@ jobs:
       - name: DB Migrate
         run: pnpm db:migrate
 
-      - name: Run E2E Tests
-        run: pnpm gate:e2e
+      - name: Build Contracts Package
+        run: pnpm --filter @nurseconnect/contracts build
+
+      - name: Run E2E UI Tests
+        run: pnpm --filter web test:e2e:ui
 
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
-          path: apps/web/playwright-report/
+          name: playwright-report-ui
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
           retention-days: 30

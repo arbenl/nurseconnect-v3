@@ -1,20 +1,17 @@
 import { expect, test } from "@playwright/test";
 
-import { resetDb, seedNurse, seedNurseLocation, seedUser } from "./db";
+import { resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
+import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 test.describe("Service Requests", () => {
     test.beforeEach(async () => {
         await resetDb();
     });
 
-    test("patient request assigns to nearest nurse", async ({ page, request }) => {
+    test("patient request assigns to nearest nurse", async ({ page }) => {
         // Seed Nurse A (near) @ Pristina coordinates
-        const nurseAEmail = "nurseA@test.local";
-        const nurseAId = await seedUser({
-            email: nurseAEmail,
-            role: "nurse",
-            displayName: "Nurse A",
-        });
+        const nurseAEmail = `nurseA-${Date.now()}@test.local`;
+        const { userId: nurseAId } = await createTestUser(page.request, nurseAEmail, "Nurse A", "nurse");
 
         await seedNurse({
             userId: nurseAId,
@@ -30,12 +27,8 @@ test.describe("Service Requests", () => {
         });
 
         // Seed Nurse B (far) @ different location
-        const nurseBEmail = "nurseB@test.local";
-        const nurseBId = await seedUser({
-            email: nurseBEmail,
-            role: "nurse",
-            displayName: "Nurse B",
-        });
+        const nurseBEmail = `nurseB-${Date.now()}@test.local`;
+        const { userId: nurseBId } = await createTestUser(page.request, nurseBEmail, "Nurse B", "nurse");
 
         await seedNurse({
             userId: nurseBId,
@@ -51,24 +44,24 @@ test.describe("Service Requests", () => {
         });
 
         // Seed patient
-        const patientEmail = "patient@test.local";
-        await seedUser({
-            email: patientEmail,
-            role: "patient",
-            displayName: "Test Patient",
-        });
+        const patientEmail = `patient-${Date.now()}@test.local`;
+        await createTestUser(page.request, patientEmail, "Test Patient", "patient");
 
         // Login as patient
-        await request.post("/api/test/login", {
-            data: { email: patientEmail },
-        });
+        await loginTestUser(page.request, patientEmail);
 
-        // Go to dashboard
+        // Ensure users can access dashboard instead of onboarding.
+        await markProfileComplete(patientEmail, { phone: "555-555-5555" });
+        await markProfileComplete(nurseAEmail, { phone: "555-555-5555" });
+        await markProfileComplete(nurseBEmail, { phone: "555-555-5555" });
+
+        // Now go to dashboard (should work)
         await page.goto("/dashboard");
 
         // Create request (near Nurse A)
-        await page.click('text="Request a Visit"');
-        await page.fill('input[name="address"]', "123 Test St, Pristina");
+        // Card is already visible
+        await expect(page.locator("text=Request a Nurse Visit")).toBeVisible();
+        await page.fill('#address', "123 Test St, Pristina");
         await page.fill('input[name="lat"]', "42.6629");
         await page.fill('input[name="lng"]', "21.1655");
 
@@ -80,7 +73,7 @@ test.describe("Service Requests", () => {
 
         // Verify request was assigned to Nurse A (nearest)
         // This could be done by checking the UI or making an API call
-        const requestsResponse = await request.get("/api/requests/mine");
+        const requestsResponse = await page.request.get("/api/requests/mine");
         const requests = await requestsResponse.json();
 
         expect(requests.length).toBeGreaterThan(0);
@@ -88,37 +81,35 @@ test.describe("Service Requests", () => {
         expect(requests[0].assignedNurseUserId).toBe(nurseAId);
 
         // Login as Nurse A and verify they see the assignment
-        await request.post("/api/test/login", {
-            data: { email: nurseAEmail },
-        });
+        // Logout first? loginTestUser calls sign-in which creates new session.
+        // But cleaner to logout.
+        await page.request.post("/api/auth/sign-out", { data: {} });
+
+        await loginTestUser(page.request, nurseAEmail);
 
         await page.goto("/dashboard");
 
         // Verify assignment card shows the request
-        await expect(page.locator("text=New Assignment")).toBeVisible();
+        await expect(page.locator("text=Current Assignment")).toBeVisible();
         await expect(page.locator("text=123 Test St, Pristina")).toBeVisible();
     });
 
-    test("request stays open when no nurses available", async ({ page, request }) => {
+    test("request stays open when no nurses available", async ({ page }) => {
         // Seed patient only (no nurses)
-        const patientEmail = "patient@test.local";
-        await seedUser({
-            email: patientEmail,
-            role: "patient",
-            displayName: "Test Patient",
-        });
+        const patientEmail = `patient-${Date.now()}@test.local`;
+        await createTestUser(page.request, patientEmail, "Test Patient", "patient");
+
+        await markProfileComplete(patientEmail, { phone: "555-555-5555" });
 
         // Login as patient
-        await request.post("/api/test/login", {
-            data: { email: patientEmail },
-        });
+        await loginTestUser(page.request, patientEmail);
 
         // Go to dashboard
         await page.goto("/dashboard");
 
         // Create request
-        await page.click('text="Request a Visit"');
-        await page.fill('input[name="address"]', "456 Remote St");
+        await expect(page.locator("text=Request a Nurse Visit")).toBeVisible();
+        await page.fill('#address', "456 Remote St");
         await page.fill('input[name="lat"]', "42.0");
         await page.fill('input[name="lng"]', "21.0");
 
@@ -129,7 +120,7 @@ test.describe("Service Requests", () => {
         await expect(page.locator("text=open")).toBeVisible({ timeout: 5000 });
 
         // Verify request status is "open"
-        const requestsResponse = await request.get("/api/requests/mine");
+        const requestsResponse = await page.request.get("/api/requests/mine");
         const requests = await requestsResponse.json();
 
         expect(requests.length).toBeGreaterThan(0);

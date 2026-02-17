@@ -23,6 +23,9 @@ export async function resetDb() {
         await client.query("TRUNCATE TABLE nurse_locations RESTART IDENTITY CASCADE");
         await client.query("TRUNCATE TABLE nurses RESTART IDENTITY CASCADE");
         await client.query("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
+        await client.query("TRUNCATE TABLE auth_sessions RESTART IDENTITY CASCADE");
+        await client.query("TRUNCATE TABLE auth_accounts RESTART IDENTITY CASCADE");
+        await client.query("TRUNCATE TABLE auth_users RESTART IDENTITY CASCADE");
     } finally {
         await client.end();
     }
@@ -40,11 +43,22 @@ export async function seedUser(params: {
     await client.connect();
 
     try {
+        const authUserId = `test-auth-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        const name = params.displayName || params.email.split("@")[0];
+
+        // 1. Insert into auth_users
+        await client.query(
+            `INSERT INTO auth_users (id, email, name, email_verified, created_at, updated_at)
+             VALUES ($1, $2, $3, true, NOW(), NOW())`,
+            [authUserId, params.email, name]
+        );
+
+        // 2. Insert into users (domain) linked to auth_user
         const result = await client.query(
-            `INSERT INTO users (email, role, display_name) 
-       VALUES ($1, $2, $3) 
-       RETURNING id`,
-            [params.email, params.role, params.displayName || params.email.split("@")[0]]
+            `INSERT INTO users (email, role, name, auth_id, created_at, updated_at) 
+             VALUES ($1, $2, $3, $4, NOW(), NOW()) 
+             RETURNING id`,
+            [params.email, params.role, name, authUserId]
         );
         return result.rows[0].id as string;
     } finally {
