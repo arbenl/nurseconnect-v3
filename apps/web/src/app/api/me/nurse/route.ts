@@ -1,12 +1,14 @@
+import { db, eq, schema } from "@nurseconnect/database";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSession } from "@/server/auth";
-import { db, schema, eq } from "@nurseconnect/database";
-import { ensureDomainUserFromSession } from "@/lib/user-service";
 
+import { ensureDomainUserFromSession } from "@/lib/user-service";
+import { getSession } from "@/server/auth";
+
+// PR-3.5: Relax schema for partial updates (e.g. availability toggle)
 const nurseProfileSchema = z.object({
-    licenseNumber: z.string().min(1, "License number is required"),
-    specialization: z.string().min(1, "Specialization is required"),
+    licenseNumber: z.string().min(1, "License number is required").optional(),
+    specialization: z.string().min(1, "Specialization is required").optional(),
     isAvailable: z.boolean().optional(),
 });
 
@@ -42,16 +44,22 @@ export async function PATCH(request: Request) {
         });
 
         if (existingNurse) {
+            // Partial Update
             await db
                 .update(schema.nurses)
                 .set({
-                    licenseNumber,
-                    specialization,
+                    ...(licenseNumber ? { licenseNumber } : {}),
+                    ...(specialization ? { specialization } : {}),
                     isAvailable: isAvailable ?? existingNurse.isAvailable,
                     updatedAt: new Date(),
                 })
                 .where(eq(schema.nurses.id, existingNurse.id));
         } else {
+            // Initial Creation - Enforce required fields
+            if (!licenseNumber || !specialization) {
+                return NextResponse.json({ error: "License number and specialization are required for initial profile." }, { status: 400 });
+            }
+
             await db.insert(schema.nurses).values({
                 userId: user.id,
                 status: "pending",
