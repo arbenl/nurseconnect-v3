@@ -29,7 +29,7 @@ NurseConnect is a healthcare platform connecting patients with local nurses for 
    Copy the example environment file:
    ```bash
    cp apps/web/.env.example apps/web/.env.local
-   # Update DB_URL in .env.local if needed (defaults match docker-compose)
+   # Update DATABASE_URL in .env.local if needed (defaults match docker-compose)
    ```
 
 3. **Start Database**
@@ -39,24 +39,31 @@ NurseConnect is a healthcare platform connecting patients with local nurses for 
    ```
 
 4. **Initialize Database**
-   Push the schema to the local database:
+   Run migrations to set up the schema:
    ```bash
-   pnpm db:push
-   # Or for migrations: pnpm db:migrate
+   pnpm db:migrate
+   # Optional (prototyping): pnpm db:push
    ```
 
 5. **Start Development Server**
    ```bash
    pnpm dev
+   # or: pnpm --filter web dev
    ```
    - Web App: http://localhost:3000
+
+6. **Verify Health**
+   ```bash
+   curl -s http://localhost:3000/api/health/db
+   ```
 
 ## Commands
 - `pnpm type-check`: Run TypeScript validation across the monorepo.
 - `pnpm lint`: Run ESLint.
 - `pnpm test:ci`: Run unit tests.
 - `pnpm db:generate`: Generate Drizzle migrations.
-- `pnpm db:push`: Push Drizzle schema to DB (prototyping).
+- `pnpm db:migrate`: Run migrations (Production/Staging).
+- `pnpm db:push`: Push Drizzle schema to DB (Prototyping).
 
 ## Architecture
 - `apps/web`: Main Next.js application.
