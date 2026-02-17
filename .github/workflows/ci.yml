@@ -71,6 +71,36 @@ jobs:
       - name: DB Migrate
         run: pnpm db:migrate
 
+      - name: Verify Migrations Applied
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL"
+          echo "Verifying migrations applied to correct database..."
+          pnpm -w exec node -e "
+          const { Client } = require('pg');
+          (async () => {
+            const c = new Client({ connectionString: process.env.DATABASE_URL });
+            await c.connect();
+            const r = await c.query(\`
+              SELECT 
+                to_regclass('public.nurse_locations') as nurse_locations,
+                to_regclass('public.service_requests') as service_requests,
+                to_regclass('public.users') as users,
+                to_regclass('public.nurses') as nurses
+            \`);
+            console.log('Tables found:', r.rows[0]);
+            if (!r.rows[0].nurse_locations) {
+              console.error('❌ FATAL: nurse_locations table not found after migration!');
+              process.exit(2);
+            }
+            if (!r.rows[0].service_requests) {
+              console.error('❌ FATAL: service_requests table not found after migration!');
+              process.exit(2);
+            }
+            console.log('✅ All critical tables exist');
+            await c.end();
+          })();
+          "
+
       - name: Type Check
         run: pnpm -w type-check
 
@@ -81,7 +111,10 @@ jobs:
         run: pnpm test:ci
 
       - name: API/DB Integration Tests
-        run: pnpm --filter web test:api
+        run: |
+          echo "DB TEST DATABASE_URL=$DATABASE_URL"
+          test -n "$DATABASE_URL" || (echo "❌ DATABASE_URL not set for DB tests!" && exit 1)
+          pnpm --filter web test:api
 
   e2e:
     name: E2E Tests
