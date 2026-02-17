@@ -1,11 +1,11 @@
 "use client";
 
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { authClient } from "@/lib/auth-client";
+
 
 export default function DashboardClientPage() {
-  const { data: session } = authClient.useSession();
-  const { data: user, isLoading, error } = useUserProfile(session?.user?.id ?? "");
+
+  const { user, isLoading, error } = useUserProfile();
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
@@ -13,9 +13,9 @@ export default function DashboardClientPage() {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="mt-4">Welcome, {user?.displayName || user?.email}!</p>
+      <p className="mt-4">Welcome, {user?.name || user?.email}!</p>
       <p>
-        Your assigned role is: <strong>{user?.roles.join(", ")}</strong>
+        Your assigned role is: <strong>{user?.role}</strong>
       </p>
       <div className="mt-6 p-4 bg-gray-50 rounded-md overflow-x-auto">
         <h3 className="font-semibold">User Details:</h3>

@@ -9,7 +9,16 @@ export const users = pgTable(
     name: text("name"),
     role: text("role").notNull(), // Phase 2 will harden to enum
     firebaseUid: text("firebase_uid"),
-    authId: text("auth_id"), // Link to Better-Auth user.id
+    authId: text("auth_id"), // Link to better-auth user.id
+
+    // Profile fields (Phase 3.3)
+    firstName: text("first_name"),
+    lastName: text("last_name"),
+    phone: text("phone"),
+    city: text("city"),
+    address: text("address"),
+    profileCompletedAt: timestamp("profile_completed_at", { withTimezone: true }),
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

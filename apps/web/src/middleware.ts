@@ -1,9 +1,9 @@
 import { type NextRequest } from "next/server";
 // import { getToken } from "next-auth/jwt";
 
-const PROTECTED_PREFIX = "/dashboard";
+// const PROTECTED_PREFIX = "/dashboard";
 
-export async function middleware(req: NextRequest) {
+export async function middleware(_req: NextRequest) {
   // TODO: Re-implement middleware with Better-Auth if strictly required for edge protection.
   // For now, removing NextAuth dependency.
   /*

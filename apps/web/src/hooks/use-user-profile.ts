@@ -1,21 +1,62 @@
-import { UserProfile } from "@nurseconnect/contracts";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-async function getUserProfile(uid: string): Promise<UserProfile> {
-  const res = await fetch(`/api/user?id=${uid}`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch user data");
-  }
-  const data = await res.json();
-  return UserProfile.parse(data);
+import type { MeResponse } from "@/types/me";
+
+const ME_KEY = ["me"];
+
+async function fetchMe(): Promise<MeResponse> {
+  const res = await fetch("/api/me");
+  if (!res.ok) throw new Error("Failed to fetch /api/me");
+  return res.json();
 }
 
-export function useUserProfile(uid: string) {
-  return useQuery({
-    queryKey: ["user", uid],
-    queryFn: () => getUserProfile(uid),
-    staleTime: 30_000,
-    retry: 1,
-    enabled: !!uid,
+type ProfilePatch = {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  city: string;
+  address?: string;
+};
+
+async function patchProfile(input: ProfilePatch) {
+  const res = await fetch("/api/me/profile", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
   });
+  if (!res.ok) throw new Error("Failed to update profile");
+  return res.json();
+}
+
+export function useUserProfile() {
+  const qc = useQueryClient();
+
+  const meQuery = useQuery({
+    queryKey: ME_KEY,
+    queryFn: fetchMe,
+    staleTime: 5_000,
+  });
+
+  const mutateProfile = useMutation({
+    mutationFn: patchProfile,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ME_KEY });
+    },
+  });
+
+  const me = meQuery.data;
+  // Safely extract user only if ok:true and user exists
+  const user = me && "ok" in me && me.ok && me.user ? me.user : null;
+  const profileComplete = !!user?.profileComplete;
+
+  return {
+    me,
+    user,
+    profileComplete,
+    isLoading: meQuery.isLoading,
+    isFetching: meQuery.isFetching,
+    error: meQuery.error,
+    refetch: meQuery.refetch,
+    mutateProfile,
+  };
 }
