@@ -1,12 +1,18 @@
-import { db, schema } from "@nurseconnect/database";
+import { db, schema, eq, sql } from "@nurseconnect/database";
 
 const { users } = schema;
+
+const parseAllowlist = () =>
+  (process.env.FIRST_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
 
 /**
  * Upserts a user into the domain database based on their Auth ID.
  * This ensures that every Better-Auth user has a corresponding record in the domain users table.
  */
-export async function upsertUserFromSession(data: {
+export async function ensureDomainUserFromSession(data: {
   id: string;
   email: string;
   name?: string | null;
@@ -33,4 +39,50 @@ export async function upsertUserFromSession(data: {
   return user;
 }
 
-export const upsertUser = upsertUserFromSession;
+export const upsertUser = ensureDomainUserFromSession;
+
+async function adminExists(): Promise<boolean> {
+  const [res] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(users)
+    .where(eq(users.role, "admin"));
+
+  return Number(res?.count ?? 0) > 0;
+}
+
+/**
+ * Promotes the user to admin if they are the first user OR in the allowlist.
+ */
+export async function maybeBootstrapFirstAdmin(domainUser: typeof users.$inferSelect) {
+  if (domainUser.role === "admin") return domainUser;
+
+  const allowlist = parseAllowlist();
+  const email = (domainUser.email ?? "").toLowerCase();
+
+  // If allowlist is set, strictly enforce it
+  if (allowlist.length > 0) {
+    if (allowlist.includes(email)) {
+      // Promote
+      const [updated] = await db
+        .update(users)
+        .set({ role: "admin" })
+        .where(eq(users.id, domainUser.id))
+        .returning();
+      return updated;
+    }
+    return domainUser;
+  }
+
+  // If allowlist is EMPTY, promote the very first admin if none exist
+  const already = await adminExists();
+  if (already) return domainUser;
+
+  // Promote first user
+  const [updated] = await db
+    .update(users)
+    .set({ role: "admin" })
+    .where(eq(users.id, domainUser.id))
+    .returning();
+
+  return updated;
+}
