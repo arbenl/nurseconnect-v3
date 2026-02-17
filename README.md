@@ -56,6 +56,7 @@ NurseConnect is a healthcare platform connecting patients with local nurses for 
    ```bash
    curl -s http://localhost:3000/api/health/db
    ```
+   - Expected response: `{"ok":true,"db":"ok"}`
 
 ## Commands
 - `pnpm type-check`: Run TypeScript validation across the monorepo.
