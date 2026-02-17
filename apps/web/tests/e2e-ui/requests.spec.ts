@@ -109,7 +109,7 @@ test.describe("Service Requests", () => {
         // Login as Nurse A and verify they see the assignment
         // Logout first? loginTestUser calls sign-in which creates new session.
         // But cleaner to logout.
-        await page.request.post("/api/auth/sign-out");
+        await page.request.post("/api/auth/sign-out", { data: {} });
 
         await loginTestUser(page.request, nurseAEmail);
 

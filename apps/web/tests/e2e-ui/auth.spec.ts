@@ -49,7 +49,7 @@ test.describe("Authentication", () => {
         expect(signUpResponse.ok()).toBeTruthy();
 
         // 2. Sign out to simulate "existing user not logged in" state
-        await page.request.post("/api/auth/sign-out");
+        await page.request.post("/api/auth/sign-out", { data: {} });
 
         // 3. Login using real API (instead of /api/test/login)
         const loginResponse = await page.request.post("/api/auth/sign-in/email", {
