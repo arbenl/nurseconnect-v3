@@ -243,6 +243,9 @@ jobs:
       - name: DB Migrate
         run: pnpm db:migrate
 
+      - name: Build Contracts Package
+        run: pnpm --filter @nurseconnect/contracts build
+
       - name: Run E2E API Tests
         run: pnpm gate:e2e-api
 
@@ -321,6 +324,9 @@ jobs:
 
       - name: DB Migrate
         run: pnpm db:migrate
+
+      - name: Build Contracts Package
+        run: pnpm --filter @nurseconnect/contracts build
 
       - name: Run E2E UI Tests
         run: pnpm --filter web test:e2e:ui
