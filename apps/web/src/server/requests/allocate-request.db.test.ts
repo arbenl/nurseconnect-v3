@@ -10,7 +10,7 @@ function uuidLike(id: string) {
     expect(id).toMatch(/^[0-9a-f-]{20,}$/i);
 }
 
-describe("createAndAssignRequest", () => {
+describe.sequential("createAndAssignRequest", () => {
     beforeAll(async () => {
         // Ensure DB reachable
         await db.execute(sql`SELECT 1`);

@@ -72,4 +72,107 @@ test.describe("Requests API", () => {
         expect(data.status).toBe("open");
         expect(data.assignedNurseUserId).toBeNull();
     });
+
+    test("full flow: assigned nurse accepts and patient sees accepted", async ({ request }) => {
+        const nurseEmail = `nurse-accept-${Date.now()}@test.local`;
+        const { userId: nurseId } = await createTestUser(request, nurseEmail, "Nurse Accept", "nurse");
+        await seedNurse({
+            userId: nurseId,
+            licenseNumber: "RN-ACCEPT",
+            specialization: "General",
+            isAvailable: true,
+        });
+        await seedNurseLocation({
+            nurseUserId: nurseId,
+            lat: "42.6629",
+            lng: "21.1655",
+        });
+
+        const patientEmail = `patient-accept-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Accept", "patient");
+        await markProfileComplete(patientEmail);
+
+        await loginTestUser(request, patientEmail);
+        const createResponse = await request.post("/api/requests", {
+            data: {
+                address: "7 Main St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+        expect(createResponse.ok(), `Create request failed: ${await createResponse.text()}`).toBeTruthy();
+        const created = await createResponse.json();
+        expect(created.status).toBe("assigned");
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, nurseEmail);
+
+        const acceptResponse = await request.post(`/api/requests/${created.id}/accept`, { data: {} });
+        expect(acceptResponse.ok(), `Accept failed: ${await acceptResponse.text()}`).toBeTruthy();
+        const accepted = await acceptResponse.json();
+        expect(accepted.request.status).toBe("accepted");
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, patientEmail);
+
+        const mineResponse = await request.get("/api/requests/mine");
+        expect(mineResponse.ok(), `Mine failed: ${await mineResponse.text()}`).toBeTruthy();
+        const mine = await mineResponse.json();
+        const latest = mine[0];
+        expect(latest.id).toBe(created.id);
+        expect(latest.status).toBe("accepted");
+    });
+
+    test("reject flow: assigned nurse rejects and request reopens", async ({ request }) => {
+        const nurseEmail = `nurse-reject-${Date.now()}@test.local`;
+        const { userId: nurseId } = await createTestUser(request, nurseEmail, "Nurse Reject", "nurse");
+        await seedNurse({
+            userId: nurseId,
+            licenseNumber: "RN-REJECT",
+            specialization: "General",
+            isAvailable: true,
+        });
+        await seedNurseLocation({
+            nurseUserId: nurseId,
+            lat: "42.6629",
+            lng: "21.1655",
+        });
+
+        const patientEmail = `patient-reject-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Reject", "patient");
+        await markProfileComplete(patientEmail);
+
+        await loginTestUser(request, patientEmail);
+        const createResponse = await request.post("/api/requests", {
+            data: {
+                address: "9 Main St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+        expect(createResponse.ok(), `Create request failed: ${await createResponse.text()}`).toBeTruthy();
+        const created = await createResponse.json();
+        expect(created.status).toBe("assigned");
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, nurseEmail);
+
+        const rejectResponse = await request.post(`/api/requests/${created.id}/reject`, {
+            data: { reason: "Unable to reach address in time" },
+        });
+        expect(rejectResponse.ok(), `Reject failed: ${await rejectResponse.text()}`).toBeTruthy();
+        const rejected = await rejectResponse.json();
+        expect(rejected.request.status).toBe("open");
+        expect(rejected.request.assignedNurseUserId).toBeNull();
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, patientEmail);
+
+        const mineResponse = await request.get("/api/requests/mine");
+        expect(mineResponse.ok(), `Mine failed: ${await mineResponse.text()}`).toBeTruthy();
+        const mine = await mineResponse.json();
+        const latest = mine[0];
+        expect(latest.id).toBe(created.id);
+        expect(latest.status).toBe("open");
+    });
 });
