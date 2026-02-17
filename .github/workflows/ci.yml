@@ -75,7 +75,7 @@ jobs:
         run: |
           echo "DATABASE_URL=$DATABASE_URL"
           echo "Verifying migrations applied to correct database..."
-          pnpm -w exec node -e "
+          cd apps/web && pnpm exec node -e "
           const { Client } = require('pg');
           (async () => {
             const c = new Client({ connectionString: process.env.DATABASE_URL });
