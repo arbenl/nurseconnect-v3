@@ -1,5 +1,6 @@
+import { db, schema, isNotNull, isNull, count } from "@nurseconnect/database";
+
 import { requireRole } from "@/server/auth";
-import { db, schema, isNotNull, isNull, sql, count } from "@nurseconnect/database";
 
 const { users } = schema;
 

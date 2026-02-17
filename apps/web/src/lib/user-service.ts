@@ -21,13 +21,13 @@ export async function ensureDomainUserFromSession(data: {
   const [user] = await db
     .insert(users)
     .values({
-      id: data.id, // Canonical ID from Better-Auth
+      authId: data.id, // Map Better-Auth ID to authId
       email: data.email,
       name: data.name,
       role: "patient", // Default role
     })
     .onConflictDoUpdate({
-      target: users.id,
+      target: users.authId,
       set: {
         email: data.email,
         name: data.name,

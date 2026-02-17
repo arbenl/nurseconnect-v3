@@ -1,6 +1,7 @@
-import { requireRole } from "@/server/auth";
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { requireRole } from "@/server/auth";
 
 export default async function AdminLayout({
   children,

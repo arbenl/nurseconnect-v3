@@ -1,5 +1,7 @@
-import { requireRole } from "@/server/auth";
 import { db, schema, ilike, or } from "@nurseconnect/database";
+
+import { requireRole } from "@/server/auth";
+
 import UserTable from "./user-table"; // Client Component
 
 const { users } = schema;

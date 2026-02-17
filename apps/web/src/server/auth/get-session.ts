@@ -1,4 +1,3 @@
-import { env } from "@/env";
 
 export async function getSession() {
   // Direct Better-Auth path (V3 standard)

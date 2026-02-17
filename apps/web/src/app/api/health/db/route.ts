@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { db, sql } from "@nurseconnect/database";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {

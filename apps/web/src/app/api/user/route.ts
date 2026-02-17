@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { zodToFieldErrors } from "@nurseconnect/ui/lib/utils";
 import { UserProfile, Role as RoleSchema } from "@nurseconnect/contracts";
 import { db, eq, schema } from "@nurseconnect/database";
+import { zodToFieldErrors } from "@nurseconnect/ui/lib/utils";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 const { users } = schema;
 

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { UserProfile } from "@nurseconnect/contracts";
+import { useQuery } from "@tanstack/react-query";
 
 async function getUserProfile(uid: string): Promise<UserProfile> {
   const res = await fetch(`/api/user?id=${uid}`);

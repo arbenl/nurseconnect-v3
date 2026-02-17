@@ -1,6 +1,5 @@
 import {
   pgTable,
-  uuid,
   text,
   timestamp,
   boolean,
@@ -19,7 +18,7 @@ import {
 export const authUsers = pgTable(
   "auth_users",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: text("id").primaryKey(),
     email: text("email").notNull(),
     name: text("name"),
     image: text("image"),
@@ -44,8 +43,8 @@ export const authUsers = pgTable(
 export const authSessions = pgTable(
   "auth_sessions",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    id: text("id").primaryKey(),
+    userId: text("user_id")
       .notNull()
       .references(() => authUsers.id, { onDelete: "cascade" }),
 
@@ -73,10 +72,10 @@ export const authSessions = pgTable(
 export const authAccounts = pgTable(
   "auth_accounts",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
+    id: text("id").primaryKey(),
+    userId: text("user_id")
       .notNull()
-      .references(() => authUsers.id, { onDelete: "cascade" }), // Fixed reference to authUsers
+      .references(() => authUsers.id, { onDelete: "cascade" }),
 
     // provider info (google, github, credentials, etc.)
     accountId: text("account_id").notNull(),
@@ -109,7 +108,7 @@ export const authAccounts = pgTable(
 export const authVerifications = pgTable(
   "auth_verifications",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: text("id").primaryKey(),
 
     // for email verification, password reset, magic links, etc.
     identifier: text("identifier").notNull(), // email or user id

@@ -1,4 +1,5 @@
 import { db, schema, eq } from "@nurseconnect/database";
+
 import { getSession } from "./get-session";
 import { UnauthorizedError } from "./require-auth";
 
@@ -20,7 +21,7 @@ export async function requireRole(role: "admin" | "nurse" | "patient") {
 
   // Fetch domain user to check role
   const user = await db.query.users.findFirst({
-    where: eq(users.id, session.user.id),
+    where: eq(users.authId, session.user.id),
   });
 
   if (!user) {

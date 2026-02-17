@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
-import { requireRole } from "@/server/auth";
 import { db, schema, eq } from "@nurseconnect/database";
+import { NextResponse } from "next/server";
+
+import { requireRole } from "@/server/auth";
 
 const { users } = schema;
 

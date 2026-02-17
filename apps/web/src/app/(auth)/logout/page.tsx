@@ -1,9 +1,10 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { authClient } from "@/lib/auth-client";
 
 export default function LogoutPage() {
   const router = useRouter();

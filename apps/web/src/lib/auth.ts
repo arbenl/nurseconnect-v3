@@ -1,10 +1,6 @@
-import { betterAuth } from "better-auth/minimal";
+import { db, schema } from "@nurseconnect/database";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@nurseconnect/database";
-
-// If your auth tables are NOT the default names ("user", "session", "account", "verification"),
-// map them here.
-import { schema } from "@nurseconnect/database";
+import { betterAuth } from "better-auth/minimal";
 
 const {
   authUsers,
@@ -17,7 +13,7 @@ const {
 // NOTE: This file runs on the server (route handler imports it).
 const APP_URL =
   process.env.APP_URL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
-const BASE_PATH = "/api/better-auth";
+const BASE_PATH = "/api/auth";
 
 export const auth = betterAuth({
   // Always set baseURL explicitly for stability/security in prod.
@@ -38,12 +34,6 @@ export const auth = betterAuth({
       verification: authVerifications,
     },
   }),
-
-  // Match Better Auth's “model names” to your table names if they’re non-default.
-  user: { modelName: "auth_users" },
-  session: { modelName: "auth_sessions" },
-  account: { modelName: "auth_accounts" },
-  verification: { modelName: "auth_verifications" },
 
   // Minimum needed auth mode for now (email+password).
   // You can tighten later (requireEmailVerification, reset email sender, etc.).

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { upsertUser } from "@/lib/user-service";
+
 
 // Input validation
 const SignupSchema = z.object({

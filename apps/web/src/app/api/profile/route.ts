@@ -1,6 +1,7 @@
-import { NextResponse, NextRequest } from "next/server";
-import { auth } from "@/lib/auth"; // direct import for API routes
 import { headers } from "next/headers";
+import { NextResponse, NextRequest } from "next/server";
+
+import { auth } from "@/lib/auth"; // direct import for API routes
 
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({

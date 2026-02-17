@@ -1,11 +1,11 @@
 "use client";
 
-import { authClient } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { authClient } from "@/lib/auth-client";
 
 export default function DashboardClientPage() {
   const { data: session } = authClient.useSession();
-  const { data: user, isLoading, error } = useUserProfile(session?.user?.id!);
+  const { data: user, isLoading, error } = useUserProfile(session?.user?.id ?? "");
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { getSession } from "@/server/auth";
+
 import { ensureDomainUserFromSession, maybeBootstrapFirstAdmin } from "@/lib/user-service";
+import { getSession } from "@/server/auth";
 
 export async function GET() {
   const session = await getSession();
