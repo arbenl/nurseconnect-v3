@@ -23,7 +23,7 @@
     "test:ci": "pnpm test:web && pnpm test:contracts",
     "gate:fast": "pnpm -w type-check && pnpm lint && pnpm test:ci",
     "gate:smoke": "pnpm -w type-check && pnpm lint && pnpm test:ci && pnpm --filter web test:api",
-    "gate:e2e": "pnpm --filter web test:e2e",
+    "gate:e2e": "pnpm --filter web test:e2e:api",
     "db:generate": "drizzle-kit generate --config packages/database/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config packages/database/drizzle.config.ts",
     "db:push": "drizzle-kit push --config packages/database/drizzle.config.ts",
