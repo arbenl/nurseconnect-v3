@@ -36,6 +36,7 @@
     "@vitest/ui": "^1.6.0",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-config-turbo": "^2.8.9",
     "node-fetch": "^3.3.2",
     "turbo": "^2.0.6",
