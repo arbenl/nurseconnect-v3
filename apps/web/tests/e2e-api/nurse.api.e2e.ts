@@ -23,7 +23,7 @@ test.describe("Nurse API", () => {
         expect(response.ok()).toBeTruthy();
 
         // Refresh session to get new role
-        await request.post("/api/auth/sign-out");
+        await request.post("/api/auth/sign-out", { data: {} });
         await loginTestUser(request, email);
 
         // 2. Verify Role Update via /api/me
@@ -46,7 +46,7 @@ test.describe("Nurse API", () => {
         });
 
         // Refresh session
-        await request.post("/api/auth/sign-out");
+        await request.post("/api/auth/sign-out", { data: {} });
         await loginTestUser(request, email);
 
         // 1. Toggle ON

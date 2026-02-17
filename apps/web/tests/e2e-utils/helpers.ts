@@ -28,7 +28,7 @@ export async function createTestUser(
     expect(me.ok(), `Sync domain user failed for ${email}`).toBeTruthy();
 
     // 3. Sign Out (to clear session and allow fresh login if needed)
-    await request.post("/api/auth/sign-out");
+    await request.post("/api/auth/sign-out", { data: {} });
 
     // 4. Update Role + fetch domain UUID
     const client = getDbClient();

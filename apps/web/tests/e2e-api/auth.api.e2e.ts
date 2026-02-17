@@ -40,7 +40,7 @@ test.describe("Authentication API", () => {
         await request.post("/api/auth/sign-up/email", {
             data: { email, password, name },
         });
-        await request.post("/api/auth/sign-out");
+        await request.post("/api/auth/sign-out", { data: {} });
 
         // 1. Login
         const loginResponse = await request.post("/api/auth/sign-in/email", {
