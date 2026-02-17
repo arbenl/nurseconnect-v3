@@ -19,6 +19,11 @@ export type MeResponse =
                 city: string | null;
                 address: string | null;
             };
+            nurseProfile?: {
+                licenseNumber: string | null;
+                specialization: string | null;
+                isAvailable: boolean;
+            };
             profileComplete: boolean;
         };
     };

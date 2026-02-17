@@ -28,14 +28,28 @@ export default async function DashboardLayout({
   }
 
   // Check if profile is complete
-  const isComplete = !!(
+  let isComplete = !!(
     user.firstName &&
     user.lastName &&
     user.phone &&
     user.city
   );
 
-  console.log("[Guard] User:", user.email, "Complete:", isComplete);
+  if (isComplete && user.role === "nurse") {
+    // Check nurse profile
+    // We need to fetch nurse record. Since we are in RSC, we can use db directly or helper.
+    // However, ensureDomainUserFromSession doesn't return nurse data.
+    // We can import getNurseByUserId from user-service which is server-only safe.
+    // But layout.tsx imports ensureDomainUserFromSession from @/lib/user-service.
+    // Let's import getNurseByUserId from there too.
+    const { getNurseByUserId } = await import("@/lib/user-service");
+    const nurse = await getNurseByUserId(user.id);
+    if (!nurse || !nurse.licenseNumber || !nurse.specialization) {
+      isComplete = false;
+    }
+  }
+
+  console.log("[Guard] User:", user.email, "Role:", user.role, "Complete:", isComplete);
 
   if (!isComplete) {
     redirect("/onboarding");

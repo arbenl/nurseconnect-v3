@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { ensureDomainUserFromSession, maybeBootstrapFirstAdmin } from "@/lib/user-service";
+import { ensureDomainUserFromSession, maybeBootstrapFirstAdmin, getNurseByUserId } from "@/lib/user-service";
 import { getSession } from "@/server/auth";
 
 export async function GET() {
@@ -24,7 +24,6 @@ export async function GET() {
     }
 
     // 2. Attempt to bootstrap admin rights (first user / allowlist)
-    // 2. Attempt to bootstrap admin rights (first user / allowlist)
     const bootstrappedUser = await maybeBootstrapFirstAdmin(domainUser);
     const finalUser = bootstrappedUser ?? domainUser;
 
@@ -37,13 +36,37 @@ export async function GET() {
       address: finalUser.address,
     };
 
+    // 3b. Fetch Nurse Profile if applicable
+    let nurseProfile = null;
+    if (finalUser.role === "nurse") {
+      const nurse = await getNurseByUserId(finalUser.id);
+      if (nurse) {
+        nurseProfile = {
+          licenseNumber: nurse.licenseNumber,
+          specialization: nurse.specialization,
+          isAvailable: nurse.isAvailable,
+        };
+      }
+    }
+
     // 4. Determine completeness (all required fields present)
-    const isComplete = !!(
+    const isPatientComplete = !!(
       finalUser.firstName &&
       finalUser.lastName &&
       finalUser.phone &&
       finalUser.city
     );
+
+    let isNurseComplete = true;
+    if (finalUser.role === "nurse") {
+      // Nurse needs patient fields + nurse fields
+      isNurseComplete = !!(
+        nurseProfile?.licenseNumber &&
+        nurseProfile?.specialization
+      );
+    }
+
+    const isComplete = isPatientComplete && isNurseComplete;
 
     // 5. Return unified response
     return NextResponse.json(
@@ -57,6 +80,7 @@ export async function GET() {
           role: finalUser.role,
           name: finalUser.name, // Keep existing name field for backward compat if needed
           profile,
+          nurseProfile,
           profileComplete: isComplete,
         },
       },

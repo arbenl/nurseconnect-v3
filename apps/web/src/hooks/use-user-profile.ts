@@ -28,6 +28,22 @@ async function patchProfile(input: ProfilePatch) {
   return res.json();
 }
 
+type NurseProfilePatch = {
+  licenseNumber: string;
+  specialization: string;
+  isAvailable?: boolean;
+};
+
+async function patchNurseProfile(input: NurseProfilePatch) {
+  const res = await fetch("/api/me/nurse", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to update nurse profile");
+  return res.json();
+}
+
 export function useUserProfile() {
   const qc = useQueryClient();
 
@@ -39,6 +55,13 @@ export function useUserProfile() {
 
   const mutateProfile = useMutation({
     mutationFn: patchProfile,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ME_KEY });
+    },
+  });
+
+  const mutateNurseProfile = useMutation({
+    mutationFn: patchNurseProfile,
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ME_KEY });
     },
@@ -58,5 +81,6 @@ export function useUserProfile() {
     error: meQuery.error,
     refetch: meQuery.refetch,
     mutateProfile,
+    mutateNurseProfile,
   };
 }

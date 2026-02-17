@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, index, boolean } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 export const nurses = pgTable(
@@ -9,6 +9,12 @@ export const nurses = pgTable(
     status: text("status").notNull(), // later enum: pending|verified|suspended
     phone: text("phone"),
     bio: text("bio"),
+
+    // PR-3.4: Onboarding fields
+    licenseNumber: text("license_number"), // Nullable to allow partial profile or step-wise creation
+    specialization: text("specialization"),
+    isAvailable: boolean("is_available").default(false).notNull(),
+
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

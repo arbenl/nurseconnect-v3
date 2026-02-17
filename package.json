@@ -24,6 +24,7 @@
     "db:generate": "drizzle-kit generate --config packages/database/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config packages/database/drizzle.config.ts",
     "db:push": "drizzle-kit push --config packages/database/drizzle.config.ts",
+    "db:check": "pnpm --filter @nurseconnect/database db:check",
     "env:check": "node scripts/env-check.mjs",
     "firebase:forbid": "! rg -n \"from [\\\"']firebase/|from [\\\"']firebase-admin/|from [\\\"']@firebase/\" apps/web/src --glob '!**/legacy/**' --glob '!**/lib/auth/config.ts' --glob '!**/*.emu.test.*' --glob '!**/vitest.config.emu.ts' --glob '!**/env.ts' -q"
   },

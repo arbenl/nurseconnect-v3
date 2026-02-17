@@ -1,6 +1,6 @@
 import { db, schema, eq, sql } from "@nurseconnect/database";
 
-const { users } = schema;
+const { users, nurses } = schema;
 
 const parseAllowlist = () =>
   (process.env.FIRST_ADMIN_EMAILS ?? "")
@@ -37,9 +37,29 @@ export async function ensureDomainUserFromSession(data: {
     .returning();
 
   return user;
+  return user;
 }
 
 export const upsertUser = ensureDomainUserFromSession;
+
+export async function getNurseByUserId(userId: string) {
+  const [nurse] = await db
+    .select()
+    .from(nurses)
+    .where(eq(nurses.userId, userId));
+  return nurse;
+}
+
+export async function createNurseRecord(userId: string) {
+  const [nurse] = await db
+    .insert(nurses)
+    .values({
+      userId,
+      status: "pending", // Default status
+    })
+    .returning();
+  return nurse;
+}
 
 async function adminExists(): Promise<boolean> {
   const [res] = await db

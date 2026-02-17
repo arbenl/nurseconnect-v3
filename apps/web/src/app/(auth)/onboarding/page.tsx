@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -27,12 +27,19 @@ const profileSchema = z.object({
   address: z.string().optional(),
 });
 
+const nurseSchema = z.object({
+  licenseNumber: z.string().min(1, "License number is required"),
+  specialization: z.string().min(1, "Specialization is required"),
+});
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
+type NurseFormValues = z.infer<typeof nurseSchema>;
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
-  const { user, profileComplete, isLoading, mutateProfile } = useUserProfile();
+  const { user, profileComplete, isLoading, mutateProfile, mutateNurseProfile } = useUserProfile();
+  const [step, setStep] = useState(1);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -45,7 +52,15 @@ export default function OnboardingPage() {
     },
   });
 
-  // Pre-fill form if data exists (e.g. from partial completion or previous fetch)
+  const nurseForm = useForm<NurseFormValues>({
+    resolver: zodResolver(nurseSchema),
+    defaultValues: {
+      licenseNumber: "",
+      specialization: "",
+    },
+  });
+
+  // Pre-fill form if data exists
   useEffect(() => {
     if (user?.profile) {
       form.reset({
@@ -56,7 +71,13 @@ export default function OnboardingPage() {
         address: user.profile.address || "",
       });
     }
-  }, [user, form]);
+    if (user?.nurseProfile) {
+      nurseForm.reset({
+        licenseNumber: user.nurseProfile.licenseNumber || "",
+        specialization: user.nurseProfile.specialization || "",
+      });
+    }
+  }, [user, form, nurseForm]);
 
   // Redirect if already complete
   useEffect(() => {
@@ -65,15 +86,27 @@ export default function OnboardingPage() {
     }
   }, [profileComplete, router]);
 
-  async function onSubmit(data: ProfileFormValues) {
+  async function onProfileSubmit(data: ProfileFormValues) {
     try {
       await mutateProfile.mutateAsync(data);
-      // Redirect handled by useEffect above (profileComplete becomes true)
-      // or we can force push here for faster UX
-      router.push("/dashboard");
+      if (user?.role === "nurse") {
+        setStep(2);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Profile update error:", error);
-      // Handle error (e.g. show toast)
+    }
+  }
+
+  async function onNurseSubmit(data: NurseFormValues) {
+    try {
+      if (mutateNurseProfile) {
+        await mutateNurseProfile.mutateAsync(data);
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error("Nurse profile update error:", error);
     }
   }
 
@@ -85,20 +118,73 @@ export default function OnboardingPage() {
     );
   }
 
-  // If user is not logged in, they shouldn't be here (middleware should handle, but just in case)
   if (!session) {
-    // return null; // or redirect
+    // return null; 
   }
 
+  // Step 2: Nurse Details
+  if (step === 2 && user?.role === "nurse") {
+    return (
+      <div key="step2" className="container max-w-md mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Nurse Details</h1>
+        <p className="text-muted-foreground mb-6">
+          Please provide your professional details.
+        </p>
+
+        <Form {...nurseForm}>
+          <form onSubmit={nurseForm.handleSubmit(onNurseSubmit)} className="space-y-6" autoComplete="off">
+            <FormField
+              control={nurseForm.control}
+              name="licenseNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>License Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="RN-12345" {...field} autoComplete="off" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={nurseForm.control}
+              name="specialization"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Specialization</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Pediatrics, Geriatrics..." {...field} autoComplete="off" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex gap-4">
+              <Button type="button" variant="outline" onClick={() => setStep(1)}>
+                Back
+              </Button>
+              <Button type="submit" className="flex-1">
+                Complete Onboarding
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    );
+  }
+
+  // Step 1: Basic Profile
   return (
-    <div className="container max-w-md mx-auto py-10">
+    <div key="step1" className="container max-w-md mx-auto py-10">
       <h1 className="text-2xl font-bold mb-6">Complete Your Profile</h1>
       <p className="text-muted-foreground mb-6">
         Please provide your details to continue to the dashboard.
       </p>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-6">
           <FormField
             control={form.control}
             name="firstName"
@@ -170,7 +256,7 @@ export default function OnboardingPage() {
           />
 
           <Button type="submit" className="w-full">
-            Save and Continue
+            {user?.role === "nurse" ? "Next: Nurse Details" : "Save and Continue"}
           </Button>
         </form>
       </Form>
