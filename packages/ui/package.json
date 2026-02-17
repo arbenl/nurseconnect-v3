@@ -9,7 +9,8 @@
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     },
-    "./lib/utils": "./src/lib/utils.ts"
+    "./lib/utils": "./src/lib/utils.ts",
+    "./components/ui/*": "./src/components/ui/*.tsx"
   },
   "scripts": {
     "type-check": "tsc -p tsconfig.json --noEmit"
