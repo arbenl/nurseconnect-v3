@@ -5,8 +5,10 @@ export default defineConfig({
     test: {
         environment: "node",
         include: [
+            "src/server/**/*.db.test.ts",
             "src/server/**/*.test.ts",
             "src/server/**/*.test.tsx",
+            "src/app/api/**/*.db.test.ts",
             "src/app/api/**/*.test.ts",
         ],
         testTimeout: 30_000,
