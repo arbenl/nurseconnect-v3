@@ -75,8 +75,7 @@ nurseconnect_ecosystem_git/
 apps/web/.seed/
 apps/web/firebase-export-*/
 
-# Drizzle local artifacts (keep migrations, ignore generated cache if any)
-packages/database/drizzle/meta/
+# Drizzle local artifacts (migrations are tracked, only ignore cache if needed)
 
 # Backfill artifacts
 tmp/
