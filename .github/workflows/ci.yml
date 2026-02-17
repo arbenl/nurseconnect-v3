@@ -121,6 +121,7 @@ jobs:
       NODE_ENV: test
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_ci
       BETTER_AUTH_SECRET: ci_better_auth_secret_32_chars_minimum_123456
+      FIRST_ADMIN_EMAILS: admin.bootstrap@test.com
 
     steps:
       - name: Checkout repo
@@ -208,6 +209,7 @@ jobs:
       APP_URL: http://localhost:3010
       BETTER_AUTH_URL: http://localhost:3010
       BETTER_AUTH_SECRET: ci_better_auth_secret_32_chars_minimum_123456
+      FIRST_ADMIN_EMAILS: admin.bootstrap@test.com
 
     steps:
       - name: Checkout repo
@@ -287,6 +289,7 @@ jobs:
       APP_URL: http://localhost:3010
       BETTER_AUTH_URL: http://localhost:3010
       BETTER_AUTH_SECRET: ci_better_auth_secret_32_chars_minimum_123456
+      FIRST_ADMIN_EMAILS: admin.bootstrap@test.com
 
     steps:
       - name: Checkout repo
