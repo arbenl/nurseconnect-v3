@@ -44,7 +44,7 @@ export default async function AdminDashboardPage() {
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ opacity: 0.6 }}>Provider:</span>
               <span style={{ fontFamily: "monospace" }}>
-                {"session" in session ? "Better-Auth" : "NextAuth/Legacy"}
+                Better-Auth
               </span>
             </div>
           </div>

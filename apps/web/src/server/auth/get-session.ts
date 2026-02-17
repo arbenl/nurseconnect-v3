@@ -1,16 +1,9 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/config";
 import { env } from "@/env";
 
 export async function getSession() {
-  if (env.FEATURE_AUTH_PROVIDER === "nextauth") {
-    // Legacy NextAuth Session
-    return getServerSession(authOptions);
-  }
-
-  // Better-Auth Session
+  // Direct Better-Auth path (V3 standard)
+  const { auth } = await import("@/lib/auth");
+  const { headers } = await import("next/headers");
   return auth.api.getSession({
     headers: await headers(),
   });

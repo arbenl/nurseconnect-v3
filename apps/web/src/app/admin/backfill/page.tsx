@@ -8,13 +8,13 @@ export default async function AdminBackfillPage() {
 
   // DB Counts
   const [totalRes] = await db.select({ value: count() }).from(users);
-  const total = totalRes.value;
+  const total = totalRes?.value ?? 0;
 
   const [linkedRes] = await db.select({ value: count() }).from(users).where(isNotNull(users.firebaseUid));
-  const linked = linkedRes.value;
+  const linked = linkedRes?.value ?? 0;
 
   const [missingEmailRes] = await db.select({ value: count() }).from(users).where(isNull(users.email));
-  const missingEmail = missingEmailRes.value;
+  const missingEmail = missingEmailRes?.value ?? 0;
 
   // Use a raw SQL for recent or just count (drizzle count() helper is nice)
   // For recent, let's just show raw count for now to keep it simple and type-safe

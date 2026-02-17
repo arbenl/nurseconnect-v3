@@ -14,14 +14,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 
 const formSchema = z.object({
   displayName: z.string().min(1, "Display name is required"),
 });
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending: loadingSession, error: sessionError } = authClient.useSession();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -66,11 +66,11 @@ export default function ProfilePage() {
     }
   }
 
-  if (status === "loading") {
+  if (loadingSession) {
     return <div>Loading...</div>;
   }
 
-  if (status === "unauthenticated") {
+  if (!session) {
     return <div>Access Denied</div>;
   }
 

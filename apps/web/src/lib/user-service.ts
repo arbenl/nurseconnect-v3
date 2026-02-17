@@ -29,6 +29,8 @@ export async function upsertUserFromSession(data: {
       },
     })
     .returning();
-  
+
   return user;
 }
+
+export const upsertUser = upsertUserFromSession;

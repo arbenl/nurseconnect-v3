@@ -1,10 +1,10 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 export default function DashboardClientPage() {
-  const { data: session } = useSession();
+  const { data: session } = authClient.useSession();
   const { data: user, isLoading, error } = useUserProfile(session?.user?.id!);
 
   if (isLoading) return <div>Loading...</div>;

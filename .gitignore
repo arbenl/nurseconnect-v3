@@ -81,3 +81,6 @@ packages/database/drizzle/meta/
 # Backfill artifacts
 tmp/
 *.export.json
+
+# local web env (forbidden in V3)
+apps/web/.env

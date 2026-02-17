@@ -1,11 +1,13 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 import "dotenv/config";
+
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { db, schema, eq } from "@nurseconnect/database";
 import { randomUUID } from "node:crypto";
 
-const { users } = schema;
+
 
 const Args = z.object({
   input: z.string().min(1),
@@ -44,6 +46,9 @@ function normEmail(email?: string | null) {
 }
 
 async function main() {
+  const { db, schema, eq } = await import("../packages/database/src/index");
+  const { users } = schema;
+
   const args = parseArgs();
   console.log(`Running backfill with mode: ${args.dryRun ? "DRY RUN" : "APPLY"}`);
   
@@ -148,14 +153,7 @@ async function main() {
 
       // 3) Insert new domain user
       const id = randomUUID();
-      if (!args.dryRun) {
-        await db.insert(users).values({
-          id,
-          email: email!, // Enforced by logic above roughly, but might fail if phone-only.
-                         // Schema usually requires email. If Schema allows null email, fine.
-                         // Our users.ts has `email: text("email").notNull()`.
-                         // So we MUST skip if email is null.
-        });
+
         
         // Wait, schema requires email.
         if (!email) {
@@ -164,6 +162,7 @@ async function main() {
             continue;
         }
 
+      if (!args.dryRun) {
         await db.insert(users).values({
           id,
           email,
