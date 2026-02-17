@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
-import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
+import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 test.describe("Requests API", () => {
     test.setTimeout(60000); // DB ops + matching might be slow
@@ -27,16 +27,8 @@ test.describe("Requests API", () => {
 
         // 2. Setup Patient
         const patientEmail = `patient-req-${Date.now()}@test.local`;
-        const { userId: patientId } = await createTestUser(request, patientEmail, "Patient Req", "patient");
-
-        const { getDbClient } = await import("../e2e-utils/db");
-        const client = getDbClient();
-        await client.connect();
-        try {
-            await client.query("UPDATE users SET first_name='Test', last_name='User', phone='555', city='Pristina' WHERE email = $1", [patientEmail]);
-        } finally {
-            await client.end();
-        }
+        await createTestUser(request, patientEmail, "Patient Req", "patient");
+        await markProfileComplete(patientEmail);
 
         await loginTestUser(request, patientEmail);
 
@@ -61,14 +53,7 @@ test.describe("Requests API", () => {
         const patientEmail = `patient-open-${Date.now()}@test.local`;
         await createTestUser(request, patientEmail, "Patient Open", "patient");
 
-        const { getDbClient } = await import("../e2e-utils/db");
-        const client = getDbClient();
-        await client.connect();
-        try {
-            await client.query("UPDATE users SET first_name='Test', last_name='User', phone='555', city='Pristina' WHERE email = $1", [patientEmail]);
-        } finally {
-            await client.end();
-        }
+        await markProfileComplete(patientEmail);
 
         await loginTestUser(request, patientEmail);
 

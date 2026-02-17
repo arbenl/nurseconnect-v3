@@ -57,3 +57,35 @@ export async function loginTestUser(request: APIRequestContext, email: string) {
     });
     expect(loginResponse.ok(), `Login failed for ${email}`).toBeTruthy();
 }
+
+export async function markProfileComplete(
+    email: string,
+    overrides?: {
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+        city?: string;
+    }
+) {
+    const firstName = overrides?.firstName ?? "Test";
+    const lastName = overrides?.lastName ?? "User";
+    const phone = overrides?.phone ?? "555";
+    const city = overrides?.city ?? "Pristina";
+
+    const client = getDbClient();
+    await client.connect();
+    try {
+        await client.query(
+            `UPDATE users
+             SET first_name = $1,
+                 last_name = $2,
+                 phone = $3,
+                 city = $4,
+                 profile_completed_at = NOW()
+             WHERE email = $5`,
+            [firstName, lastName, phone, city, email]
+        );
+    } finally {
+        await client.end();
+    }
+}

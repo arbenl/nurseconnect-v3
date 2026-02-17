@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
-import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
+import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 test.describe("Service Requests", () => {
     test.beforeEach(async () => {
@@ -50,36 +50,10 @@ test.describe("Service Requests", () => {
         // Login as patient
         await loginTestUser(page.request, patientEmail);
 
-        // Go to dashboard
-        await page.goto("/dashboard");
-        // Expect onboarding (since profile is incomplete) or complete logic
-        // But for requests, we might need complete profile?
-        // Let's check if dashboard access is allowed.
-        // auth.spec.ts showed redirect to /onboarding.
-        // If we are on onboarding, we can't create request.
-        // We MUST complete profile for patient if required.
-        // Assuming "complete profile" means basic fields or just accessing dashboard if not enforced strictly?
-        // Wait, auth.spec.ts says "Should be authenticated and redirected to onboarding".
-        // If requests.spec.ts needs dashboard, we need to bypass onboarding.
-        // We can use DB to set profile_complete = true?
-        // DB schema users.ts: `profileComplete: boolean("profile_complete").default(false)`.
-        // I should update createTestUser or do it manually here.
-        // I will do it manually here for now.
-        const { getDbClient } = await import("../e2e-utils/db");
-        const client = await import("../e2e-utils/db").then(m => m.getDbClient());
-        await client.connect();
-        try {
-            const updateProfileQuery = `
-                UPDATE users 
-                SET first_name = 'Test', last_name = 'User', phone = '555-555-5555', city = 'Pristina', profile_completed_at = NOW() 
-                WHERE email = $1
-            `;
-            await client.query(updateProfileQuery, [patientEmail]);
-            await client.query(updateProfileQuery, [nurseAEmail]);
-            await client.query(updateProfileQuery, [nurseBEmail]);
-        } finally {
-            await client.end();
-        }
+        // Ensure users can access dashboard instead of onboarding.
+        await markProfileComplete(patientEmail, { phone: "555-555-5555" });
+        await markProfileComplete(nurseAEmail, { phone: "555-555-5555" });
+        await markProfileComplete(nurseBEmail, { phone: "555-555-5555" });
 
         // Now go to dashboard (should work)
         await page.goto("/dashboard");
@@ -125,19 +99,7 @@ test.describe("Service Requests", () => {
         const patientEmail = `patient-${Date.now()}@test.local`;
         await createTestUser(page.request, patientEmail, "Test Patient", "patient");
 
-        // Update profile complete
-        const { getDbClient } = await import("../e2e-utils/db");
-        const client = await getDbClient();
-        await client.connect();
-        try {
-            await client.query(`
-                UPDATE users 
-                SET first_name = 'Test', last_name = 'User', phone = '555-555-5555', city = 'Pristina', profile_completed_at = NOW() 
-                WHERE email = $1
-            `, [patientEmail]);
-        } finally {
-            await client.end();
-        }
+        await markProfileComplete(patientEmail, { phone: "555-555-5555" });
 
         // Login as patient
         await loginTestUser(page.request, patientEmail);

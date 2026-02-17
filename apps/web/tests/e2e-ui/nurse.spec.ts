@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
-import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
+import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 test.describe("Nurse Features", () => {
     test.beforeEach(async () => {
@@ -16,22 +16,7 @@ test.describe("Nurse Features", () => {
         // Login via test endpoint
         await loginTestUser(page.request, email);
 
-        // Go to dashboard (redirects to onboarding if incomplete)
-        // We need profile complete to see dashboard?
-        // Or "Become a nurse" is part of onboarding or dashboard?
-        // Usually dashboard. So we need profile complete.
-        const { getDbClient } = await import("../e2e-utils/db");
-        const client = await getDbClient();
-        await client.connect();
-        try {
-            await client.query(`
-                UPDATE users 
-                SET first_name = 'Test', last_name = 'User', phone = '555-555-5555', city = 'Pristina', profile_completed_at = NOW() 
-                WHERE email = $1
-            `, [email]);
-        } finally {
-            await client.end();
-        }
+        await markProfileComplete(email, { phone: "555-555-5555" });
 
         // 1. Prove we are on dashboard
         await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
@@ -89,19 +74,7 @@ test.describe("Nurse Features", () => {
             lng: "21.1655",
         });
 
-        // Set profile complete
-        const { getDbClient } = await import("../e2e-utils/db");
-        const client = await import("../e2e-utils/db").then(m => m.getDbClient()); // lazy import
-        await client.connect();
-        try {
-            await client.query(`
-                UPDATE users 
-                SET first_name = 'Test', last_name = 'Nurse', phone = '555-555-5555', city = 'Pristina', profile_completed_at = NOW() 
-                WHERE email = $1
-            `, [email]);
-        } finally {
-            await client.end();
-        }
+        await markProfileComplete(email, { lastName: "Nurse", phone: "555-555-5555" });
 
         // Login
         await loginTestUser(page.request, email);

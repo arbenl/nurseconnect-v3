@@ -21,7 +21,7 @@
     "test:contracts": "pnpm --filter contracts test",
     "web:test:emu": "pnpm --filter web run test:emu",
     "test:ci": "pnpm test:web && pnpm test:contracts",
-    "test:api": "pnpm --filter web test:api",
+    "test:api": "pnpm --filter @nurseconnect/contracts build && pnpm --filter web test:api",
     "gate:fast": "pnpm -w type-check && pnpm lint && pnpm test:ci",
     "gate:smoke": "pnpm -w type-check && pnpm lint && pnpm test:ci && pnpm test:api",
     "gate:e2e-api": "pnpm --filter web test:e2e:api",
