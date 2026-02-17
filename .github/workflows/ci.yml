@@ -68,8 +68,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: DB Push
-        run: pnpm db:push
+      - name: DB Migrate
+        run: pnpm db:migrate
 
       - name: Type Check
         run: pnpm -w type-check

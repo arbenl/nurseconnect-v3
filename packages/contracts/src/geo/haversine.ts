@@ -2,10 +2,12 @@
 export type LatLng = { lat: number; lng: number };
 
 /**
- * Haversine distance in meters between two WGS84 coordinates.
+ * Calculate distance between two lat/lng points using the Haversine formula.
+ * Uses Earth mean radius of 6,371 km.
+ * @returns distance in meters
  */
 export function haversineMeters(a: LatLng, b: LatLng): number {
-    const R = 6371000; // meters
+    const R = 6371000; // Earth mean radius in meters
     const toRad = (deg: number) => (deg * Math.PI) / 180;
 
     const dLat = toRad(b.lat - a.lat);
