@@ -22,7 +22,7 @@ const formSchema = z.object({
 });
 
 export default function ProfilePage() {
-  const { data: session, isPending: loadingSession, error: sessionError } = authClient.useSession();
+  const { data: session, isPending: loadingSession, error: _sessionError } = authClient.useSession();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -60,8 +60,8 @@ export default function ProfilePage() {
       }
 
       setSuccess(true);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Unknown error");
     } finally {
       setLoading(false);
     }

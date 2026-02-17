@@ -1,7 +1,7 @@
 import { requireRole } from "@/server/auth";
 
 export default async function AdminDashboardPage() {
-  const { user, session } = await requireRole("admin");
+  const { user, session: _session } = await requireRole("admin");
 
   return (
     <div>

@@ -49,8 +49,6 @@ export default async function DashboardLayout({
     }
   }
 
-  console.log("[Guard] User:", user.email, "Role:", user.role, "Complete:", isComplete);
-
   if (!isComplete) {
     redirect("/onboarding");
   }

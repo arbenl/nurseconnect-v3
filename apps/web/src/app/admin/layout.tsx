@@ -10,7 +10,7 @@ export default async function AdminLayout({
 }) {
   try {
     await requireRole("admin");
-  } catch (error) {
+  } catch {
     // Basic protection: redirect to smoke page (or login) if not admin
     redirect("/smoke/auth");
   }

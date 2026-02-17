@@ -11,7 +11,7 @@ export async function POST(
 ) {
   try {
     // 1. Enforce RBAC
-    const { user: actor } = await requireRole("admin");
+    const { user: _actor } = await requireRole("admin");
     const { id: targetUserId } = await params;
 
     // 2. Parse Body
@@ -29,19 +29,12 @@ export async function POST(
       .set({ role, updatedAt: new Date() })
       .where(eq(users.id, targetUserId));
 
-    // 5. Audit Log (Console for now)
-    console.info("[AUDIT] Role Change", {
-      actorId: actor.id,
-      actorEmail: actor.email,
-      targetUserId,
-      newRole: role,
-      timestamp: new Date().toISOString(),
-    });
 
     return NextResponse.json({ ok: true });
-  } catch (error: any) {
-    if (error.name === "UnauthorizedError") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (error.name === "ForbiddenError") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    return NextResponse.json({ error: error.message || "Internal Error" }, { status: 500 });
+  } catch (error: unknown) {
+    const err = error as { name?: string; message?: string };
+    if (err.name === "UnauthorizedError") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (err.name === "ForbiddenError") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: err.message || "Internal Error" }, { status: 500 });
   }
 }
