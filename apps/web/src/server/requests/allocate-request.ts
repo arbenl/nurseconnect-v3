@@ -51,12 +51,12 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
             lat: string;
             lng: string;
         }>(sql`
-      SELECT nl.nurse_user_id, nl.lat::text as lat, nl.lng::text as lng
-      FROM nurse_locations nl
-      JOIN nurses n ON n.user_id = nl.nurse_user_id
-      WHERE n.is_available = true
-      FOR UPDATE OF nl SKIP LOCKED
-    `);
+          SELECT nl.nurse_user_id, nl.lat::text as lat, nl.lng::text as lng
+          FROM nurse_locations nl
+          JOIN nurses n ON n.user_id = nl.nurse_user_id
+          WHERE n.is_available = true
+          FOR UPDATE OF nl SKIP LOCKED
+        `);
 
         const candidates = rows.rows.map((r) => ({
             nurseUserId: r.nurse_user_id,
