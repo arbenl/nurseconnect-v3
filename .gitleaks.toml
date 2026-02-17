@@ -1,0 +1,7 @@
+[allowlist]
+description = "Allow fake keys for testing/emulators"
+regexes = [
+    '''fake-api-key''',
+    '''dev-dont-use-in-prod''',
+    '''demo-nurseconnect'''
+]

@@ -1,5 +1,7 @@
 # NurseConnect V3
 
+![CI](https://github.com/arbenl/nurseconnect-v3/actions/workflows/ci.yml/badge.svg)
+
 NurseConnect is a healthcare platform connecting patients with local nurses for at-home care services.
 This V3 release is built as a monorepo using **Next.js**, **Tailwind CSS**, and **Firebase** (with local emulators).
 
