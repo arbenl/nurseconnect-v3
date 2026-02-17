@@ -1,0 +1,94 @@
+1:.env.example
+2:.env.test
+5:.firebaserc
+21:apps/web/.env.local.example
+25:apps/web/.seed/firebase-export-metadata.json
+130:emulator/firebase-export-metadata.json
+133:firebase.json
+201:scripts/export-firebase-users.ts
+---
+./vitest.setup.ts:8:  apiKey: "fake-api-key",
+./seedUser.js:8:  const res = await fetch(`${authHost}/accounts:signUp?key=fake-api-key`, {
+./prompts/1-auth-roles.md:8:- Design tokens (tailwind.config) and CSS variables; dark mode toggle.
+./GEMINI.md:154:If any `auth/invalid-api-key` or network errors, make sure you ran:
+./apply-phase-1.5-full.sh:241:          || (request.resource.data.role == 'admin' && (request.auth.token.role == 'admin'))
+./prompts/context_perf.md:3:You optimize a Next.js monorepo for build/runtime performance without changing product behavior. Focus on bundle size, code-splitting, caching, and fast CI. No secret tokens, no deploy steps.
+./prompts/context_devops.md:3:- Do not require paid runners or external secrets to pass locally.
+./enhancement_code.txt:224:	•	UX (your new agent): refactors auth pages to shadcn/ui + tokens; keeps forms tied to Zod.
+./prompts/context_security.md:3:- Add secure defaults (.env.example updates, secret handling notes).
+./prompts/context_ux.md:5:- Consistent design tokens (color, spacing, radius, shadow), light/dark themes.
+./prompts/context_ux.md:12:- Tailwind config updates, tokens, shadcn/ui usage commands and resulting files.
+./firestore.rules.phase15.suggested:12:          || (request.resource.data.role == 'admin' && (request.auth.token.role == 'admin'))
+./apps/web/middleware.ts:5:const secret = process.env.NEXTAUTH_SECRET;
+./apps/web/middleware.ts:31:    const token = await getToken({ req, secret });
+./apps/web/middleware.ts:32:    if (!token) {
+./firestore.rules:13:        && request.auth.token.aud == "demo-nurseconnect"
+./firestore.rules:14:        && request.auth.token.iss.matches("https://securetoken.google.com/demo-nurseconnect");
+./apps/web/src/env.ts:18:  "FIREBASE_PRIVATE_KEY",
+./packages/database/drizzle/0000_deep_moonstone.sql:64:	"access_token" text,
+./packages/database/drizzle/0000_deep_moonstone.sql:65:	"refresh_token" text,
+./packages/database/drizzle/0000_deep_moonstone.sql:67:	"id_token" text,
+./packages/database/drizzle/0000_deep_moonstone.sql:69:	"token_type" text,
+./packages/database/drizzle/0000_deep_moonstone.sql:78:	"token" text NOT NULL,
+./packages/database/drizzle/0000_deep_moonstone.sql:125:CREATE UNIQUE INDEX "auth_sessions_token_uq" ON "auth_sessions" USING btree ("token");--> statement-breakpoint
+./packages/database/drizzle/0000_deep_moonstone.sql:130:CREATE UNIQUE INDEX "auth_verifications_token_uq" ON "auth_verifications" USING btree ("value");--> statement-breakpoint
+./apps/web/README.emu.md:67:- **`auth/invalid-api-key`:** This usually means the web app is not configured to talk to the emulator. Ensure `NEXT_PUBLIC_USE_EMULATORS=true` is set in your `.env.local` file and that the app was restarted after the change.
+./pnpm-lock.yaml:342:  '@alcalzone/ansi-tokenize@0.2.5':
+./pnpm-lock.yaml:477:      '@csstools/css-tokenizer': ^3.0.4
+./pnpm-lock.yaml:484:      '@csstools/css-tokenizer': ^3.0.4
+./pnpm-lock.yaml:490:      '@csstools/css-tokenizer': ^3.0.4
+./pnpm-lock.yaml:492:  '@csstools/css-tokenizer@3.0.4':
+./pnpm-lock.yaml:2576:  '@types/jsonwebtoken@9.0.10':
+./pnpm-lock.yaml:4531:  gtoken@7.1.0:
+./pnpm-lock.yaml:4535:  gtoken@8.0.0:
+./pnpm-lock.yaml:4965:  js-tokens@4.0.0:
+./pnpm-lock.yaml:4968:  js-tokens@9.0.1:
+./pnpm-lock.yaml:5019:  jsonwebtoken@9.0.2:
+./pnpm-lock.yaml:5594:  oidc-token-hash@5.1.1:
+./pnpm-lock.yaml:6099:  registry-auth-token@5.1.0:
+./pnpm-lock.yaml:7263:  '@alcalzone/ansi-tokenize@0.2.5':
+./pnpm-lock.yaml:7277:      '@csstools/css-calc': 2.1.4(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)
+./pnpm-lock.yaml:7278:      '@csstools/css-color-parser': 3.0.10(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)
+./pnpm-lock.yaml:7279:      '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
+./pnpm-lock.yaml:7280:      '@csstools/css-tokenizer': 3.0.4
+./pnpm-lock.yaml:7286:      js-tokens: 4.0.0
+./pnpm-lock.yaml:7422:  '@csstools/css-calc@2.1.4(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)':
+./pnpm-lock.yaml:7424:      '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
+./pnpm-lock.yaml:7425:      '@csstools/css-tokenizer': 3.0.4
+./pnpm-lock.yaml:7427:  '@csstools/css-color-parser@3.0.10(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)':
+./pnpm-lock.yaml:7430:      '@csstools/css-calc': 2.1.4(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)
+./pnpm-lock.yaml:7431:      '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
+./pnpm-lock.yaml:7432:      '@csstools/css-tokenizer': 3.0.4
+./pnpm-lock.yaml:7434:  '@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4)':
+./pnpm-lock.yaml:7436:      '@csstools/css-tokenizer': 3.0.4
+./pnpm-lock.yaml:7438:  '@csstools/css-tokenizer@3.0.4': {}
+./pnpm-lock.yaml:8269:      '@alcalzone/ansi-tokenize': 0.2.5
+./pnpm-lock.yaml:9379:  '@types/jsonwebtoken@9.0.10':
+./pnpm-lock.yaml:11467:      jsonwebtoken: 9.0.2
+./pnpm-lock.yaml:11744:      gtoken: 8.0.0
+./pnpm-lock.yaml:11755:      gtoken: 7.1.0(encoding@0.1.13)
+./pnpm-lock.yaml:11831:  gtoken@7.1.0(encoding@0.1.13):
+./pnpm-lock.yaml:11839:  gtoken@8.0.0:
+./pnpm-lock.yaml:12256:  js-tokens@4.0.0: {}
+./pnpm-lock.yaml:12258:  js-tokens@9.0.1: {}
+./pnpm-lock.yaml:12319:  jsonwebtoken@9.0.2:
+./pnpm-lock.yaml:12354:      '@types/jsonwebtoken': 9.0.10
+./pnpm-lock.yaml:12493:      js-tokens: 4.0.0
+./pnpm-lock.yaml:12837:  oidc-token-hash@5.1.1: {}
+./pnpm-lock.yaml:12871:      oidc-token-hash: 5.1.1
+./pnpm-lock.yaml:12907:      registry-auth-token: 5.1.0
+./pnpm-lock.yaml:13358:  registry-auth-token@5.1.0:
+./pnpm-lock.yaml:13836:      js-tokens: 9.0.1
+./pnpm-lock.yaml:13840:      js-tokens: 9.0.1
+./apps/web/src/middleware.ts:15:  const token = await getToken({ req });
+./apps/web/src/middleware.ts:17:  if (!token) {
+./packages/database/src/schema/auth.ts:51:    // session token or id (implementation-specific)
+./packages/database/src/schema/auth.ts:52:    token: text("token").notNull(),
+./packages/database/src/schema/auth.ts:66:    tokenUq: uniqueIndex("auth_sessions_token_uq").on(t.token),
+./packages/database/src/schema/auth.ts:84:    accessToken: text("access_token"),
+./packages/database/src/schema/auth.ts:85:    refreshToken: text("refresh_token"),
+./packages/database/src/schema/auth.ts:87:    idToken: text("id_token"),
+./packages/database/src/schema/auth.ts:89:    tokenType: text("token_type"),
+./packages/database/src/schema/auth.ts:124:    tokenUq: uniqueIndex("auth_verifications_token_uq").on(t.value),
+./scripts/export-firebase-users.ts:39:  const privateKeyRaw = requiredEnv("FIREBASE_PRIVATE_KEY");
+./vitest.setup.emu.ts:8:  apiKey: "fake-api-key",

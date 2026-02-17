@@ -84,3 +84,4 @@ tmp/
 
 # local web env (forbidden in V3)
 apps/web/.env
+.env.test
