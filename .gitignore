@@ -85,3 +85,5 @@ tmp/
 # local web env (forbidden in V3)
 apps/web/.env
 .env.test
+# Build artifacts
+apps/web/tsconfig.tsbuildinfo
