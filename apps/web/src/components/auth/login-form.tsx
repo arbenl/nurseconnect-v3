@@ -11,7 +11,8 @@ type LoginFormValues = { email: string; password: string };
 export default function LoginForm() {
   const form = useForm<LoginFormValues>({ defaultValues: { email: "", password: "" } });
 
-  const onSubmit = (values: LoginFormValues) => {
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+  const onSubmit = async (_data: LoginFormValues) => {
     // You can call your sign-in action here (emulator-aware).
     // e.g. await signInWithEmailAndPassword(getAuth(app), values.email, values.password);
   };

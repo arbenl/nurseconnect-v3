@@ -34,8 +34,10 @@ type ControllerRenderProps<
 > = {
   name: TName;
   value: TFieldValues[TName];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange: (...event: any[]) => void;
   onBlur: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ref: React.Ref<any>;
 };
 
