@@ -11,6 +11,25 @@ jobs:
     name: Build & Lint
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nurseconnect_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d nurseconnect_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_test
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -49,8 +68,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: DB Push
+        run: pnpm db:push
+
       - name: Type Check
         run: pnpm -w type-check
 
       - name: Lint
         run: pnpm lint
+
+      - name: Unit Tests
+        run: pnpm test:ci
+
+      - name: API/DB Integration Tests
+        run: pnpm --filter web test:api

@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run --config vitest.config.ts",
+    "test:api": "vitest -c vitest.config.node.ts run",
     "test:emu": "echo 'Emulator tests removed' && exit 0"
   },
   "dependencies": {
