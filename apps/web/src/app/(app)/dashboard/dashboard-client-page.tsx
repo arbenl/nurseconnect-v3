@@ -1,7 +1,9 @@
 "use client";
 
 import { BecomeNurseCard } from "@/components/dashboard/become-nurse-card";
+import { NurseAssignmentCard } from "@/components/dashboard/nurse-assignment-card";
 import { NurseStatusCard } from "@/components/dashboard/nurse-status-card";
+import { PatientRequestCard } from "@/components/dashboard/patient-request-card";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 
@@ -20,14 +22,16 @@ export default function DashboardClientPage() {
       
 
       {user?.role === "nurse" && (
-        <div className="mb-6">
+        <div className="grid gap-6 md:grid-cols-2 mb-6">
           <NurseStatusCard isAvailable={user.nurseProfile?.isAvailable ?? false} />
+          <NurseAssignmentCard />
         </div>
       )}
 
       {user?.role !== "nurse" && (
-        <div className="mb-6">
-           <BecomeNurseCard />
+        <div className="grid gap-6 md:grid-cols-2 mb-6">
+          <PatientRequestCard />
+          <BecomeNurseCard />
         </div>
       )}
 

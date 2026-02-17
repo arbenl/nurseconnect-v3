@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, timestamp, index } from "drizzle-orm/pg-core";
-import { serviceRequests } from "./service_requests";
+import { serviceRequests } from "./service-requests";
 import { nurses } from "./nurses";
 
 export const assignments = pgTable(
