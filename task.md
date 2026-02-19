@@ -61,3 +61,49 @@
 ## CI/Gate Alignment
 - [x] `db:migrate` remains the migration path
 - [x] Root `gate:e2e-api` now builds contracts before running API E2E to avoid stale contract exports
+
+---
+
+# PR-3.9 Task Checklist: Nurse Location Update API + Deterministic Throttle
+
+## Scope
+- [x] Add nurse-only endpoint to update current location (`PATCH /api/me/location`)
+- [x] Keep contract-first implementation (shared Zod schemas in `packages/contracts`)
+- [x] Add deterministic throttle for repeated location updates
+- [x] Preserve allocation behavior so nearest nurse selection uses latest location data
+- [x] Expand API-first E2E with location endpoint coverage
+
+## Contracts
+- [x] Added request schema: `NurseLocationUpdateRequestSchema` (`lat`, `lng`)
+- [x] Added response schema: `NurseLocationUpdateResponseSchema` (`ok`, `throttled`, `lastUpdated`)
+- [x] Exported new location contracts through `packages/contracts/src/index.ts`
+
+## Server Implementation
+- [x] Added service: `apps/web/src/server/nurse-location/update-my-location.ts`
+  - [x] validates actor is nurse role
+  - [x] requires nurse profile record (`nurses` table)
+  - [x] performs upsert into `nurse_locations`
+  - [x] enforces fixed 30-second throttle window for repeated updates
+- [x] Added route: `apps/web/src/app/api/me/location/route.ts`
+  - [x] `401` for unauthenticated users
+  - [x] `400` for invalid payload
+  - [x] `403` for non-nurse/incomplete nurse profile
+  - [x] `200` for successful update with typed payload
+
+## Tests
+- [x] Added DB integration tests:
+  - [x] first location write creates row
+  - [x] immediate second write is throttled and keeps previous coordinates
+  - [x] non-nurse user gets forbidden error
+- [x] Added API E2E tests:
+  - [x] non-nurse cannot update location
+  - [x] nurse can update location
+  - [x] location endpoint affects nearest nurse assignment outcome
+
+## CI/Gate Alignment
+- [x] Verified with blocking lanes:
+  - [x] `pnpm -w type-check`
+  - [x] `pnpm lint`
+  - [x] `pnpm test:ci`
+  - [x] `pnpm --filter web test:api`
+  - [x] `pnpm gate:e2e-api`

@@ -175,4 +175,57 @@ test.describe("Requests API", () => {
         expect(latest.id).toBe(created.id);
         expect(latest.status).toBe("open");
     });
+
+    test("location endpoint influences nearest nurse assignment", async ({ request }) => {
+        const nearNurseEmail = `nurse-near-${Date.now()}@test.local`;
+        const { userId: nearNurseId } = await createTestUser(request, nearNurseEmail, "Nurse Near", "nurse");
+        await seedNurse({
+            userId: nearNurseId,
+            licenseNumber: "RN-NEAR",
+            specialization: "General",
+            isAvailable: true,
+        });
+
+        const farNurseEmail = `nurse-far-${Date.now()}@test.local`;
+        const { userId: farNurseId } = await createTestUser(request, farNurseEmail, "Nurse Far", "nurse");
+        await seedNurse({
+            userId: farNurseId,
+            licenseNumber: "RN-FAR",
+            specialization: "General",
+            isAvailable: true,
+        });
+
+        await loginTestUser(request, nearNurseEmail);
+        const nearLocation = await request.patch("/api/me/location", {
+            data: { lat: 42.6629, lng: 21.1655 },
+        });
+        expect(nearLocation.ok(), `Near location failed: ${await nearLocation.text()}`).toBeTruthy();
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, farNurseEmail);
+        const farLocation = await request.patch("/api/me/location", {
+            data: { lat: 43.0000, lng: 21.9000 },
+        });
+        expect(farLocation.ok(), `Far location failed: ${await farLocation.text()}`).toBeTruthy();
+
+        await request.post("/api/auth/sign-out", { data: {} });
+
+        const patientEmail = `patient-location-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Location", "patient");
+        await markProfileComplete(patientEmail);
+        await loginTestUser(request, patientEmail);
+
+        const createResponse = await request.post("/api/requests", {
+            data: {
+                address: "10 Center St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+
+        expect(createResponse.ok(), `Create request failed: ${await createResponse.text()}`).toBeTruthy();
+        const created = await createResponse.json();
+        expect(created.status).toBe("assigned");
+        expect(created.assignedNurseUserId).toBe(nearNurseId);
+    });
 });
