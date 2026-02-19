@@ -1,3 +1,9 @@
+# Combined Delivery Verification: PR-3.8 + PR-3.9
+
+This report intentionally includes both milestone verification sections for this branch.
+
+---
+
 # Verification Report: PR-3.8
 
 Date: 2026-02-17

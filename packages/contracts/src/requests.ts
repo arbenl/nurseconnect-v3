@@ -27,14 +27,14 @@ export const ServiceRequestSchema = z.object({
     address: z.string(),
     lat: z.string(),
     lng: z.string(),
-    assignedAt: z.string().nullable(),
-    acceptedAt: z.string().nullable(),
-    enrouteAt: z.string().nullable(),
-    completedAt: z.string().nullable(),
-    canceledAt: z.string().nullable(),
-    rejectedAt: z.string().nullable(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
+    assignedAt: z.string().datetime({ offset: true }).nullable(),
+    acceptedAt: z.string().datetime({ offset: true }).nullable(),
+    enrouteAt: z.string().datetime({ offset: true }).nullable(),
+    completedAt: z.string().datetime({ offset: true }).nullable(),
+    canceledAt: z.string().datetime({ offset: true }).nullable(),
+    rejectedAt: z.string().datetime({ offset: true }).nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
 });
 export type ServiceRequestDto = z.infer<typeof ServiceRequestSchema>;
 

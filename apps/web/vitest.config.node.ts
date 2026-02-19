@@ -4,6 +4,8 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
     test: {
         environment: "node",
+        // Keep file-level execution serialized for deterministic shared-DB integration tests.
+        // describe.sequential only protects within one file, not across files.
         fileParallelism: false,
         include: [
             "src/server/**/*.db.test.ts",

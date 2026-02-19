@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ServiceRequest {
   id: string;
@@ -17,6 +18,7 @@ export function NurseAssignmentCard() {
   const [assignment, setAssignment] = useState<ServiceRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<null | "accept" | "reject" | "enroute" | "complete">(null);
+  const { toast } = useToast();
 
   const fetchAssignment = useCallback(async () => {
     try {
@@ -32,10 +34,15 @@ export function NurseAssignmentCard() {
       setAssignment(active || null);
     } catch (error) {
       console.error("Failed to fetch assignment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load assignments. Please refresh and try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const handleAction = async (action: "accept" | "reject" | "enroute" | "complete") => {
     if (!assignment) return;
@@ -55,6 +62,11 @@ export function NurseAssignmentCard() {
       await fetchAssignment();
     } catch (error) {
       console.error(`Failed to ${action} request:`, error);
+      toast({
+        title: "Action failed",
+        description: `Could not ${action} this request. Please try again.`,
+        variant: "destructive",
+      });
     } finally {
       setActionLoading(null);
     }

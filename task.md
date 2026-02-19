@@ -1,3 +1,9 @@
+# Combined Delivery: PR-3.8 + PR-3.9
+
+This document intentionally includes both milestones delivered in this branch.
+
+---
+
 # PR-3.8 Task Checklist: Request Lifecycle + Nurse Accept/Reject
 
 ## Scope
