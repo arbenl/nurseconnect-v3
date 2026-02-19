@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import { getCachedUser } from "@/lib/auth/user";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/server/requests/request-events";
 
 type Params = { params: { id: string } };
+const IdParam = z.object({ id: z.string().uuid() });
 
 export async function GET(_: Request, { params }: Params) {
   const user = await getCachedUser();
@@ -19,9 +21,14 @@ export async function GET(_: Request, { params }: Params) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const parsedParams = IdParam.safeParse(params);
+  if (!parsedParams.success) {
+    return NextResponse.json({ error: "Invalid request id" }, { status: 400 });
+  }
+
   try {
     const events = await getRequestEventsForUser({
-      requestId: params.id,
+      requestId: parsedParams.data.id,
       actorUserId: user.id,
       actorRole: user.role,
     });

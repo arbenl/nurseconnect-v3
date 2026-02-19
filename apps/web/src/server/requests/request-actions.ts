@@ -167,7 +167,8 @@ export async function applyRequestAction(input: ApplyRequestActionInput) {
       actorUserId: actorUserId,
       fromStatus: locked.status,
       toStatus: nextStatus,
-      meta: action === "reject" ? { reason: input.reason } : null,
+      meta:
+        action === "reject" && input.reason ? { reason: input.reason } : null,
     });
 
     return updated;
