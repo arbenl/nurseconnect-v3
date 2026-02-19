@@ -7,7 +7,7 @@ This report intentionally includes both milestone verification sections for this
 # Verification Report: PR-3.8
 
 Date: 2026-02-17
-Workspace: `/Users/arbenlila/development/nurseconnect-v3`
+Workspace: `<repo-root>`
 Verification DB: `postgresql://nurseconnect:nurseconnect@localhost:5432/nurseconnect_pr38`
 
 ## Migration Verification
@@ -56,7 +56,7 @@ Verification DB: `postgresql://nurseconnect:nurseconnect@localhost:5432/nursecon
 # Verification Report: PR-3.9
 
 Date: 2026-02-19
-Workspace: `/Users/arbenlila/development/nurseconnect-v3`
+Workspace: `<repo-root>`
 Verification DB: `postgresql://nurseconnect:nurseconnect@localhost:5432/nurseconnect_pr39`
 
 ## Environment Preparation
@@ -107,7 +107,6 @@ Verification DB: `postgresql://nurseconnect:nurseconnect@localhost:5432/nursecon
 # Verification Report: PR-4.0 (in progress)
 
 Date: 2026-02-19
-Workspace: `/Users/arbenlila/development/nurseconnect-v3`
 
 ## Planned / Pending Verification
 1. `pnpm --filter @nurseconnect/contracts build`
