@@ -72,4 +72,160 @@ test.describe("Requests API", () => {
         expect(data.status).toBe("open");
         expect(data.assignedNurseUserId).toBeNull();
     });
+
+    test("full flow: assigned nurse accepts and patient sees accepted", async ({ request }) => {
+        const nurseEmail = `nurse-accept-${Date.now()}@test.local`;
+        const { userId: nurseId } = await createTestUser(request, nurseEmail, "Nurse Accept", "nurse");
+        await seedNurse({
+            userId: nurseId,
+            licenseNumber: "RN-ACCEPT",
+            specialization: "General",
+            isAvailable: true,
+        });
+        await seedNurseLocation({
+            nurseUserId: nurseId,
+            lat: "42.6629",
+            lng: "21.1655",
+        });
+
+        const patientEmail = `patient-accept-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Accept", "patient");
+        await markProfileComplete(patientEmail);
+
+        await loginTestUser(request, patientEmail);
+        const createResponse = await request.post("/api/requests", {
+            data: {
+                address: "7 Main St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+        expect(createResponse.ok(), `Create request failed: ${await createResponse.text()}`).toBeTruthy();
+        const created = await createResponse.json();
+        expect(created.status).toBe("assigned");
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, nurseEmail);
+
+        const acceptResponse = await request.post(`/api/requests/${created.id}/accept`, { data: {} });
+        expect(acceptResponse.ok(), `Accept failed: ${await acceptResponse.text()}`).toBeTruthy();
+        const accepted = await acceptResponse.json();
+        expect(accepted.request.status).toBe("accepted");
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, patientEmail);
+
+        const mineResponse = await request.get("/api/requests/mine");
+        expect(mineResponse.ok(), `Mine failed: ${await mineResponse.text()}`).toBeTruthy();
+        const mine = await mineResponse.json();
+        const latest = mine[0];
+        expect(latest.id).toBe(created.id);
+        expect(latest.status).toBe("accepted");
+    });
+
+    test("reject flow: assigned nurse rejects and request reopens", async ({ request }) => {
+        const nurseEmail = `nurse-reject-${Date.now()}@test.local`;
+        const { userId: nurseId } = await createTestUser(request, nurseEmail, "Nurse Reject", "nurse");
+        await seedNurse({
+            userId: nurseId,
+            licenseNumber: "RN-REJECT",
+            specialization: "General",
+            isAvailable: true,
+        });
+        await seedNurseLocation({
+            nurseUserId: nurseId,
+            lat: "42.6629",
+            lng: "21.1655",
+        });
+
+        const patientEmail = `patient-reject-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Reject", "patient");
+        await markProfileComplete(patientEmail);
+
+        await loginTestUser(request, patientEmail);
+        const createResponse = await request.post("/api/requests", {
+            data: {
+                address: "9 Main St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+        expect(createResponse.ok(), `Create request failed: ${await createResponse.text()}`).toBeTruthy();
+        const created = await createResponse.json();
+        expect(created.status).toBe("assigned");
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, nurseEmail);
+
+        const rejectResponse = await request.post(`/api/requests/${created.id}/reject`, {
+            data: { reason: "Unable to reach address in time" },
+        });
+        expect(rejectResponse.ok(), `Reject failed: ${await rejectResponse.text()}`).toBeTruthy();
+        const rejected = await rejectResponse.json();
+        expect(rejected.request.status).toBe("open");
+        expect(rejected.request.assignedNurseUserId).toBeNull();
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, patientEmail);
+
+        const mineResponse = await request.get("/api/requests/mine");
+        expect(mineResponse.ok(), `Mine failed: ${await mineResponse.text()}`).toBeTruthy();
+        const mine = await mineResponse.json();
+        const latest = mine[0];
+        expect(latest.id).toBe(created.id);
+        expect(latest.status).toBe("open");
+    });
+
+    test("location endpoint influences nearest nurse assignment", async ({ request }) => {
+        const nearNurseEmail = `nurse-near-${Date.now()}@test.local`;
+        const { userId: nearNurseId } = await createTestUser(request, nearNurseEmail, "Nurse Near", "nurse");
+        await seedNurse({
+            userId: nearNurseId,
+            licenseNumber: "RN-NEAR",
+            specialization: "General",
+            isAvailable: true,
+        });
+
+        const farNurseEmail = `nurse-far-${Date.now()}@test.local`;
+        const { userId: farNurseId } = await createTestUser(request, farNurseEmail, "Nurse Far", "nurse");
+        await seedNurse({
+            userId: farNurseId,
+            licenseNumber: "RN-FAR",
+            specialization: "General",
+            isAvailable: true,
+        });
+
+        await loginTestUser(request, nearNurseEmail);
+        const nearLocation = await request.patch("/api/me/location", {
+            data: { lat: 42.6629, lng: 21.1655 },
+        });
+        expect(nearLocation.ok(), `Near location failed: ${await nearLocation.text()}`).toBeTruthy();
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, farNurseEmail);
+        const farLocation = await request.patch("/api/me/location", {
+            data: { lat: 43.0000, lng: 21.9000 },
+        });
+        expect(farLocation.ok(), `Far location failed: ${await farLocation.text()}`).toBeTruthy();
+
+        await request.post("/api/auth/sign-out", { data: {} });
+
+        const patientEmail = `patient-location-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Location", "patient");
+        await markProfileComplete(patientEmail);
+        await loginTestUser(request, patientEmail);
+
+        const createResponse = await request.post("/api/requests", {
+            data: {
+                address: "10 Center St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+
+        expect(createResponse.ok(), `Create request failed: ${await createResponse.text()}`).toBeTruthy();
+        const created = await createResponse.json();
+        expect(created.status).toBe("assigned");
+        expect(created.assignedNurseUserId).toBe(nearNurseId);
+    });
 });

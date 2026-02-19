@@ -15,7 +15,7 @@
   "scripts": {
     "type-check": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint .",
+    "lint": "eslint src test",
     "test": "vitest run --config vitest.config.ts",
     "test:emu": "vitest run --config vitest.config.emu.ts"
   },

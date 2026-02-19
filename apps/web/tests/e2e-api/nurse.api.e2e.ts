@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { resetDb } from "../e2e-utils/db";
+import { resetDb, seedNurse } from "../e2e-utils/db";
 import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
 test.describe("Nurse API", () => {
@@ -70,5 +70,45 @@ test.describe("Nurse API", () => {
         const check2 = await request.get("/api/me");
         const data2 = await check2.json();
         expect(data2.user.nurseProfile.isAvailable).toBe(false);
+    });
+
+    test("forbids location updates for non-nurse users", async ({ request }) => {
+        const email = `location-patient-${Date.now()}@test.local`;
+        await createTestUser(request, email, "Location Patient", "patient");
+        await loginTestUser(request, email);
+
+        const response = await request.patch("/api/me/location", {
+            data: {
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+
+        expect(response.status()).toBe(403);
+    });
+
+    test("nurse can set location", async ({ request }) => {
+        const email = `location-nurse-${Date.now()}@test.local`;
+        const { userId } = await createTestUser(request, email, "Location Nurse", "nurse");
+        await seedNurse({
+            userId,
+            licenseNumber: "RN-LOC-API",
+            specialization: "General",
+            isAvailable: true,
+        });
+        await loginTestUser(request, email);
+
+        const response = await request.patch("/api/me/location", {
+            data: {
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+
+        expect(response.ok(), `Location update failed: ${await response.text()}`).toBeTruthy();
+        const body = await response.json();
+        expect(body.ok).toBe(true);
+        expect(body.throttled).toBe(false);
+        expect(typeof body.lastUpdated).toBe("string");
     });
 });

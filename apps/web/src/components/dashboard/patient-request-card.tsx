@@ -1,17 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 
+interface ServiceRequest {
+  id: string;
+  status: string;
+  address: string;
+  assignedNurseUserId: string | null;
+  createdAt: string;
+}
+
 export function PatientRequestCard() {
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activeRequest, setActiveRequest] = useState<ServiceRequest | null>(null);
   const { toast } = useToast();
+
+  const fetchActiveRequest = useCallback(async () => {
+    try {
+      const response = await fetch("/api/requests/mine");
+      if (!response.ok) return;
+      const requests = (await response.json()) as ServiceRequest[];
+      const active = requests.find((r) =>
+        ["open", "assigned", "accepted", "enroute"].includes(r.status)
+      );
+      setActiveRequest(active || requests[0] || null);
+    } catch (error) {
+      console.error("Failed to fetch patient requests:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchActiveRequest();
+  }, [fetchActiveRequest]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +80,7 @@ export function PatientRequestCard() {
       });
 
       setAddress("");
+      await fetchActiveRequest();
     } catch (error) {
       console.error("Request creation failed:", error);
       toast({
@@ -88,6 +117,15 @@ export function PatientRequestCard() {
             {loading ? "Creating request..." : "Request Visit"}
           </Button>
         </form>
+        {activeRequest && (
+          <div className="mt-4 space-y-2 border-t pt-4">
+            <p className="text-sm font-medium">Current request</p>
+            <p className="text-sm text-muted-foreground">{activeRequest.address}</p>
+            <Badge variant={activeRequest.status === "completed" ? "secondary" : "default"}>
+              {activeRequest.status}
+            </Badge>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

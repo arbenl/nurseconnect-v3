@@ -24,7 +24,7 @@
     "test:api": "pnpm --filter @nurseconnect/contracts build && pnpm --filter web test:api",
     "gate:fast": "pnpm -w type-check && pnpm lint && pnpm test:ci",
     "gate:smoke": "pnpm -w type-check && pnpm lint && pnpm test:ci && pnpm test:api",
-    "gate:e2e-api": "pnpm --filter web test:e2e:api",
+    "gate:e2e-api": "pnpm --filter @nurseconnect/contracts build && pnpm --filter web test:e2e:api",
     "gate:e2e": "pnpm gate:e2e-api",
     "db:generate": "drizzle-kit generate --config packages/database/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config packages/database/drizzle.config.ts",

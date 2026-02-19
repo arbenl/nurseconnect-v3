@@ -79,6 +79,8 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
             .set({
                 assignedNurseUserId: chosen.nurseUserId,
                 status: "assigned",
+                assignedAt: new Date(),
+                updatedAt: new Date(),
             })
             .where(eq(serviceRequests.id, req.id))
             .returning();
