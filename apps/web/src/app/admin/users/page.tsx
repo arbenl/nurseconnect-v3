@@ -1,53 +1,38 @@
-import { db, schema, ilike, or } from "@nurseconnect/database";
-
+import { getAdminUsers } from "@/server/admin/admin-reads";
 import { requireRole } from "@/server/auth";
 
 import UserTable from "./user-table"; // Client Component
 
-const { users } = schema;
-
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ cursor?: string; limit?: string }>;
 }) {
   await requireRole("admin");
-  const query = (await searchParams).q || "";
+  const query = await searchParams;
+  const rawLimit = query.limit ? Number(query.limit) : 20;
+  const normalizedLimit = Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 20;
 
-  // Simple search implementation
-  const data = await db.query.users.findMany({
-    where: query
-      ? or(ilike(users.email, `%${query}%`), ilike(users.name, `%${query}%`))
-      : undefined,
-    limit: 50,
-    orderBy: (users, { desc }) => [desc(users.createdAt)],
+  const data = await getAdminUsers({
+    limit: normalizedLimit,
+    cursor: query.cursor,
   });
 
   return (
     <div>
       <h1 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>User Management</h1>
-      
-      {/* Search Form (Server Action or just GET param) */}
-      <form style={{ marginBottom: "1.5rem", display: "flex", gap: "0.5rem" }}>
-        <input 
-          name="q" 
-          defaultValue={query} 
-          placeholder="Search email or name..." 
-          style={{ 
-            padding: "8px", 
-            borderRadius: "4px", 
-            border: "1px solid #333", 
-            background: "#000", 
-            color: "#fff",
-            width: "300px"
-          }} 
-        />
-        <button type="submit" style={{ padding: "8px 16px", background: "#333", color: "#fff", border: "none", borderRadius: "4px" }}>
-          Search
-        </button>
-      </form>
 
-      <UserTable users={data} />
+      <UserTable users={data.items} />
+      {data.nextCursor && (
+        <div style={{ marginTop: "1rem" }}>
+          <a
+            href={`/admin/users?cursor=${encodeURIComponent(data.nextCursor)}&limit=${normalizedLimit}`}
+            style={{ textDecoration: "underline" }}
+          >
+            Next page
+          </a>
+        </div>
+      )}
     </div>
   );
 }

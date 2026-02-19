@@ -29,6 +29,8 @@ export default async function AdminLayout({
         <nav style={{ display: "flex", gap: "1rem" }}>
           <Link href="/admin" style={{ opacity: 0.8 }}>Dashboard</Link>
           <Link href="/admin/users" style={{ opacity: 0.8 }}>Users</Link>
+          <Link href="/admin/nurses" style={{ opacity: 0.8 }}>Nurses</Link>
+          <Link href="/admin/requests" style={{ opacity: 0.8 }}>Requests</Link>
           <Link href="/admin/backfill" style={{ opacity: 0.8 }}>Backfill Status</Link>
         </nav>
         <div style={{ marginLeft: "auto" }}>
