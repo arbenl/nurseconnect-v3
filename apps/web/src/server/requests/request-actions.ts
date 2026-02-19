@@ -1,6 +1,7 @@
-import type { RequestStatus } from "@nurseconnect/contracts";
+import type { RequestEventType, RequestStatus } from "@nurseconnect/contracts";
 import { db, eq, schema, sql } from "@nurseconnect/database";
 
+import { appendRequestEvent } from "./request-events";
 import { canTransition, type RequestAction } from "./request-lifecycle";
 
 const { nurses, serviceRequests } = schema;
@@ -42,11 +43,16 @@ type ApplyRequestActionInput = {
 };
 
 const nurseActions = new Set<RequestAction>(["accept", "reject", "enroute", "complete"]);
+const requestActionEventType: Record<RequestAction, RequestEventType> = {
+  accept: "request_accepted",
+  reject: "request_rejected",
+  enroute: "request_enroute",
+  complete: "request_completed",
+  cancel: "request_canceled",
+};
 
 export async function applyRequestAction(input: ApplyRequestActionInput) {
   const { requestId, actorUserId, action } = input;
-  // Extension point: reason can be persisted in a future service_request_events table.
-  void input.reason;
 
   return db.transaction(async (tx) => {
     const lockResult = await tx.execute<LockedRequestRow>(sql`
@@ -154,6 +160,15 @@ export async function applyRequestAction(input: ApplyRequestActionInput) {
         .set({ isAvailable: true, updatedAt: now })
         .where(eq(nurses.userId, locked.assigned_nurse_user_id));
     }
+
+    await appendRequestEvent(tx, {
+      requestId,
+      type: requestActionEventType[action],
+      actorUserId: actorUserId,
+      fromStatus: locked.status,
+      toStatus: nextStatus,
+      meta: action === "reject" ? { reason: input.reason } : null,
+    });
 
     return updated;
   });

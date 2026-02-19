@@ -4,6 +4,23 @@ This document intentionally includes both milestones delivered in this branch.
 
 ---
 
+⚠️ PR-4.0 (audit timeline) is now being implemented in this branch.
+
+# PR-4.0 Task Checklist: Request Events Timeline
+
+## Scope
+- [ ] Add request event table + migration (`service_request_events`)
+- [ ] Add append-only event contracts in `packages/contracts`
+- [ ] Add event write service and authorization helper
+- [ ] Add endpoint: `GET /api/requests/[id]/events`
+- [ ] Append event row for request creation and assignment in allocation path
+- [ ] Append event rows for lifecycle actions in action path
+- [ ] Add DB integration tests for event writing and ordering
+- [ ] Add API E2E test for coherent timeline
+- [ ] Update docs/verification evidence for PR-4.0 handoff
+
+---
+
 # PR-3.8 Task Checklist: Request Lifecycle + Nurse Accept/Reject
 
 ## Scope

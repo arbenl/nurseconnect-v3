@@ -228,4 +228,59 @@ test.describe("Requests API", () => {
         expect(created.status).toBe("assigned");
         expect(created.assignedNurseUserId).toBe(nearNurseId);
     });
+
+    test("events endpoint returns ordered timeline", async ({ request }) => {
+        const nurseEmail = `timeline-nurse-${Date.now()}@test.local`;
+        const { userId: nurseId } = await createTestUser(
+            request,
+            nurseEmail,
+            "Timeline Nurse",
+            "nurse"
+        );
+        await seedNurse({
+            userId: nurseId,
+            licenseNumber: "RN-TL",
+            specialization: "General",
+            isAvailable: true,
+        });
+        await seedNurseLocation({
+            nurseUserId: nurseId,
+            lat: "42.6629",
+            lng: "21.1655",
+        });
+
+        const patientEmail = `timeline-patient-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Timeline Patient", "patient");
+        await markProfileComplete(patientEmail);
+
+        await loginTestUser(request, patientEmail);
+        const createResponse = await request.post("/api/requests", {
+            data: {
+                address: "11 Center St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+        expect(createResponse.ok(), `Create request failed: ${await createResponse.text()}`).toBeTruthy();
+        const created = await createResponse.json();
+        expect(created.status).toBe("assigned");
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, nurseEmail);
+        const acceptResponse = await request.post(`/api/requests/${created.id}/accept`);
+        expect(acceptResponse.ok(), `Accept failed: ${await acceptResponse.text()}`).toBeTruthy();
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, patientEmail);
+        const eventsResponse = await request.get(`/api/requests/${created.id}/events`);
+        expect(eventsResponse.ok(), `Get events failed: ${await eventsResponse.text()}`).toBeTruthy();
+        const events = await eventsResponse.json();
+
+        expect(Array.isArray(events)).toBe(true);
+        expect(events.map((event: { type: string }) => event.type)).toEqual([
+            "request_created",
+            "request_assigned",
+            "request_accepted",
+        ]);
+    });
 });

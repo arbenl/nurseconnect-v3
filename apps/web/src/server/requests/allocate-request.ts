@@ -2,6 +2,8 @@
 import { haversineMeters } from "@nurseconnect/contracts";
 import { db, eq, schema, sql } from "@nurseconnect/database";
 
+import { appendRequestEvent } from "./request-events";
+
 const { serviceRequests } = schema;
 
 export type CreateRequestInput = {
@@ -43,6 +45,15 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
         if (!req) {
             throw new Error("Failed to create request");
         }
+
+        await appendRequestEvent(tx, {
+            requestId: req.id,
+            type: "request_created",
+            actorUserId: patientUserId,
+            fromStatus: null,
+            toStatus: "open",
+            meta: null,
+        });
 
         // 2) lock available nurse location rows (skip locked)
         // We lock nurse_locations rows so concurrent allocators won't pick same nurse.
@@ -88,6 +99,17 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
         if (!updated) {
             throw new Error("Failed to update request");
         }
+
+        await appendRequestEvent(tx, {
+            requestId: updated.id,
+            type: "request_assigned",
+            actorUserId: null,
+            fromStatus: "open",
+            toStatus: "assigned",
+            meta: {
+                nurseUserId: chosen.nurseUserId,
+            },
+        });
 
         return updated;
     });
