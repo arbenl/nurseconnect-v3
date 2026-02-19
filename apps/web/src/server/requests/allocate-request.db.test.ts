@@ -18,6 +18,7 @@ describe.sequential("createAndAssignRequest", () => {
 
     beforeEach(async () => {
         // Truncate in dependency-safe order
+        await db.execute(sql`TRUNCATE TABLE service_request_events RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE service_requests RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE nurse_locations RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE nurses RESTART IDENTITY CASCADE`);

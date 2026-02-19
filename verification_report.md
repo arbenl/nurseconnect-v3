@@ -100,4 +100,29 @@ Verification DB: `postgresql://nurseconnect:nurseconnect@localhost:5432/nursecon
 - Nurse-only location updates are enforced at API/service layer.
 - Repeated updates inside throttle window return `throttled=true` and keep prior coordinates.
 - API returns typed response with `lastUpdated`.
-- Nearest-nurse allocation reflects coordinates set via `/api/me/location`.
+- Nearest-nurse assignment reflects coordinates set via `/api/me/location`.
+
+---
+
+# Verification Report: PR-4.0 (in progress)
+
+Date: 2026-02-19
+Workspace: `/Users/arbenlila/development/nurseconnect-v3`
+
+## Planned / Pending Verification
+1. `pnpm --filter @nurseconnect/contracts build`
+2. `pnpm -w type-check`
+3. `pnpm lint`
+4. `pnpm test:ci`
+5. `pnpm --filter web test:api`
+6. `pnpm gate:e2e-api`
+
+## DB/Schema Work
+- Migration added: `packages/database/drizzle/0006_long_ikaris.sql`
+- Journal updated with `0006_long_ikaris`.
+
+## Behavioral Targets
+- Request creation appends `request_created` event.
+- Successful allocation appends `request_assigned`.
+- Lifecycle actions append transition events in same transaction.
+- `GET /api/requests/[id]/events` returns ordered timeline for authorized actors.

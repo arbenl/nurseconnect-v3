@@ -1,6 +1,7 @@
 export * from "./users";
 export * from "./nurses";
 export * from "./service-requests";
+export * from "./request-events";
 export * from "./nurse-locations";
 export * from "./patients";
 export * from "./assignments";
