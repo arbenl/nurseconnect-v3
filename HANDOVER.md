@@ -19,6 +19,7 @@ Completed milestones include:
 - Nurse availability + “Become a nurse” self-onboarding
 - Patient “request a visit” MVP with **race-safe nearest-nurse allocation**
 - Request lifecycle actions using **strict state machine + row locking**
+- Request events/audit timeline (PR-4.0): append-only `service_request_events`, event writes on request lifecycle, authorized timeline endpoint
 - Robust CI/test strategy with **API-first E2E as the blocking lane** (UI E2E quarantined)
 
 ---
@@ -327,58 +328,48 @@ Push early to let CI validate incrementally.
 
 ---
 
-## 13) Recommended Next Milestone (PR-3.9+)
+## 13) Recommended Next Milestone (PR-4.1+)
 
 Pick one based on product priority.
 
-### Option 1 — Nurse location updates endpoint (recommended)
+### Option 1 — Admin console MVP (recommended)
 
-**Why:** unlocks real-time allocation quality, makes location freshness explicit, improves future SLA/dispatch logic.
+**Why:** highest operational leverage now that lifecycle and timeline data are deterministic and authorized.
 
 **Scope**
 
-- Endpoint: `PATCH /api/me/location` (or `POST`)
-- Inputs: lat/lng (NUMERIC-safe)
-- Behavior:
+- Admin-only read-only views:
 
-  - only nurses
-  - update `nurse_locations.lat/lng/lastUpdated`
-  - server-side throttling (time-based or “only update if moved X meters / after Y seconds”)
-- Tests:
+  - users
+  - nurses
+  - requests
+- Request detail view uses existing authorized event timeline:
+  - `GET /api/requests/[id]/events`
+- RBAC tests on API-first E2E
 
-  - DB integration tests (writes + updates + lastUpdated behavior)
-  - API-first E2E:
+### Option 2 — Request timeline UI for patients/nurses
 
-    - nurse sets location
-    - patient request allocates nearest nurse
+**Why:** product-visible auditability with low backend risk.
 
-**Acceptance**
+**Scope**
 
-- deterministic in tests
-- rejects non-nurse users
-- enforces minimal freshness/throttle rule in a predictable way
-
-### Option 2 — Request timeline / audit events
-
-- Append-only `request_events` table
-- Each lifecycle action writes an event row
-- Enables richer UI timeline + admin insight
+- Add timeline card(s) in request detail using existing timeline endpoint
+- Show actor + transition + timestamp sequence
 
 ### Option 3 — Notifications baseline
 
 - Polling-based “new assignment” notification
 - Later move to SSE/WebSocket
 
-### Option 4 — Admin console MVP
-
-- View users, nurses, requests
-- Role changes + support tooling
-- Strong RBAC tests
-
-### Option 5 — Stabilize UI E2E (optional)
+### Option 4 — Stabilize UI E2E (optional)
 
 - Only if ROI is worth it now
 - Otherwise keep quarantined/manual
+
+### Option 5 — Nurse location quality (follow-up)
+
+- Improve freshness/accuracy assumptions in allocation source-of-truth flow
+- Keep throttle/race behavior deterministic
 
 ---
 
@@ -456,7 +447,7 @@ stateDiagram-v2
 
 ## Next 3 PRs plan
 
-### PR-3.9 — Nurse location update API + tests (recommended)
+### PR-3.9 — Nurse location update API + tests (completed)
 
 **Deliverables**
 
@@ -464,6 +455,7 @@ stateDiagram-v2
 - writes to `nurse_locations` with numeric lat/lng + `lastUpdated`
 - deterministic throttling rule
 - DB integration tests + API-first E2E coverage
+- **Status:** completed (PR #3)
 
 **Success metric**
 
@@ -473,15 +465,17 @@ stateDiagram-v2
 
 **Deliverables**
 
-- `request_events` table + event writer utility in service layer
+- `service_request_events` table + event writer utility in service layer
 - each lifecycle action appends an event
-- basic UI timeline (read-only)
+- `GET /api/requests/[id]/events` endpoint with role-gated access
+- DB + API-E2E test coverage
+- **Status:** completed (PR #4)
 
 **Success metric**
 
 - Supportability: requests are explainable (“who did what when”) without reading logs.
 
-### PR-4.1 — Admin console MVP (read-only first)
+### PR-4.1 — Admin console MVP (read-only first, next)
 
 **Deliverables**
 
@@ -492,3 +486,15 @@ stateDiagram-v2
 **Success metric**
 
 - Fast operational visibility + safer support workflows without direct DB access.
+
+### PR-4.2 — Request timeline UX (optional)
+
+**Deliverables**
+
+- add timeline card on patient/nurse request detail views
+- reuse `/api/requests/[id]/events` for read-only event rendering
+- deterministic ordering by DB id/created timestamp
+
+**Success metric**
+
+- Better user-facing auditability without changing backend behavior.
