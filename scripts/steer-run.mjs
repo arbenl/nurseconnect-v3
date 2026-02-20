@@ -19,6 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const root = path.resolve(__dirname, "..");
 const STEER_SCHEMA_PATH = path.join(root, "schemas", "steer-output.schema.json");
+const TASK_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 
 function writeValidationReport(taskDir, task, phase, validationErrors, meta = {}, schema) {
   const report = {
@@ -155,6 +156,16 @@ function loadSchema() {
   return JSON.parse(raw);
 }
 
+function sanitizeTask(task) {
+  const normalizedTask = String(task || "");
+  if (!TASK_ID_PATTERN.test(normalizedTask)) {
+    throw new Error(
+      `Invalid task id "${task}". Use a safe slug (letters, numbers, hyphen, underscore, dot) with no path separators.`
+    );
+  }
+  return normalizedTask;
+}
+
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -226,7 +237,17 @@ function runAgent(agentId, task, taskDir, catalog, schema, validationErrors, ris
   }
 
   const output = readFileSync(outFile, "utf8");
-  const parsedOutput = JSON.parse(output);
+  let parsedOutput;
+  try {
+    parsedOutput = JSON.parse(output);
+  } catch {
+    validationErrors.push({
+      kind: "agent-output-unparseable",
+      agentId,
+      reason: [`output was not valid JSON: ${path.relative(root, outFile)}`],
+    });
+    throw new Error(`Agent output JSON invalid for ${agentId}: ${outFile}`);
+  }
 
   const errors = [];
   validateBySchema(parsedOutput, schema.agentOutput, `agent-output(${agentId})`, errors);
@@ -275,6 +296,13 @@ function main() {
     console.error("Usage: node scripts/steer-run.mjs <task-id> [--risk low|medium|high]");
     process.exit(1);
   }
+  let safeTask;
+  try {
+    safeTask = sanitizeTask(task);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 
   const configPath = path.join(root, "steer", "steer.config.json");
   if (!existsSync(configPath)) {
@@ -285,7 +313,7 @@ function main() {
   const config = JSON.parse(readFileSync(configPath, "utf8"));
   const catalog = config.agentCatalog || {};
   const schema = loadSchema();
-  const taskDir = path.join(root, "artifacts", task);
+  const taskDir = path.join(root, "artifacts", safeTask);
   mkdirSync(taskDir, { recursive: true });
   const validationErrors = [];
 
@@ -295,7 +323,7 @@ function main() {
       kind: "invalid-risk",
       reason: [`unknown risk level: ${risk}`],
     });
-    writeValidationReport(taskDir, task, "run", validationErrors, { phase: "config-validation" }, schema);
+    writeValidationReport(taskDir, safeTask, "run", validationErrors, { phase: "config-validation" }, schema);
     console.error(`Unknown risk level: ${risk}. Use low, medium, or high.`);
     process.exit(1);
   }
@@ -305,7 +333,7 @@ function main() {
   const runAgents = [...requiredAgents, ...optionalAgents];
 
   const manifest = {
-    task,
+    task: safeTask,
     risk,
     startedAt: new Date().toISOString(),
     profile: {
@@ -322,12 +350,12 @@ function main() {
 
   for (const agentId of runAgents) {
     try {
-      const result = runAgent(agentId, task, taskDir, catalog, schema, validationErrors, risk);
+      const result = runAgent(agentId, safeTask, taskDir, catalog, schema, validationErrors, risk);
       manifest.results.agents.push(result);
       manifest.artifacts.push(result.artifact);
       manifest.artifacts.push(result.log);
     } catch (error) {
-      writeValidationReport(taskDir, task, "run", validationErrors, { phase: "agent-execution" }, schema);
+      writeValidationReport(taskDir, safeTask, "run", validationErrors, { phase: "agent-execution" }, schema);
       throw error;
     }
   }
@@ -349,13 +377,13 @@ function main() {
       kind: "manifest-write-failed",
       reason: [`failed writing ${path.relative(root, manifestFile)}`],
     });
-    writeValidationReport(taskDir, task, "run", validationErrors, { phase: "manifest-write" }, schema);
+    writeValidationReport(taskDir, safeTask, "run", validationErrors, { phase: "manifest-write" }, schema);
     console.error(`Failed to write manifest file: ${manifestFile}`);
     process.exit(1);
   }
 
   const signature = {
-    task,
+    task: safeTask,
     risk,
     manifestHash,
     agents: manifest.results.agents.map((a) => ({ id: a.id, name: a.name })),
@@ -370,14 +398,14 @@ function main() {
       kind: "manifest-invalid",
       reason: manifestErrors,
     });
-    writeValidationReport(taskDir, task, "run", validationErrors, { phase: "manifest-validation" }, schema);
+    writeValidationReport(taskDir, safeTask, "run", validationErrors, { phase: "manifest-validation" }, schema);
     console.error(`Manifest schema validation failed after finalization:\n- ${manifestErrors.join("\n- ")}`);
     process.exit(1);
   }
   writeFileSync(manifestFile, `${JSON.stringify(canonicalizeForHash(manifest), null, 2)}\n`, "utf8");
-  writeValidationReport(taskDir, task, "run", validationErrors, { phase: "success" }, schema);
+  writeValidationReport(taskDir, safeTask, "run", validationErrors, { phase: "success" }, schema);
 
-  console.log(`✅ steer run complete for ${task}`);
+  console.log(`✅ steer run complete for ${safeTask}`);
 }
 
 main();

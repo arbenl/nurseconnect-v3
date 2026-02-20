@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 const root = path.resolve(__dirname, "..");
 const STEER_SCHEMA_PATH = path.join(root, "schemas", "steer-output.schema.json");
 const STEER_CONFIG_PATH = path.join(root, "steer", "steer.config.json");
+const TASK_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 
 function parseArgs(argv) {
   const parsed = {
@@ -160,11 +161,28 @@ function fail(report, message) {
   report.errors.push(message);
 }
 
+function sanitizeTask(task) {
+  const normalizedTask = String(task || "");
+  if (!TASK_ID_PATTERN.test(normalizedTask)) {
+    throw new Error(
+      `Invalid task id "${task}". Use a safe slug (letters, numbers, hyphen, underscore, dot) with no path separators.`
+    );
+  }
+  return normalizedTask;
+}
+
 function main() {
   const { task, risk: cliRisk } = parseArgs(process.argv.slice(2));
 
   if (!task) {
     console.error("Usage: node scripts/steer-verify.mjs <task-id> [--risk low|medium|high]");
+    process.exit(1);
+  }
+  let safeTask;
+  try {
+    safeTask = sanitizeTask(task);
+  } catch (error) {
+    console.error(error.message);
     process.exit(1);
   }
 
@@ -176,7 +194,7 @@ function main() {
   const config = loadConfig();
   const schema = loadSchema();
 
-  const taskDir = path.join(root, "artifacts", task);
+  const taskDir = path.join(root, "artifacts", safeTask);
   const manifestPath = path.join(taskDir, "manifest.json");
   if (!existsSync(manifestPath)) {
     console.error(`Missing manifest at ${manifestPath}`);
@@ -200,7 +218,7 @@ function main() {
 
   const catalog = config.agentCatalog || {};
   const report = {
-    task,
+    task: safeTask,
     risk,
     status: "pass",
     runValidation: null,
@@ -277,7 +295,7 @@ function main() {
     }
 
     if (parsedOutput.agent !== id.toUpperCase() && parsedOutput.agent !== id) {
-      report.errors.push(`Agent ID mismatch in ${id} output: ${parsedOutput.agent}`);
+      fail(report, `Agent ID mismatch in ${id} output: ${parsedOutput.agent}`);
     }
 
     const actions = Array.isArray(parsedOutput.actions) ? parsedOutput.actions : [];
@@ -315,7 +333,10 @@ function main() {
 
   const gateConfig = config.governance?.verificationGate || {};
   const gateArtifact = gateConfig.artifact || "verification-gates.json";
-  const gateRequired = gateConfig.requiredByRisk?.[risk] === true;
+  const gateRequiredArtifacts = new Set(profile.requiredArtifacts || []);
+  const gateRequired =
+    gateConfig.requiredByRisk?.[risk] === true ||
+    gateRequiredArtifacts.has(gateArtifact);
   const gateReportPath = path.join(taskDir, gateArtifact);
   if (existsSync(gateReportPath)) {
     try {
@@ -342,7 +363,7 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`✅ steer verification passed for ${task}`);
+  console.log(`✅ steer verification passed for ${safeTask}`);
 }
 
 main();
