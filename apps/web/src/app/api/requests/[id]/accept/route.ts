@@ -1,16 +1,36 @@
 import { NextResponse } from "next/server";
 
 import { getCachedUser } from "@/lib/auth/user";
+import {
+  createApiLogContext,
+  logApiFailure,
+  logApiStart,
+  logApiSuccess,
+  withRequestId,
+} from "@/server/telemetry/ops-logger";
 import { requestActionErrorResponse } from "@/server/requests/request-action-http";
 import { applyRequestAction } from "@/server/requests/request-actions";
 
 type Params = { params: { id: string } };
 
 export async function POST(_: Request, { params }: Params) {
+  const startedAt = Date.now();
+  const context = createApiLogContext(_, "/api/requests/[id]/accept", {
+    action: "request.accept",
+  });
+  logApiStart(context, startedAt);
+
   const user = await getCachedUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const unauthorizedContext = { ...context, actorId: undefined, actorRole: undefined };
+    const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    logApiFailure(unauthorizedContext, "Unauthorized", 401, startedAt, {
+      source: "request-action",
+    });
+    return withRequestId(response, context.requestId);
   }
+
+  const actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
   try {
     const updated = await applyRequestAction({
@@ -18,9 +38,10 @@ export async function POST(_: Request, { params }: Params) {
       actorUserId: user.id,
       action: "accept",
     });
-
-    return NextResponse.json({ request: updated });
+    const response = NextResponse.json({ request: updated });
+    logApiSuccess(actorContext, 200, startedAt, { action: "accept", requestId: params.id });
+    return withRequestId(response, context.requestId);
   } catch (error) {
-    return requestActionErrorResponse(error);
+    return requestActionErrorResponse(error, actorContext, startedAt);
   }
 }

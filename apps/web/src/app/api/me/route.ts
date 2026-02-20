@@ -1,17 +1,38 @@
 import { NextResponse } from "next/server";
 
-import { ensureDomainUserFromSession, maybeBootstrapFirstAdmin, getNurseByUserId } from "@/lib/user-service";
+import {
+  ensureDomainUserFromSession,
+  maybeBootstrapFirstAdmin,
+  getNurseByUserId,
+} from "@/lib/user-service";
+import {
+  createApiLogContext,
+  logApiFailure,
+  logApiStart,
+  logApiSuccess,
+  withRequestId,
+} from "@/server/telemetry/ops-logger";
 import { getSession } from "@/server/auth";
 
-export async function GET() {
-  const session = await getSession();
-
-  if (!session?.user?.id || !session?.user?.email) {
-    return NextResponse.json({ ok: true, user: null }, { status: 200 });
-  }
+export async function GET(request: Request) {
+  const startedAt = Date.now();
+  const context = createApiLogContext(request, "/api/me", {
+    action: "me.profile.fetch",
+  });
+  logApiStart(context, startedAt);
+  let actorContext = context;
 
   try {
-    // 1. Sync session user to domain DB
+    const session = await getSession();
+
+    if (!session?.user?.id || !session?.user?.email) {
+      const response = NextResponse.json({ ok: true, user: null }, { status: 200 });
+      logApiSuccess(context, 200, startedAt, { statusMessage: "unauthenticated" });
+      return withRequestId(response, context.requestId);
+    }
+
+    actorContext = { ...context, actorId: session.user.id };
+
     const domainUser = await ensureDomainUserFromSession({
       id: session.user.id,
       email: session.user.email!,
@@ -23,11 +44,9 @@ export async function GET() {
       throw new Error("Failed to upsert domain user");
     }
 
-    // 2. Attempt to bootstrap admin rights (first user / allowlist)
     const bootstrappedUser = await maybeBootstrapFirstAdmin(domainUser);
     const finalUser = bootstrappedUser ?? domainUser;
 
-    // 3. Construct profile object
     const profile = {
       firstName: finalUser.firstName,
       lastName: finalUser.lastName,
@@ -36,7 +55,6 @@ export async function GET() {
       address: finalUser.address,
     };
 
-    // 3b. Fetch Nurse Profile if applicable
     let nurseProfile = null;
     if (finalUser.role === "nurse") {
       const nurse = await getNurseByUserId(finalUser.id);
@@ -49,7 +67,6 @@ export async function GET() {
       }
     }
 
-    // 4. Determine completeness (all required fields present)
     const isPatientComplete = !!(
       finalUser.firstName &&
       finalUser.lastName &&
@@ -59,7 +76,6 @@ export async function GET() {
 
     let isNurseComplete = true;
     if (finalUser.role === "nurse") {
-      // Nurse needs patient fields + nurse fields
       isNurseComplete = !!(
         nurseProfile?.licenseNumber &&
         nurseProfile?.specialization
@@ -68,8 +84,7 @@ export async function GET() {
 
     const isComplete = isPatientComplete && isNurseComplete;
 
-    // 5. Return unified response
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         ok: true,
         session,
@@ -78,7 +93,7 @@ export async function GET() {
           authId: finalUser.authId,
           email: finalUser.email,
           role: finalUser.role,
-          name: finalUser.name, // Keep existing name field for backward compat if needed
+          name: finalUser.name,
           profile,
           nurseProfile,
           profileComplete: isComplete,
@@ -86,12 +101,19 @@ export async function GET() {
       },
       { status: 200 },
     );
+    logApiSuccess(actorContext, 200, startedAt, {
+      targetUserId: finalUser.id,
+      role: finalUser.role,
+    });
+    return withRequestId(response, context.requestId);
   } catch (error) {
-    console.error("GET /api/me failed", error);
-    // Return session user as fallback if DB fails, but log error
-    return NextResponse.json(
-      { ok: true, session, user: null, error: "Sync failed" },
-      { status: 200 }, // Keep 200 to avoid breaking clients, just explicit null user
-    );
+    const fallback = { ok: true, session: null, user: null, error: "Sync failed" };
+    const response = NextResponse.json(fallback, { status: 200 });
+    logApiFailure(actorContext, error, 200, startedAt, {
+      status: 200,
+      fallback: true,
+      source: "api.me",
+    });
+    return withRequestId(response, context.requestId);
   }
 }
