@@ -64,7 +64,7 @@ export async function createNurseRecord(userId: string) {
 
 
 /**
- * Promotes the user to admin if they are the first user OR in the allowlist.
+ * Promotes the user to admin ONLY if their email is in the allowlist.
  */
 export async function maybeBootstrapFirstAdmin(domainUser: typeof users.$inferSelect) {
   if (domainUser.role === "admin") return domainUser;
