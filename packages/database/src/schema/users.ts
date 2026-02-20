@@ -1,5 +1,6 @@
-import { pgTable, uuid, text, timestamp, index, uniqueIndex, check } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { pgTable, uuid, text, timestamp, index, uniqueIndex, pgEnum } from "drizzle-orm/pg-core";
+
+export const userRoleEnum = pgEnum("user_role", ["admin", "nurse", "patient"]);
 
 export const users = pgTable(
   "users",
@@ -7,7 +8,7 @@ export const users = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     email: text("email").notNull(),
     name: text("name"),
-    role: text("role").notNull(), // Phase 2 will harden to enum
+    role: userRoleEnum("role").notNull().default("patient"), // Hardened to enum
     firebaseUid: text("firebase_uid"),
     authId: text("auth_id"), // Link to better-auth user.id
 
@@ -26,6 +27,5 @@ export const users = pgTable(
     emailIdx: index("users_email_idx").on(t.email),
     firebaseUidIdx: uniqueIndex("users_firebase_uid_idx").on(t.firebaseUid),
     authIdIdx: uniqueIndex("users_auth_id_idx").on(t.authId),
-    roleCheck: check("users_role_check", sql`${t.role} IN ('admin', 'nurse', 'patient')`),
   })
 );
