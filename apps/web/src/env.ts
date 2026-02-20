@@ -26,11 +26,6 @@ for (const key of REJECTED_FIREBASE_VARS) {
   }
 }
 
-// ── NextAuth (legacy, Phase 2 removal) ──────────────────────────────
-// NextAuth is still used in middleware, SessionProvider, dashboard pages,
-// and tests. Do NOT reject NEXTAUTH_* vars until Phase 2 completes the
-// Better-Auth migration. See docs/migration/data-sources.md.
-
 // ── Validated environment ───────────────────────────────────────────
 export const env = createEnv({
   server: {
@@ -51,9 +46,6 @@ export const env = createEnv({
     FEATURE_BACKEND_SERVICE_REQUEST: z.literal("postgres").default("postgres"),
     FEATURE_BACKEND_ASSIGNMENT: z.literal("postgres").default("postgres"),
     FEATURE_BACKEND_VISIT: z.literal("postgres").default("postgres"),
-
-    // Auth Provider Cutover (Phase 2.2.4)
-    // FEATURE_AUTH_PROVIDER: z.enum(["nextauth", "betterauth"]).default("nextauth"),
   },
   client: {
     // V3 has no client-side env vars yet. Add as needed.
@@ -68,9 +60,6 @@ export const env = createEnv({
     FEATURE_BACKEND_SERVICE_REQUEST: process.env.FEATURE_BACKEND_SERVICE_REQUEST,
     FEATURE_BACKEND_ASSIGNMENT: process.env.FEATURE_BACKEND_ASSIGNMENT,
     FEATURE_BACKEND_VISIT: process.env.FEATURE_BACKEND_VISIT,
-
-    // Auth Provider Cutover
-    // FEATURE_AUTH_PROVIDER: process.env.FEATURE_AUTH_PROVIDER,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
