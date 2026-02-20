@@ -37,6 +37,20 @@ export const env = createEnv({
         (url) => url.startsWith("postgres://") || url.startsWith("postgresql://"),
         "DATABASE_URL must use postgres:// or postgresql:// scheme"
       ),
+    DATABASE_POOL_URL: z
+      .string()
+      .url()
+      .refine(
+        (url) => url.startsWith("postgres://") || url.startsWith("postgresql://"),
+        "DATABASE_POOL_URL must use postgres:// or postgresql:// scheme"
+      )
+      .optional(),
+    PGPOOL_MAX: z.coerce.number().int().positive().optional(),
+    PGPOOL_MIN: z.coerce.number().int().nonnegative().optional(),
+    PGPOOL_IDLE_TIMEOUT_MS: z.coerce.number().int().nonnegative().optional(),
+    PGPOOL_CONNECTION_TIMEOUT_MS: z.coerce.number().int().nonnegative().optional(),
+    PGPOOL_MAX_LIFETIME_SECONDS: z.coerce.number().int().nonnegative().optional(),
+    PGPOOL_ALLOW_EXIT_ON_IDLE: z.coerce.boolean().optional(),
     BETTER_AUTH_SECRET: z.string().min(1, "BETTER_AUTH_SECRET is required"),
     FIRST_ADMIN_EMAILS: z.string().optional(),
 
@@ -53,6 +67,13 @@ export const env = createEnv({
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_POOL_URL: process.env.DATABASE_POOL_URL,
+    PGPOOL_MAX: process.env.PGPOOL_MAX,
+    PGPOOL_MIN: process.env.PGPOOL_MIN,
+    PGPOOL_IDLE_TIMEOUT_MS: process.env.PGPOOL_IDLE_TIMEOUT_MS,
+    PGPOOL_CONNECTION_TIMEOUT_MS: process.env.PGPOOL_CONNECTION_TIMEOUT_MS,
+    PGPOOL_MAX_LIFETIME_SECONDS: process.env.PGPOOL_MAX_LIFETIME_SECONDS,
+    PGPOOL_ALLOW_EXIT_ON_IDLE: process.env.PGPOOL_ALLOW_EXIT_ON_IDLE,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     FIRST_ADMIN_EMAILS: process.env.FIRST_ADMIN_EMAILS,
     FEATURE_BACKEND_NURSE_PROFILE: process.env.FEATURE_BACKEND_NURSE_PROFILE,
