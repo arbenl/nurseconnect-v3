@@ -154,11 +154,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: DB Migrate
-        run: pnpm db:migrate
-
       - name: Verify Migration Meta
         run: pnpm --filter @nurseconnect/database db:verify-meta
+
+      - name: DB Migrate
+        run: pnpm db:migrate
 
       - name: Verify Migrations Applied
         run: |
