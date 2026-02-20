@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { db, schema, eq } from "@nurseconnect/database";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+
+
 import { maybeBootstrapFirstAdmin, ensureDomainUserFromSession } from "../../lib/user-service";
 
 const { users } = schema;
@@ -33,9 +35,9 @@ describe("maybeBootstrapFirstAdmin", () => {
             name: "First User",
         });
 
-        const result = await maybeBootstrapFirstAdmin(domainUser);
+        const result = await maybeBootstrapFirstAdmin(domainUser!);
 
-        expect(result.role).toBe("patient"); // Remains default
+        expect(result!.role).toBe("patient"); // Remains default
     });
 
     it("should NOT promote a user when FIRST_ADMIN_EMAILS is set but their email is not in the list", async () => {
@@ -47,9 +49,9 @@ describe("maybeBootstrapFirstAdmin", () => {
             name: "Random User",
         });
 
-        const result = await maybeBootstrapFirstAdmin(domainUser);
+        const result = await maybeBootstrapFirstAdmin(domainUser!);
 
-        expect(result.role).toBe("patient"); // Remains default
+        expect(result!.role).toBe("patient"); // Remains default
     });
 
     it("should promote a user when their email exactly matches the FIRST_ADMIN_EMAILS list", async () => {
