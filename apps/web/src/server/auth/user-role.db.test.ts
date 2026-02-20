@@ -1,5 +1,5 @@
-import { db, schema, eq } from "@nurseconnect/database";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { db, schema } from "@nurseconnect/database";
+import { describe, it, expect, beforeEach } from "vitest";
 
 const { users } = schema;
 
