@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nurseconnect:steer-output-schema",
+  "manifest": {
+    "type": "object",
+    "required": [
+      "task",
+      "risk",
+      "startedAt",
+      "endedAt",
+      "profile",
+      "results",
+      "artifacts",
+      "hash"
+    ],
+    "properties": {
+      "task": { "type": "string", "minLength": 1 },
+      "risk": { "type": "string", "enum": ["low", "medium", "high"] },
+      "startedAt": { "type": "string", "format": "date-time" },
+      "endedAt": { "type": "string", "format": "date-time" },
+      "profile": {
+        "type": "object",
+        "required": ["requiredAgents", "requiredArtifacts", "resolvedAsOf"],
+        "properties": {
+          "requiredAgents": { "type": "array", "items": { "type": "string" } },
+          "optionalAgents": { "type": "array", "items": { "type": "string" } },
+          "requiredArtifacts": { "type": "array", "items": { "type": "string" } },
+          "resolvedAsOf": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": true
+      },
+      "results": {
+        "type": "object",
+        "required": ["agents"],
+        "properties": {
+          "agents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "name", "artifact", "log", "summary", "source"],
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "source": { "type": "string" },
+                "artifact": { "type": "string" },
+                "log": { "type": "string" },
+                "summary": {
+                  "type": "object",
+                  "required": ["summary", "actionCount"],
+                  "properties": {
+                    "summary": { "type": "string" },
+                    "actionCount": { "type": "number", "minimum": 0 }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      },
+      "artifacts": { "type": "array", "items": { "type": "string" } },
+      "hash": { "type": "string", "minLength": 16 },
+      "signature": {
+        "type": "object",
+        "required": ["task", "risk", "manifestHash", "agents"],
+        "properties": {
+          "task": { "type": "string" },
+          "risk": { "type": "string" },
+          "manifestHash": { "type": "string" },
+          "agents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "name"],
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "additionalProperties": true
+  },
+  "agentOutput": {
+    "type": "object",
+    "required": ["agent", "task", "summary", "actions", "verify", "notes"],
+    "properties": {
+      "agent": { "type": "string", "minLength": 1 },
+      "task": { "type": "string", "minLength": 1 },
+      "summary": { "type": "string" },
+      "actions": { "type": "array", "items": { "type": "object" } },
+      "verify": { "type": "array", "items": { "type": "string" } },
+      "notes": { "type": "array", "items": { "type": "string" } }
+    },
+    "additionalProperties": true
+  },
+  "validation": {
+    "type": "object",
+    "required": [
+      "task",
+      "phase",
+      "status",
+      "generatedAt",
+      "errors",
+      "meta"
+    ],
+    "properties": {
+      "task": { "type": "string", "minLength": 1 },
+      "phase": { "type": "string", "minLength": 1 },
+      "status": { "type": "string", "enum": ["pass", "fail"] },
+      "generatedAt": { "type": "string", "format": "date-time" },
+      "errors": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["kind", "reason"],
+          "properties": {
+            "kind": { "type": "string", "minLength": 1 },
+            "agentId": { "type": "string" },
+            "reason": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "meta": { "type": "object", "additionalProperties": true }
+    },
+    "additionalProperties": true
+  }
+}

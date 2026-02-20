@@ -82,6 +82,9 @@ apps/web/firebase-export-*/
 tmp/
 *.export.json
 
+# Steer run artifacts
+artifacts/
+
 # local web env (forbidden in V3)
 apps/web/.env
 .env.test
