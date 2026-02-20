@@ -8,10 +8,6 @@ const { users } = schema;
 
 type Role = z.infer<typeof RoleSchema>;
 
-function toNonEmptyRoles(arr: Role[] | undefined): [Role, ...Role[]] {
-  return arr && arr.length ? [arr[0]!, ...arr.slice(1)] : ["staff"];
-}
-
 const GetUserSchema = z.object({
   id: z.string().min(1, "id (uid) is required"),
 });
@@ -46,20 +42,17 @@ export async function GET(req: NextRequest) {
     }
 
     // Adapt DB user to UserProfile contract
-    // DB has single role, contract expects array
     const rawRole = userRecord.role;
     const allowed = new Set(RoleSchema.options as readonly string[]);
 
     // Validate role against schema (cast to RoleSchema type)
-    const validRole = allowed.has(rawRole) ? (rawRole as Role) : "staff";
-
-    const roles: [Role, ...Role[]] = [validRole];
+    const validRole = allowed.has(rawRole) ? (rawRole as Role) : "patient";
 
     const profile = {
       uid: userRecord.id, // map id -> uid
       email: userRecord.email,
       displayName: userRecord.name ?? "",
-      roles,
+      role: validRole,
       createdAt: userRecord.createdAt.toISOString(),
       updatedAt: userRecord.updatedAt.toISOString(),
     };
