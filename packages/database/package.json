@@ -14,7 +14,8 @@
   "scripts": {
     "db:push": "drizzle-kit push",
     "db:check": "drizzle-kit check",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:verify-meta": "tsx scripts/verify-migration-meta.ts"
   },
   "devDependencies": {
     "@types/pg": "^8.11.0",
