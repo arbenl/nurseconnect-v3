@@ -58,6 +58,9 @@ NurseConnect is a healthcare platform connecting patients with local nurses for 
    ```
    - Expected response: `{"ok":true,"db":"ok"}`
 
+## Documentation
+- [Production Bootstrap Runbook](docs/runbooks/production_bootstrap_runbook.md): Guide for deploying V3 from zero to a fully functional administrative state.
+
 ## Commands
 
 - `pnpm gate:fast`: Comprehensive fast gate (Type-check + Lint + Unit tests).

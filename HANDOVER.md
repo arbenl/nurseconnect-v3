@@ -93,6 +93,7 @@ pnpm --filter web dev
 
 - “First admin bootstrap” / allowlist mechanism exists to safely create initial administrative control.
 - Promotions remain guarded by server-side checks.
+- **Runbook**: See [Production Bootstrap Runbook](docs/runbooks/production_bootstrap_runbook.md) for detailed deployment and initial configuration steps.
 
 ---
 
