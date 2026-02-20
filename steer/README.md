@@ -45,6 +45,9 @@ pnpm agents:orchestrate:verify -- 1-auth-roles --risk high
 
 1. `steer:run`
 2. `steer:verify`
+3. configured verification gates (`pnpm gate:*`)
+
+`steer:run` and `steer:verify` can be run directly for a task, but verification reports that require gates must include `verification-gates.json` in `taskProfiles.requiredArtifacts` or be executed through `steer:orchestrate`.
 
 and exits non-zero on any failure.
 
@@ -68,6 +71,7 @@ Artifacts are written to `artifacts/<TASK_ID>/`:
 - `validation.json`: structured run-validation result (`pass`/`fail`) with machine-readable reasons.
 - `validation.json` conforms to `schemas/steer-output.schema.json#/validation`.
 - `signature.json`: compact digest summary.
+- `verification-gates.json`: verification gate execution report (created by `steer:orchestrate`).
 - `verification.json`: pass/fail verification report.
 
 ### Failure diagnostics
@@ -82,9 +86,9 @@ Artifacts are written to `artifacts/<TASK_ID>/`:
 
 ## Agent naming
 
-`steer.config.json` keeps two fields per role:
+`steer.config.json` defines roles as object properties keyed by a stable agent id:
 
-- `agent_id`: stable script id (`dev`, `qa`, `security`, `ops`, ...).
+- Object key: stable script id (`dev`, `qa`, `security`, `ops`, ...).
 - `name`: human-readable role name used in manifests (`Architect`, `Verifier`, `Threat Analyst`, etc.).
 
 This keeps tooling stable while giving reports clearer labels.

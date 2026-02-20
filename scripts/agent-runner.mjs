@@ -22,14 +22,15 @@ const __dirname = dirname(__filename);
 // workspace root is parent of this scripts folder
 const root = join(__dirname, "..");
 const STEER_CONFIG_PATH = join(root, "steer", "steer.config.json");
+const TASK_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 const AGENT = process.argv[2];
-const TASK = process.argv[3];
+const TASK_RAW = process.argv[3];
 const AGENT_RISK = (process.env.RISK || "low").toLowerCase();
 const LOCAL_AGENT_RUNNER = process.env.STEER_LOCAL === "1" || process.env.STEER_LOCAL === "true";
 
 const DEFAULT_POLICY = {
   maxActionsPerAgent: 40,
-  allowedActions: ["write", "append", "replace"],
+  allowedActions: ["write", "append"],
   allowedPathPrefixes: [
     "apps",
     "packages",
@@ -83,9 +84,20 @@ const DEFAULT_POLICY = {
   ],
 };
 
-if (!AGENT || !TASK) {
+if (!AGENT || !TASK_RAW) {
   console.error("Usage: node scripts/agent-runner.mjs <agent> <task>");
   process.exit(1);
+}
+const TASK = validateTaskId(TASK_RAW);
+
+function validateTaskId(task) {
+  if (!TASK_ID_PATTERN.test(String(task || ""))) {
+    console.error(
+      `Invalid task id "${task}". Use a safe slug (letters, numbers, hyphen, underscore, dot) with no path separators.`
+    );
+    process.exit(1);
+  }
+  return task;
 }
 
 const AGENT_MAP = {
@@ -144,36 +156,36 @@ function getPolicyForAgent(agentId, risk) {
 
   return {
     maxActionsPerAgent: preferValue(
-      DEFAULT_POLICY.maxActionsPerAgent,
+      defaultPolicy.maxActionsPerAgent,
       preferValue(riskPolicy.maxActionsPerAgent, agentPolicy.maxActionsPerAgent)
     ),
     allowedActions: preferArray(
-      DEFAULT_POLICY.allowedActions,
+      defaultPolicy.allowedActions,
       riskPolicy.allowedActions,
       agentPolicy.allowedActions
     ),
     allowedPathPrefixes: preferArray(
-      DEFAULT_POLICY.allowedPathPrefixes,
+      defaultPolicy.allowedPathPrefixes,
       riskPolicy.allowedPathPrefixes,
       agentPolicy.allowedPathPrefixes
     ),
     blockedPathFragments: preferArray(
-      DEFAULT_POLICY.blockedPathFragments,
+      defaultPolicy.blockedPathFragments,
       riskPolicy.blockedPathFragments,
       agentPolicy.blockedPathFragments
     ),
     blockedFileNameFragments: preferArray(
-      DEFAULT_POLICY.blockedFileNameFragments,
+      defaultPolicy.blockedFileNameFragments,
       riskPolicy.blockedFileNameFragments,
       agentPolicy.blockedFileNameFragments
     ),
     rootAllowedFiles: preferArray(
-      DEFAULT_POLICY.rootAllowedFiles,
+      defaultPolicy.rootAllowedFiles,
       riskPolicy.rootAllowedFiles,
       agentPolicy.rootAllowedFiles
     ),
     allowedExtensions: preferArray(
-      DEFAULT_POLICY.allowedExtensions,
+      defaultPolicy.allowedExtensions,
       riskPolicy.allowedExtensions,
       agentPolicy.allowedExtensions
     ),
@@ -279,12 +291,12 @@ function validatePlanAgainstPolicy(plan, policy) {
       reasons.push(`action[${index}]: missing type`);
       return;
     }
-    if (!policy.allowedActions.includes(actionType === "replace" ? "write" : actionType)) {
+    if (!policy.allowedActions.includes(actionType)) {
       reasons.push(`action[${index}]: type "${actionType}" not allowed`);
       return;
     }
 
-    if (actionType === "write" || actionType === "append" || actionType === "replace") {
+    if (actionType === "write" || actionType === "append") {
       if (!action.path || typeof action.path !== "string") {
         reasons.push(`action[${index}]: missing path for ${actionType}`);
         return;
@@ -292,11 +304,10 @@ function validatePlanAgainstPolicy(plan, policy) {
       if (!isPathAllowed(action.path, policy)) {
         reasons.push(`action[${index}]: path "${action.path}" fails allowlist`);
       }
-      if (!["write", "append"].includes(actionType) && actionType !== "replace") {
-        return;
-      }
-      if (action.content !== undefined && typeof action.content !== "string") {
-        reasons.push(`action[${index}]: content must be a string when provided`);
+      if (typeof action.content !== "string") {
+        reasons.push(
+          `action[${index}]: content is required and must be a string for ${actionType}`
+        );
       }
     }
   });
@@ -341,16 +352,16 @@ You are generating a single JSON object (no markdown fences, no commentary).
 The schema is:
 
 {
-  "agent": "${AGENT.toUpperCase()}",
-  "task": "${TASK}",
-  "summary": "one-sentence high-level summary",
-  "actions": [
-    {
-      "type": "write" | "append" | "replace",
-      "path": "<relative path from repo root>",
-      "description": "what/why concisely",
-      "content": "if type=write/replace: full contents of the file; if append: the block to append"
-    }
+      "agent": "${AGENT.toUpperCase()}",
+      "task": "${TASK}",
+      "summary": "one-sentence high-level summary",
+      "actions": [
+        {
+          "type": "write" | "append",
+          "path": "<relative path from repo root>",
+          "description": "what/why concisely",
+          "content": "full contents of the file for write or the block to append"
+        }
   ],
   "verify": [
     "shell command(s) to verify (one per string)",

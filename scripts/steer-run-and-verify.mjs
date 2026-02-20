@@ -18,6 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const root = path.resolve(__dirname, "..");
 const STEER_CONFIG_PATH = path.join(root, "steer", "steer.config.json");
+const TASK_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 
 function parseArgs(argv) {
   const parsed = {
@@ -107,6 +108,17 @@ function runCommand(command, task, risk) {
   };
 }
 
+function validateTask(task) {
+  const normalizedTask = String(task || "");
+  if (!TASK_ID_PATTERN.test(normalizedTask)) {
+    console.error(
+      `Invalid task id "${task}". Use a safe slug (letters, numbers, hyphen, underscore, dot) with no path separators.`
+    );
+    process.exit(1);
+  }
+  return normalizedTask;
+}
+
 function runVerificationGates(task, risk, options = {}) {
   const shouldSkip = Boolean(options.skip);
   const config = loadConfig();
@@ -173,26 +185,27 @@ function main() {
     console.error("Usage: node scripts/steer-run-and-verify.mjs <task-id> [--risk low|medium|high]");
     process.exit(1);
   }
+  const safeTask = validateTask(task);
 
   runStep(
     path.join(root, "scripts/steer-run.mjs"),
-    [task, "--risk", risk, ...(includeOptional ? ["--include-optional"] : [])],
+    [safeTask, "--risk", risk, ...(includeOptional ? ["--include-optional"] : [])],
     "Steer run",
-    task,
+    safeTask,
     risk
   );
 
-  runVerificationGates(task, risk, { skip: skipVerificationGates });
+  runVerificationGates(safeTask, risk, { skip: skipVerificationGates });
 
   runStep(
     path.join(root, "scripts/steer-verify.mjs"),
-    [task, "--risk", risk],
+    [safeTask, "--risk", risk],
     "Steer verify",
-    task,
+    safeTask,
     risk
   );
 
-  console.log(`✅ steer orchestrated execution complete for ${task} (${risk})`);
+  console.log(`✅ steer orchestrated execution complete for ${safeTask} (${risk})`);
 }
 
 main();

@@ -90,7 +90,8 @@
         "manifest.json",
         "agentOutputs.dev.json",
         "agentOutputs.qa.json",
-        "signature.json"
+        "signature.json",
+        "verification-gates.json"
       ]
     },
     "medium": {
@@ -110,7 +111,8 @@
         "agentOutputs.dev.json",
         "agentOutputs.qa.json",
         "agentOutputs.ops.json",
-        "signature.json"
+        "signature.json",
+        "verification-gates.json"
       ]
     },
     "high": {
@@ -134,7 +136,8 @@
         "agentOutputs.ops.json",
         "agentOutputs.critic.json",
         "agentOutputs.reconciler.json",
-        "signature.json"
+        "signature.json",
+        "verification-gates.json"
       ]
     }
   },
@@ -144,8 +147,7 @@
         "maxActionsPerAgent": 60,
         "allowedActions": [
           "write",
-          "append",
-          "replace"
+          "append"
         ],
         "allowedPathPrefixes": [
           "apps",
@@ -259,8 +261,7 @@
           ],
           "allowedActions": [
             "write",
-            "append",
-            "replace"
+            "append"
           ],
           "allowedExtensions": [
             ".md",
