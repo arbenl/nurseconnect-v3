@@ -1,3 +1,4 @@
+import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
@@ -7,9 +8,7 @@ export async function middleware(req: NextRequest) {
   // We check for the explicit presence of the Better Auth session cookie.
   // This is not cryptographically verified at the edge (handled by RSC Layouts natively),
   // but it drops anonymous traffic immediately and cleanly before hitting the origin DB.
-  const hasSessionCookie =
-    req.cookies.has("better-auth.session_token") ||
-    req.cookies.has("__Secure-better-auth.session_token");
+  const hasSessionCookie = !!getSessionCookie(req);
 
   if (!hasSessionCookie) {
     const loginUrl = new URL("/login", req.url);
