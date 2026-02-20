@@ -43,6 +43,7 @@ export const env = createEnv({
         "DATABASE_URL must use postgres:// or postgresql:// scheme"
       ),
     BETTER_AUTH_SECRET: z.string().min(1, "BETTER_AUTH_SECRET is required"),
+    FIRST_ADMIN_EMAILS: z.string().optional(),
 
     // Feature flags — postgres-only during V3 mandate
     FEATURE_BACKEND_NURSE_PROFILE: z.literal("postgres").default("postgres"),
@@ -61,6 +62,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    FIRST_ADMIN_EMAILS: process.env.FIRST_ADMIN_EMAILS,
     FEATURE_BACKEND_NURSE_PROFILE: process.env.FEATURE_BACKEND_NURSE_PROFILE,
     FEATURE_BACKEND_PATIENT_PROFILE: process.env.FEATURE_BACKEND_PATIENT_PROFILE,
     FEATURE_BACKEND_SERVICE_REQUEST: process.env.FEATURE_BACKEND_SERVICE_REQUEST,

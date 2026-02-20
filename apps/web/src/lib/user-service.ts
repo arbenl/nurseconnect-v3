@@ -1,4 +1,4 @@
-import { db, schema, eq, sql } from "@nurseconnect/database";
+import { db, schema, eq } from "@nurseconnect/database";
 
 const { users, nurses } = schema;
 
@@ -61,14 +61,7 @@ export async function createNurseRecord(userId: string) {
   return nurse;
 }
 
-async function adminExists(): Promise<boolean> {
-  const [res] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users)
-    .where(eq(users.role, "admin"));
 
-  return Number(res?.count ?? 0) > 0;
-}
 
 /**
  * Promotes the user to admin if they are the first user OR in the allowlist.
@@ -79,30 +72,17 @@ export async function maybeBootstrapFirstAdmin(domainUser: typeof users.$inferSe
   const allowlist = parseAllowlist();
   const email = (domainUser.email ?? "").toLowerCase();
 
-  // If allowlist is set, strictly enforce it
-  if (allowlist.length > 0) {
-    if (allowlist.includes(email)) {
-      // Promote
-      const [updated] = await db
-        .update(users)
-        .set({ role: "admin" })
-        .where(eq(users.id, domainUser.id))
-        .returning();
-      return updated;
-    }
-    return domainUser;
+  // Explicit bootstrap: only promote if email is in the allowlist.
+  // If allowlist is empty or email strongly mismatches, fallback is safety.
+  if (allowlist.length > 0 && allowlist.includes(email)) {
+    const [updated] = await db
+      .update(users)
+      .set({ role: "admin" })
+      .where(eq(users.id, domainUser.id))
+      .returning();
+    return updated;
   }
 
-  // If allowlist is EMPTY, promote the very first admin if none exist
-  const already = await adminExists();
-  if (already) return domainUser;
-
-  // Promote first user
-  const [updated] = await db
-    .update(users)
-    .set({ role: "admin" })
-    .where(eq(users.id, domainUser.id))
-    .returning();
-
-  return updated;
+  // Not in allowlist (or allowlist is empty) -> unchanged
+  return domainUser;
 }
