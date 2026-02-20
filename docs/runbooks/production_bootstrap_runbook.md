@@ -27,6 +27,13 @@
   * **Case-insensitive**; whitespace is trimmed.
   * Leaving empty is safe-by-default: **no one is auto-promoted**.
 
+#### DB connection strategy (Connection Pooling)
+
+* `DATABASE_URL` — should be the **direct** (unpooled) database URL. This is critical for Drizzle migrations (`pnpm db:migrate`) to succeed without hanging.
+* `DATABASE_POOL_URL` — optional URL representing a pooled connection (e.g. PgBouncer, Neon pooled endpoint). Used by the application at runtime to avoid stranding/starving connections.
+* `PGPOOL_IDLE_TIMEOUT_MS` — recommended to be kept aggressively low (e.g. `5000` ms) in Serverless / Edge functions (like Vercel) instead of relying on default timeouts.
+* `PGPOOL_MAX` — max connections the pool can open. **Caution**: Vercel recommends against `max=1` in Fluid Compute environments; size appropriately based on your downstream limits.
+
 ---
 
 ### 2) Smoke verification: app + DB are up
