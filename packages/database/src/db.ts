@@ -22,7 +22,7 @@ const setupPool = () => {
 
 export const dbPool = globalForDb.__dbPool ?? setupPool();
 
-// Keep a constant reference to the pool across Vercel invocations / dev restarts
+// Keep a constant reference to the pool across Next.js dev HMR reloads and within a warm serverless instance.
 if (process.env.NODE_ENV !== "production") {
     globalForDb.__dbPool = dbPool;
 }

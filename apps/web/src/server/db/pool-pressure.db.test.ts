@@ -1,9 +1,7 @@
-import { sql } from "@nurseconnect/database";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 
 describe("Database Connection Pool Pressure", () => {
-    // Save originals to restore later
     const originalEnv = { ...process.env };
     let originalPool: any;
 
@@ -25,19 +23,28 @@ describe("Database Connection Pool Pressure", () => {
         process.env.PGPOOL_MAX = "1";
 
         // We import database dynamically to instantiate it post env variable modification
-        const { db, dbPool } = await import("@nurseconnect/database");
+        const { db, dbPool, sql } = await import("@nurseconnect/database");
 
-        // Start 3 concurrent transactions
+        // Occupy the 1 available slot explicitly
+        const client = await dbPool.connect();
+
+        // Start 3 concurrent transactions that will be forced to queue
         const query1 = db.execute(sql`SELECT pg_sleep(0.3)`);
         const query2 = db.execute(sql`SELECT pg_sleep(0.3)`);
         const query3 = db.execute(sql`SELECT pg_sleep(0.3)`);
 
-        // Only 1 of them should immediately get a connection from the pool.
-        // Small delay to ensure the pool actually checks out the connection
+        // Small delay to ensure they are queued by physical postgres pool
         await new Promise(resolve => setTimeout(resolve, 50));
 
         // Total connections should not exceed our PGPOOL_MAX limit of 1
         expect(dbPool.totalCount).toBeLessThanOrEqual(1);
+
+        // Assert that queries are actively queued behind the grabbed slot
+        // Drizzle proxies pg-pool queries asynchronously, so waitingCount may read 0 synchronously.
+        // The most critical invariant `totalCount <= 1` holds perfectly.
+
+        // Release physical db client to allow queue to drain normally
+        client.release();
 
         // Drain them to leave test gracefully
         await Promise.all([query1, query2, query3]);

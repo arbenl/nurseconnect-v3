@@ -41,8 +41,8 @@ export function getPoolConfigFromEnv(env: Record<string, string | undefined>): P
         if (!isNaN(maxLifetimeSeconds) && maxLifetimeSeconds >= 0) config.maxLifetimeSeconds = maxLifetimeSeconds;
     }
 
-    if (env.PGPOOL_ALLOW_EXIT_ON_IDLE) {
-        config.allowExitOnIdle = env.PGPOOL_ALLOW_EXIT_ON_IDLE === "true";
+    if (env.PGPOOL_ALLOW_EXIT_ON_IDLE !== undefined) {
+        config.allowExitOnIdle = ["true", "1"].includes(String(env.PGPOOL_ALLOW_EXIT_ON_IDLE).toLowerCase());
     }
 
     return config;
