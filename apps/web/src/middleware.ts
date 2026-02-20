@@ -1,29 +1,26 @@
-import { type NextRequest } from "next/server";
-// import { getToken } from "next-auth/jwt";
+import { NextResponse, type NextRequest } from "next/server";
 
-// const PROTECTED_PREFIX = "/dashboard";
-
-export async function middleware(_req: NextRequest) {
-  // TODO: Re-implement middleware with Better-Auth if strictly required for edge protection.
-  // For now, removing NextAuth dependency.
-  /*
+export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
-  const isProtected = pathname.startsWith(PROTECTED_PREFIX);
 
-  if (!isProtected) return;
+  // Optimistic Edge Defense-in-depth:
+  // We check for the explicit presence of the Better Auth session cookie.
+  // This is not cryptographically verified at the edge (handled by RSC Layouts natively),
+  // but it drops anonymous traffic immediately and cleanly before hitting the origin DB.
+  const hasSessionCookie =
+    req.cookies.has("better-auth.session_token") ||
+    req.cookies.has("__Secure-better-auth.session_token");
 
-  const token = await getToken({ req });
-
-  if (!token) {
+  if (!hasSessionCookie) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname + (search || ""));
     return NextResponse.redirect(loginUrl);
   }
-  */
-  // authenticated → allow
-  return;
+
+  // authenticated (probably) → allow through to server layout for strict verification
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
 };
