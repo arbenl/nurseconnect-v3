@@ -1,5 +1,5 @@
 import type { GetRequestEventsResponse, RequestEventType, RequestStatus } from "@nurseconnect/contracts";
-import { db, asc, eq, schema } from "@nurseconnect/database";
+import { and, asc, db, desc, eq, gte, or, schema } from "@nurseconnect/database";
 
 const { requestEvents, serviceRequests } = schema;
 
@@ -18,6 +18,13 @@ type ReadRequestEventsInput = {
   requestId: string;
   actorUserId: string;
   actorRole: "admin" | "nurse" | "patient";
+};
+
+type ReadNotificationsInput = {
+  actorUserId: string;
+  actorRole: "admin" | "nurse" | "patient";
+  sinceIso?: string | null;
+  limit?: number | null;
 };
 
 export class RequestEventNotFoundError extends Error {
@@ -93,6 +100,67 @@ export async function getRequestEventsForUser(
     .from(requestEvents)
     .where(eq(requestEvents.requestId, requestId))
     .orderBy(asc(requestEvents.id));
+
+  return events.map((event) => serializeEvent(event));
+}
+
+export async function getNotificationsForActor(input: ReadNotificationsInput): Promise<GetRequestEventsResponse> {
+  const { actorUserId, actorRole, sinceIso, limit = 25 } = input;
+
+  const normalizedLimit = Math.min(Math.max(limit ?? 25, 1), 100);
+  const sinceDate = sinceIso ? new Date(sinceIso) : null;
+  const sinceCondition = sinceDate && Number.isFinite(sinceDate.getTime())
+    ? gte(requestEvents.createdAt, sinceDate)
+    : null;
+
+  if (actorRole === "admin") {
+    const adminEvents = await (
+      sinceCondition
+        ? db
+            .select()
+            .from(requestEvents)
+            .where(sinceCondition)
+            .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
+            .limit(normalizedLimit)
+        : db
+            .select()
+            .from(requestEvents)
+            .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
+            .limit(normalizedLimit)
+    );
+    return adminEvents.map((event) => serializeEvent(event));
+  }
+
+  const requestIdRows = await db
+    .select({ requestId: serviceRequests.id })
+    .from(serviceRequests)
+    .where(
+      actorRole === "nurse"
+        ? eq(serviceRequests.assignedNurseUserId, actorUserId)
+        : eq(serviceRequests.patientUserId, actorUserId),
+    );
+
+  if (requestIdRows.length === 0) {
+    return [];
+  }
+
+  const requestIdFilter = or(...requestIdRows.map((requestIdRow) => eq(requestEvents.requestId, requestIdRow.requestId)));
+
+  const events = await (
+    sinceCondition
+      ? db
+          .select()
+          .from(requestEvents)
+          .where(and(requestIdFilter, sinceCondition))
+          .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
+          .limit(normalizedLimit)
+      : db
+          .select()
+          .from(requestEvents)
+          .where(requestIdFilter)
+          .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
+          .limit(normalizedLimit)
+  );
 
   return events.map((event) => serializeEvent(event));
 }
