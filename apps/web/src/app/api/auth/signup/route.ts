@@ -5,7 +5,6 @@ import {
   createApiLogContext,
   logApiFailure,
   logApiStart,
-  logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
 

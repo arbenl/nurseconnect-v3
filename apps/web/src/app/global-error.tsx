@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { logClientError } from "@/server/telemetry/ops-logger";
 
+import { logClientError } from "@/server/telemetry/ops-logger";
+
 export default function GlobalError({
   error,
   reset,
