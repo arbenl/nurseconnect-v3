@@ -37,18 +37,21 @@ if [[ -z "$REPO_ROOT" ]]; then
 fi
 cd "$REPO_ROOT"
 
+REQUIRED_LOCAL_COMMANDS="${PR_FINALIZER_LOCAL_COMMANDS:-$'pnpm type-check\npnpm test:ci'}"
+REQUIRED_CHECKS="${PR_FINALIZER_REQUIRED_CHECKS:-$'Type Check & Lint\nUnit Tests (jsdom)\nDB Integration Tests (node)\nE2E API Tests\nE2E UI Smoke Gate'}"
+
 if [[ -n "$(git status --porcelain)" ]]; then
   fail "Git working tree is not clean"
   git status --short
 fi
 
-run_local_checks=("pnpm type-check" "pnpm test:ci")
-for cmd in "${run_local_checks[@]}"; do
+while IFS= read -r cmd; do
+  [[ -z "$cmd" ]] && continue
   log "Running local gate command: ${cmd}"
   if ! bash -lc "$cmd"; then
     fail "Local gate command failed: ${cmd}"
   fi
- done
+done <<< "$REQUIRED_LOCAL_COMMANDS"
 
 pr_number="${PR_NUMBER:-}"
 if [[ -z "$pr_number" ]]; then
@@ -144,11 +147,6 @@ if [[ -z "$THREADS_JSON" ]]; then
   print_failures
 fi
 
-REQUIRED_CHECKS=$'Type Check & Lint\nUnit Tests (jsdom)\nDB Integration Tests (node)\nE2E API Tests\nE2E UI Smoke Gate'
-if [[ -n "${PR_FINALIZER_REQUIRED_CHECKS:-}" ]]; then
-  REQUIRED_CHECKS="$PR_FINALIZER_REQUIRED_CHECKS"
-fi
-
 if ! CI_GUARD_OUTPUT=$(PR_JSON="$PR_JSON" REQUIRED_CHECKS="$REQUIRED_CHECKS" UNRESOLVED_THREADS="$THREADS_JSON" node - <<'NODE'
 const data = JSON.parse(process.env.PR_JSON || '{}');
 const required = (process.env.REQUIRED_CHECKS || '')
@@ -168,7 +166,7 @@ for (const checkName of required) {
     errors.push(`Required check not completed yet: ${checkName} (${entry.status})`);
     continue;
   }
-  if (!['SUCCESS', 'NEUTRAL', 'SKIPPED'].includes(entry.conclusion)) {
+  if (entry.conclusion !== 'SUCCESS') {
     errors.push(`Required check did not pass: ${checkName} (${entry.conclusion})`);
   }
 }

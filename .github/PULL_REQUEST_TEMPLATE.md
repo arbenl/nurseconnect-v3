@@ -3,14 +3,14 @@
 
 ## Evidence
 ### Logs
-- `artifacts/<TASK_ID>/validation.log`
-- `artifacts/<TASK_ID>/signature.json`
+- [ ] Logs path: `artifacts/<TASK_ID>/validation.log`
+- [ ] Optional signature/output: `artifacts/<TASK_ID>/signature.json`
 
 ### Screenshots
-- `apps/web/test-results/<run-id>/screenshot-1.png`
+- [ ] Screenshot path: `apps/web/test-results/<run-id>/screenshot-1.png`
 
 ### Runbook
-- `docs/runbooks/<runbook>.md`
+- [ ] Runbook path: `docs/runbooks/<runbook>.md`
 
 ## Pilot guardrails
 - [ ] No protected auth/routing/proxy/API contract files were changed.
