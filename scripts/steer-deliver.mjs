@@ -326,7 +326,6 @@ function stageTaskArtifacts(task) {
   }
   return staged.split("\n").filter(Boolean);
 }
-
 function main() {
   const parsed = parseArgs(process.argv.slice(2));
   if (!parsed.task) {
