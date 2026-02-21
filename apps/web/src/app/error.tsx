@@ -1,7 +1,8 @@
 "use client";
 
-import { logClientError } from "@/server/telemetry/ops-logger";
 import { useEffect } from "react";
+
+import { logClientError } from "@/server/telemetry/ops-logger";
 
 export default function Error({
   error,

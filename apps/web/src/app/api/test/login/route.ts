@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-
 import { db, eq, schema } from "@nurseconnect/database";
+import { NextRequest, NextResponse } from "next/server";
 
 import {
   createApiLogContext,
