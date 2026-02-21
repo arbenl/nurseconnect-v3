@@ -1,0 +1,19 @@
+{
+  "agent": "QA",
+  "task": "2-request-creation",
+  "summary": "Deterministic local plan for qa on 2-request-creation",
+  "actions": [
+    {
+      "type": "append",
+      "path": "docs/steer-offline-2-request-creation-qa.md",
+      "description": "Generate deterministic local artifact for qa",
+      "content": "\n- Planned by local mode.\n- Agent: qa\n- Task: 2-request-creation\n- Risk: low"
+    }
+  ],
+  "verify": [
+    "node -e \"console.log('steer local verification hook')\""
+  ],
+  "notes": [
+    "Generated in STEER_LOCAL mode. No external LLM call was executed."
+  ]
+}

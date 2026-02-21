@@ -1,0 +1,8 @@
+command: node scripts/agent-runner.mjs qa 4-scheduling
+exitCode: 0
+----- stdout -----
+ℹ️  Using task prompt: prompts/4-scheduling.md
+▶️  Generating plan for agent=qa task=4-scheduling
+✅ Plan written: /Users/arbenlila/development/nurseconnect-v3/output/4-scheduling/QA.plan.json
+
+----- stderr -----

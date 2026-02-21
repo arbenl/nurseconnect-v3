@@ -16,6 +16,7 @@
     "steer:run": "node scripts/steer-run.mjs",
     "steer:verify": "node scripts/steer-verify.mjs",
     "steer:orchestrate": "node scripts/steer-run-and-verify.mjs",
+    "steer:deliver": "node scripts/steer-deliver.mjs",
     "agents:orchestrate": "node scripts/steer-run.mjs",
     "agents:orchestrate:verify": "node scripts/steer-verify.mjs",
     "agents:apply": "node scripts/apply-plan.mjs",

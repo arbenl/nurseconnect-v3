@@ -37,6 +37,7 @@ pnpm steer:run -- 1-auth-roles --risk high
 pnpm steer:verify -- 1-auth-roles --risk high
 pnpm steer:orchestrate -- 1-auth-roles --risk high
 pnpm steer:orchestrate -- 1-auth-roles --risk high --include-optional
+pnpm steer:deliver -- 1-auth-roles --risk high --include-optional --title "feat:..." --body "..."
 pnpm agents:orchestrate -- 1-auth-roles --risk high
 pnpm agents:orchestrate:verify -- 1-auth-roles --risk high
 ```
@@ -46,6 +47,19 @@ pnpm agents:orchestrate:verify -- 1-auth-roles --risk high
 1. `steer:run`
 2. `steer:verify`
 3. configured verification gates (`pnpm gate:*`)
+
+`pnpm steer:deliver` adds a delivery layer:
+
+1. Runs `steer:orchestrate`.
+2. Commits task artifacts from `artifacts/<TASK_ID>/` and `output/<TASK_ID>/`.
+3. Pushes the branch.
+4. Creates/updates PR then runs `gh pr checks --watch`.
+5. Stops on:
+   - CI failures
+   - merge conflicts / dirty merge state
+   - any Copilot review or PR comments
+
+`steer:deliver` prints a ready-to-run merge command but does not execute merge automatically.
 
 `steer:run` and `steer:verify` can be run directly for a task, but verification reports that require gates must include `verification-gates.json` in `taskProfiles.requiredArtifacts` or be executed through `steer:orchestrate`.
 

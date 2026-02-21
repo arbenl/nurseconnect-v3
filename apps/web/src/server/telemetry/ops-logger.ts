@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 type LogLevel = "info" | "warn" | "error";
 
 type ApiActor = {
@@ -12,6 +10,14 @@ export type ApiLogContext = {
   route: string;
   method: string;
   action: string;
+  actorId?: string;
+  actorRole?: string;
+};
+
+type ClientErrorContext = {
+  requestId?: string;
+  route?: string;
+  action?: string;
   actorId?: string;
   actorRole?: string;
 };
@@ -31,6 +37,21 @@ function sanitizeRequestId(candidate: string | null): string | null {
   }
 
   return trimmed;
+}
+
+function generateRequestId(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+
+  if (typeof globalThis.crypto?.getRandomValues === "function") {
+    const bytes = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    const hex = Array.from(bytes).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    return `req_${hex}`;
+  }
+
+  return `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function normalizeAction(route: string, fallback = "api.action") {
@@ -60,7 +81,7 @@ export function getRequestId(headers: Headers): string {
     return headerRequestId;
   }
 
-  return randomUUID();
+  return generateRequestId();
 }
 
 export function createApiLogContext(
@@ -161,4 +182,23 @@ export function logApiFailure(
 export function withRequestId(response: Response, requestId: string) {
   response.headers.set("x-request-id", requestId);
   return response;
+}
+
+export function logClientError(
+  error: unknown,
+  context: ClientErrorContext = {},
+  details: Record<string, unknown> = {},
+) {
+  const { requestId, ...safeContext } = context;
+  const payload = {
+    level: "error",
+    event: "ui.request.error",
+    timestamp: new Date().toISOString(),
+    ...safeContext,
+    requestId: requestId ?? generateRequestId(),
+    details: details || {},
+    error: scrub(error),
+  };
+
+  console.error(JSON.stringify(payload));
 }
