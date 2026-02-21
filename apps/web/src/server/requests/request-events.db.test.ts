@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createAndAssignRequest } from "./allocate-request";
 import { RequestConflictError, applyRequestAction } from "./request-actions";
-import { getRequestEventsForUser, RequestEventForbiddenError } from "./request-events";
+import { getNotificationsForActor, getRequestEventsForUser, RequestEventForbiddenError } from "./request-events";
 
 const { users, nurses, nurseLocations, requestEvents, serviceRequests } = schema;
 
@@ -106,6 +106,191 @@ describe.sequential("request events", () => {
       toStatus: "assigned",
       meta: { nurseUserId: nurseUser!.id },
     });
+  });
+
+  it("returns notifications only for the requested actor", async () => {
+    const [patientOne] = await db
+      .insert(users)
+      .values({ email: "event-notif-patient-one@test.local", role: "patient" })
+      .returning();
+    const [patientTwo] = await db
+      .insert(users)
+      .values({ email: "event-notif-patient-two@test.local", role: "patient" })
+      .returning();
+
+    const [nurseOneUser] = await db
+      .insert(users)
+      .values({ email: "event-notif-nurse-one@test.local", role: "nurse" })
+      .returning();
+
+    const [nurseTwoUser] = await db
+      .insert(users)
+      .values({ email: "event-notif-nurse-two@test.local", role: "nurse" })
+      .returning();
+
+    await db.insert(nurses).values([
+      {
+        userId: nurseOneUser!.id,
+        status: "verified",
+        licenseNumber: "RN-NOTIF-ONE",
+        specialization: "General",
+        isAvailable: true,
+      },
+      {
+        userId: nurseTwoUser!.id,
+        status: "verified",
+        licenseNumber: "RN-NOTIF-TWO",
+        specialization: "General",
+        isAvailable: true,
+      },
+    ]);
+
+    await db.insert(nurseLocations).values([
+      {
+        nurseUserId: nurseOneUser!.id,
+        lat: "10.000001",
+        lng: "10.000001",
+      },
+      {
+        nurseUserId: nurseTwoUser!.id,
+        lat: "40.000001",
+        lng: "40.000001",
+      },
+    ]);
+
+    const requestNearNurseOne = await createAndAssignRequest({
+      patientUserId: patientOne!.id,
+      address: "Nurse One St",
+      lat: 10,
+      lng: 10,
+    });
+    const requestNearNurseTwo = await createAndAssignRequest({
+      patientUserId: patientTwo!.id,
+      address: "Nurse Two St",
+      lat: 40,
+      lng: 40,
+    });
+
+    const patientOneNotifications = await getNotificationsForActor({
+      actorUserId: patientOne!.id,
+      actorRole: "patient",
+    });
+    expect(patientOneNotifications).toHaveLength(2);
+    expect(
+      patientOneNotifications.every((entry) => entry.requestId === requestNearNurseOne.id)
+    ).toBe(true);
+
+    const nurseOneNotifications = await getNotificationsForActor({
+      actorUserId: nurseOneUser!.id,
+      actorRole: "nurse",
+    });
+    expect(nurseOneNotifications).toHaveLength(2);
+    expect(
+      nurseOneNotifications.every((entry) => entry.requestId === requestNearNurseOne.id)
+    ).toBe(true);
+
+    const nurseTwoNotifications = await getNotificationsForActor({
+      actorUserId: nurseTwoUser!.id,
+      actorRole: "nurse",
+    });
+    expect(nurseTwoNotifications).toHaveLength(2);
+    expect(
+      nurseTwoNotifications.every((entry) => entry.requestId === requestNearNurseTwo.id)
+    ).toBe(true);
+  });
+
+  it("supports since filters and limit caps", async () => {
+    const [patient] = await db
+      .insert(users)
+      .values({ email: "event-notif-limit@test.local", role: "patient" })
+      .returning();
+
+    const [nurseUser] = await db
+      .insert(users)
+      .values({ email: "event-notif-limit-nurse@test.local", role: "nurse" })
+      .returning();
+
+    await db.insert(nurses).values({
+      userId: nurseUser!.id,
+      status: "verified",
+      licenseNumber: "RN-NOTIF-LIM",
+      specialization: "General",
+      isAvailable: true,
+    });
+
+    await db.insert(nurseLocations).values({
+      nurseUserId: nurseUser!.id,
+      lat: "20.000001",
+      lng: "20.000001",
+    });
+
+    for (let i = 0; i < 3; i += 1) {
+      await createAndAssignRequest({
+        patientUserId: patient!.id,
+        address: `Notification Street ${i}`,
+        lat: 20,
+        lng: 20,
+      });
+    }
+
+    const cappedLimitNotifications = await getNotificationsForActor({
+      actorUserId: patient!.id,
+      actorRole: "patient",
+      limit: 2,
+    });
+    expect(cappedLimitNotifications).toHaveLength(2);
+    expect(cappedLimitNotifications[0].type).toBe(requestActionTypes.request_assigned);
+
+    const futureSince = new Date(Date.now() + 60_000).toISOString();
+    const futureNotifications = await getNotificationsForActor({
+      actorUserId: patient!.id,
+      actorRole: "patient",
+      sinceIso: futureSince,
+    });
+    expect(futureNotifications).toHaveLength(0);
+  });
+
+  it("returns all events for admins regardless of actor", async () => {
+    const [admin] = await db
+      .insert(users)
+      .values({ email: "event-notif-admin@test.local", role: "admin" })
+      .returning();
+
+    const [patientOne] = await db
+      .insert(users)
+      .values({ email: "event-notif-admin-patient-one@test.local", role: "patient" })
+      .returning();
+    const [nurseOne] = await db
+      .insert(users)
+      .values({ email: "event-notif-admin-nurse@test.local", role: "nurse" })
+      .returning();
+
+    await db.insert(nurses).values({
+      userId: nurseOne!.id,
+      status: "verified",
+      licenseNumber: "RN-NOTIF-ADMIN",
+      specialization: "General",
+      isAvailable: true,
+    });
+
+    await db.insert(nurseLocations).values({
+      nurseUserId: nurseOne!.id,
+      lat: "30.000001",
+      lng: "30.000001",
+    });
+
+    await createAndAssignRequest({
+      patientUserId: patientOne!.id,
+      address: "Admin View Road",
+      lat: 30,
+      lng: 30,
+    });
+
+    const adminNotifications = await getNotificationsForActor({
+      actorUserId: admin!.id,
+      actorRole: "admin",
+    });
+    expect(adminNotifications).toHaveLength(2);
   });
 
   it("writes timeline events for accepted requests", async () => {
