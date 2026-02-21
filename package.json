@@ -23,6 +23,7 @@
     "agents:phase": "make full-phase TASK=$TASK",
     "ci:phase": "pnpm type-check && pnpm lint && firebase emulators:exec --only firestore,auth --project demo-nurseconnect \"pnpm -w vitest run\"",
     "ci:local": "pnpm type-check && pnpm -F web build && pnpm -w vitest run && pnpm -F web lint",
+    "pr:finalizer": "bash scripts/pr-finalizer.sh",
     "test:web": "pnpm --filter web test",
     "test:contracts": "pnpm --filter contracts test",
     "web:test:emu": "pnpm --filter web run test:emu",
