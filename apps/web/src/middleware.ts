@@ -40,7 +40,6 @@ export async function middleware(req: NextRequest) {
   }
 
   // authenticated (probably) → allow through to server layout for strict verification
-  response.headers.set("X-Request-ID", requestId);
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "no-referrer");

@@ -35,7 +35,6 @@ export async function POST(request: Request) {
   const actorContext = {
     ...context,
     actorId: session.user.id,
-    actorRole: session.user.role,
   };
 
   try {
