@@ -1,14 +1,5 @@
 import type { GetRequestEventsResponse, RequestEventType, RequestStatus } from "@nurseconnect/contracts";
-import {
-  db,
-  asc,
-  desc,
-  and,
-  gte,
-  eq,
-  inArray,
-  schema,
-} from "@nurseconnect/database";
+import { and, asc, db, desc, eq, gte, or, schema } from "@nurseconnect/database";
 
 const { requestEvents, serviceRequests } = schema;
 
@@ -149,23 +140,24 @@ export async function getNotificationsForActor(input: ReadNotificationsInput): P
         : eq(serviceRequests.patientUserId, actorUserId),
     );
 
-  const requestIds = requestIdRows.map((row) => row.requestId).filter(Boolean);
-  if (requestIds.length === 0) {
+  if (requestIdRows.length === 0) {
     return [];
   }
+
+  const requestIdFilter = or(...requestIdRows.map((requestIdRow) => eq(requestEvents.requestId, requestIdRow.requestId)));
 
   const events = await (
     sinceCondition
       ? db
           .select()
           .from(requestEvents)
-          .where(and(inArray(requestEvents.requestId, requestIds), sinceCondition))
+          .where(and(requestIdFilter, sinceCondition))
           .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
           .limit(normalizedLimit)
       : db
           .select()
           .from(requestEvents)
-          .where(inArray(requestEvents.requestId, requestIds))
+          .where(requestIdFilter)
           .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
           .limit(normalizedLimit)
   );
