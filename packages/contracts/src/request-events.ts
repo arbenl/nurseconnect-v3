@@ -10,6 +10,7 @@ export const RequestEventTypeSchema = z.enum([
     "request_enroute",
     "request_completed",
     "request_canceled",
+    "request_reassigned",
 ]);
 
 export type RequestEventType = z.infer<typeof RequestEventTypeSchema>;
@@ -29,4 +30,3 @@ export type RequestEvent = z.infer<typeof RequestEventSchema>;
 
 export const GetRequestEventsResponseSchema = z.array(RequestEventSchema);
 export type GetRequestEventsResponse = z.infer<typeof GetRequestEventsResponseSchema>;
-
