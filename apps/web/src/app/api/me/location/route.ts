@@ -4,16 +4,16 @@ import { z } from "zod";
 
 import { getCachedUser } from "@/lib/auth/user";
 import {
+  NurseLocationForbiddenError,
+  updateMyNurseLocation,
+} from "@/server/nurse-location/update-my-location";
+import {
   createApiLogContext,
   logApiFailure,
   logApiStart,
   logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
-import {
-  NurseLocationForbiddenError,
-  updateMyNurseLocation,
-} from "@/server/nurse-location/update-my-location";
 
 export async function PATCH(request: Request) {
   const startedAt = Date.now();

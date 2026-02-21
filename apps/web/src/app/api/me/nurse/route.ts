@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { ensureDomainUserFromSession } from "@/lib/user-service";
+import { getSession } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -10,7 +11,6 @@ import {
   logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
-import { getSession } from "@/server/auth";
 
 const nurseProfileSchema = z.object({
   licenseNumber: z.string().min(1, "License number is required").optional(),

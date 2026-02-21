@@ -5,6 +5,7 @@ import {
   maybeBootstrapFirstAdmin,
   getNurseByUserId,
 } from "@/lib/user-service";
+import { getSession } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -12,7 +13,6 @@ import {
   logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
-import { getSession } from "@/server/auth";
 
 export async function GET(request: Request) {
   const startedAt = Date.now();

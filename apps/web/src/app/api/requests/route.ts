@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getCachedUser } from "@/lib/auth/user";
+import { createAndAssignRequest } from "@/server/requests/allocate-request";
 import {
   createApiLogContext,
   logApiFailure,
@@ -10,7 +11,6 @@ import {
   logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
-import { createAndAssignRequest } from "@/server/requests/allocate-request";
 
 export async function POST(request: Request) {
   const startedAt = Date.now();

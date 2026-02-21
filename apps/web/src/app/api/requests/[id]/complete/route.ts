@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getCachedUser } from "@/lib/auth/user";
+import { requestActionErrorResponse } from "@/server/requests/request-action-http";
+import { applyRequestAction } from "@/server/requests/request-actions";
 import {
   createApiLogContext,
   logApiFailure,
@@ -8,8 +10,6 @@ import {
   logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
-import { requestActionErrorResponse } from "@/server/requests/request-action-http";
-import { applyRequestAction } from "@/server/requests/request-actions";
 
 type Params = { params: { id: string } };
 

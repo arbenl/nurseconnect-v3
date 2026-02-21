@@ -2,6 +2,7 @@ import { db, schema, eq } from "@nurseconnect/database";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getSession } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -9,7 +10,6 @@ import {
   logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
-import { getSession } from "@/server/auth";
 
 const { users } = schema;
 
