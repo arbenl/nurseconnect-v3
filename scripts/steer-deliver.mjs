@@ -292,6 +292,38 @@ function ensureToolingPresent() {
   runCommand("git", ["--version"]);
 }
 
+function hasTaskFiles(basePath) {
+  const check = runCommandCapture("find", [basePath, "-mindepth", "1", "-maxdepth", "3", "-type", "f", "-print"]).trim();
+  return check.length > 0;
+}
+
+function stageTaskArtifacts(task) {
+  const artifactDir = `artifacts/${task}`;
+  const outputDir = `output/${task}`;
+  const stageTargets = [];
+  if (existsSync(path.join(root, artifactDir))) {
+    if (hasTaskFiles(path.join(root, artifactDir))) {
+      stageTargets.push(artifactDir);
+    }
+  }
+  if (existsSync(path.join(root, outputDir))) {
+    if (hasTaskFiles(path.join(root, outputDir))) {
+      stageTargets.push(outputDir);
+    }
+  }
+  if (stageTargets.length === 0) {
+    throw new Error(`No artifacts were produced for task ${task}.`);
+  }
+
+  runCommand("git", ["add", "-f", "--", ...stageTargets]);
+
+  const staged = runCommandCapture("git", ["diff", "--cached", "--name-only"]).trim();
+  if (!staged) {
+    throw new Error(`No changes detected after staging task artifacts for ${task}.`);
+  }
+  return staged.split("\n").filter(Boolean);
+}
+
 function main() {
   const parsed = parseArgs(process.argv.slice(2));
   if (!parsed.task) {
@@ -315,23 +347,7 @@ function main() {
   const runArgs = [task, "--risk", parsed.risk, ...(parsed.includeOptional ? ["--include-optional"] : []), ...(parsed.skipVerificationGates ? ["--skip-verification-gates"] : [])];
   runCommand("node", ["scripts/steer-run-and-verify.mjs", ...runArgs]);
 
-  if (!hasChangesForTask(task)) {
-    throw new Error(`No task artifacts were produced for ${task}; aborting commit/push.`);
-  }
-
-  const commitPaths = [];
-  if (existsSync(path.join(root, "artifacts", task))) {
-    commitPaths.push(`artifacts/${task}`);
-  }
-  if (existsSync(path.join(root, "output", task))) {
-    commitPaths.push(`output/${task}`);
-  }
-
-  if (commitPaths.length === 0) {
-    throw new Error(`No artifact directories found to stage for task ${task}.`);
-  }
-
-  runCommand("git", ["add", "--", ...commitPaths]);
+  stageTaskArtifacts(task);
   runCommand("git", ["commit", "-m", parsed.commitMessage]);
 
   runCommand("git", ["push", "-u", "origin", branch]);
