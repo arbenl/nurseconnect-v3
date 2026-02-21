@@ -146,7 +146,7 @@ export async function reassignRequest(input: {
     await recordAdminAction(
       {
         actorUserId,
-        action: "request_reassigned",
+        action: "request.reassigned",
         targetEntityType: "request",
         targetEntityId: requestId,
         details: {
