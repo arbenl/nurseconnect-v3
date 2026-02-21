@@ -212,17 +212,6 @@ function getCurrentBranch() {
   return out;
 }
 
-function getWorkspacePath(relativePath) {
-  return path.join(root, relativePath);
-}
-
-function hasChangesForTask(task) {
-  const artifactPath = `artifacts/${task}`;
-  const outputPath = `output/${task}`;
-  const status = runCommandCapture("git", ["status", "--short", "--", artifactPath, outputPath]).trim();
-  return status.length > 0;
-}
-
 function getRepoOwnerRepo() {
   const originUrl = runCommandCapture("git", ["config", "--get", "remote.origin.url"]).trim();
   const normalized = originUrl
@@ -290,6 +279,20 @@ function formatCopilotFinding(finding, index) {
 function ensureToolingPresent() {
   runCommand("gh", ["--version"]);
   runCommand("git", ["--version"]);
+}
+
+function sleepMs(ms) {
+  const safeDelayMs = Number(ms);
+  if (!Number.isFinite(safeDelayMs) || safeDelayMs <= 0) {
+    return;
+  }
+  const seconds = safeDelayMs / 1000;
+  spawnSync("node", ["-e", `setTimeout(() => {}, ${seconds * 1000});`], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: "pipe",
+    shell: false,
+  });
 }
 
 function hasTaskFiles(basePath) {
@@ -371,7 +374,25 @@ function main() {
   }
 
   console.log(`PR #${prNumber} is ready. Running CI checks.`);
-  runCommand("gh", ["pr", "checks", `${prNumber}`, "--watch"]);
+  let checksPassed = false;
+  const maxCheckWatchAttempts = 6;
+  for (let attempt = 1; attempt <= maxCheckWatchAttempts; attempt += 1) {
+    try {
+      runCommand("gh", ["pr", "checks", `${prNumber}`, "--watch"]);
+      checksPassed = true;
+      break;
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (!/no checks reported/i.test(message) || attempt >= maxCheckWatchAttempts) {
+        throw error;
+      }
+      console.log(`No checks reported yet for PR #${prNumber}; retrying in 20s (${attempt}/${maxCheckWatchAttempts})`);
+      sleepMs(20000);
+    }
+  }
+  if (!checksPassed) {
+    throw new Error(`CI checks did not start for PR #${prNumber} after retries.`);
+  }
 
   const prMeta = runJsonCommand("gh", ["pr", "view", `${prNumber}`, "--json", "mergeable", "mergeStateStatus", "headRefName"]);
   if (prMeta.mergeable !== "MERGEABLE") {
