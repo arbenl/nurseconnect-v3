@@ -94,11 +94,13 @@ export async function reassignRequest(input: {
     const previousStatus = request.status as RequestStatus;
     const nextStatus: RequestStatus = nurseUserId ? "assigned" : "open";
     const isPreviouslyAssigned = request.status === "assigned";
-    const shouldReleasePreviousNurse = isPreviouslyAssigned && previousNurseUserId && nextStatus === "open";
-    const shouldAssignNewNurse =
-      nurseUserId !== null && (!isPreviouslyAssigned || nurseUserId !== previousNurseUserId);
+    const isReassignToSameNurse =
+      isPreviouslyAssigned && nurseUserId !== null && nurseUserId === previousNurseUserId;
+    const shouldReleasePreviousNurse = isPreviouslyAssigned && previousNurseUserId && nurseUserId === null;
+    const shouldAssignNewNurse = nurseUserId !== null && (!isPreviouslyAssigned || nurseUserId !== previousNurseUserId);
+    const shouldRefreshAssignedAt = nurseUserId !== null && !isReassignToSameNurse;
     const now = new Date();
-    const nextAssignedAt = nurseUserId ? now : previousAssignedAt;
+    const nextAssignedAt = shouldRefreshAssignedAt ? now : previousAssignedAt;
 
     const updatePayload = {
       status: nextStatus,

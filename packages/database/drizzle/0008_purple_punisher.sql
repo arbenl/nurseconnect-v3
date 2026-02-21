@@ -1,3 +1,4 @@
+-- NOTE: PostgreSQL 12+ required for ALTER TYPE ... ADD VALUE operations; this migration is intentionally non-revertable.
 ALTER TYPE "public"."service_request_event_type" ADD VALUE 'request_reassigned';--> statement-breakpoint
 CREATE TABLE "admin_audit_logs" (
 	"id" serial PRIMARY KEY NOT NULL,
