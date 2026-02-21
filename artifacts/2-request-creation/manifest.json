@@ -1,0 +1,70 @@
+{
+  "artifacts": [
+    "artifacts/2-request-creation/agentOutputs.dev.json",
+    "artifacts/2-request-creation/agent.dev.log.txt",
+    "artifacts/2-request-creation/agentOutputs.qa.json",
+    "artifacts/2-request-creation/agent.qa.log.txt",
+    "artifacts/2-request-creation/manifest.json"
+  ],
+  "endedAt": "2026-02-21T07:58:56.687Z",
+  "hash": "67c03f7c92aefe21d996ab01ab197e567bd606d3bbe78167f2f143acd64d86fe",
+  "profile": {
+    "optionalAgents": [],
+    "requiredAgents": [
+      "dev",
+      "qa"
+    ],
+    "requiredArtifacts": [
+      "manifest.json",
+      "agentOutputs.dev.json",
+      "agentOutputs.qa.json",
+      "signature.json",
+      "verification-gates.json"
+    ],
+    "resolvedAsOf": "2026-02-21T07:58:56.610Z"
+  },
+  "results": {
+    "agents": [
+      {
+        "artifact": "artifacts/2-request-creation/agentOutputs.dev.json",
+        "id": "dev",
+        "log": "artifacts/2-request-creation/agent.dev.log.txt",
+        "name": "Architect",
+        "source": "output/2-request-creation/DEV.plan.json",
+        "summary": {
+          "actionCount": 1,
+          "summary": "Deterministic local plan for dev on 2-request-creation"
+        }
+      },
+      {
+        "artifact": "artifacts/2-request-creation/agentOutputs.qa.json",
+        "id": "qa",
+        "log": "artifacts/2-request-creation/agent.qa.log.txt",
+        "name": "Verifier",
+        "source": "output/2-request-creation/QA.plan.json",
+        "summary": {
+          "actionCount": 1,
+          "summary": "Deterministic local plan for qa on 2-request-creation"
+        }
+      }
+    ]
+  },
+  "risk": "low",
+  "signature": {
+    "agents": [
+      {
+        "id": "dev",
+        "name": "Architect"
+      },
+      {
+        "id": "qa",
+        "name": "Verifier"
+      }
+    ],
+    "manifestHash": "67c03f7c92aefe21d996ab01ab197e567bd606d3bbe78167f2f143acd64d86fe",
+    "risk": "low",
+    "task": "2-request-creation"
+  },
+  "startedAt": "2026-02-21T07:58:56.610Z",
+  "task": "2-request-creation"
+}

@@ -1,0 +1,19 @@
+{
+  "agent": "DEV",
+  "task": "2-request-creation",
+  "summary": "Deterministic local plan for dev on 2-request-creation",
+  "actions": [
+    {
+      "type": "append",
+      "path": "docs/steer-offline-2-request-creation-dev.md",
+      "description": "Generate deterministic local artifact for dev",
+      "content": "\n- Planned by local mode.\n- Agent: dev\n- Task: 2-request-creation\n- Risk: low"
+    }
+  ],
+  "verify": [
+    "node -e \"console.log('steer local verification hook')\""
+  ],
+  "notes": [
+    "Generated in STEER_LOCAL mode. No external LLM call was executed."
+  ]
+}
