@@ -377,7 +377,7 @@ function main() {
   const maxCheckWatchAttempts = 6;
   for (let attempt = 1; attempt <= maxCheckWatchAttempts; attempt += 1) {
     try {
-      runCommand("gh", ["pr", "checks", `${prNumber}`, "--watch"]);
+      runCommandCapture("gh", ["pr", "checks", `${prNumber}`, "--watch"]);
       checksPassed = true;
       break;
     } catch (error) {
