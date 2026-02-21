@@ -15,7 +15,7 @@
 
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -300,25 +300,81 @@ function hasTaskFiles(basePath) {
   return check.length > 0;
 }
 
+function collectFiles(basePath) {
+  const entries = readdirSync(basePath, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const fullPath = path.join(basePath, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectFiles(fullPath));
+      continue;
+    }
+    if (entry.isFile()) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+function isIgnoredByGit(relativePath) {
+  const proc = spawnSync("git", ["check-ignore", "-q", relativePath], {
+    cwd: root,
+    encoding: "utf8",
+    shell: false,
+    stdio: ["inherit", "pipe", "pipe"],
+  });
+
+  if (proc.error) {
+    throw proc.error;
+  }
+
+  if (proc.status === 0) {
+    return true;
+  }
+  if (proc.status === 1) {
+    return false;
+  }
+
+  const message = proc.stderr || proc.stdout || "";
+  throw new Error(`Failed to evaluate gitignore state for ${relativePath}: ${String(message).trim()}`);
+}
+
 function stageTaskArtifacts(task) {
   const artifactDir = `artifacts/${task}`;
   const outputDir = `output/${task}`;
+  const artifactPath = path.join(root, artifactDir);
+  const outputPath = path.join(root, outputDir);
   const stageTargets = [];
-  if (existsSync(path.join(root, artifactDir))) {
-    if (hasTaskFiles(path.join(root, artifactDir))) {
-      stageTargets.push(artifactDir);
+  if (existsSync(artifactPath) && hasTaskFiles(artifactPath)) {
+    const files = collectFiles(artifactPath);
+    const trackableFiles = files
+      .map((absPath) => path.relative(root, absPath))
+      .filter((filePath) => !isIgnoredByGit(filePath));
+
+    if (trackableFiles.length === 0) {
+      log(`Skipping ${artifactDir} because all produced files are ignored by .gitignore.`);
+    } else {
+      stageTargets.push(...trackableFiles);
     }
   }
-  if (existsSync(path.join(root, outputDir))) {
-    if (hasTaskFiles(path.join(root, outputDir))) {
-      stageTargets.push(outputDir);
+
+  if (existsSync(outputPath) && hasTaskFiles(outputPath)) {
+    const files = collectFiles(outputPath);
+    const trackableFiles = files
+      .map((absPath) => path.relative(root, absPath))
+      .filter((filePath) => !isIgnoredByGit(filePath));
+
+    if (trackableFiles.length === 0) {
+      log(`Skipping ${outputDir} because all produced files are ignored by .gitignore.`);
+    } else {
+      stageTargets.push(...trackableFiles);
     }
   }
   if (stageTargets.length === 0) {
     throw new Error(`No artifacts were produced for task ${task}.`);
   }
 
-  runCommand("git", ["add", "-f", "--", ...stageTargets]);
+  runCommand("git", ["add", "--", ...stageTargets]);
 
   const staged = runCommandCapture("git", ["diff", "--cached", "--name-only"]).trim();
   if (!staged) {
@@ -326,7 +382,6 @@ function stageTaskArtifacts(task) {
   }
   return staged.split("\n").filter(Boolean);
 }
-
 function main() {
   const parsed = parseArgs(process.argv.slice(2));
   if (!parsed.task) {

@@ -1,5 +1,6 @@
 export * from "./users";
 export * from "./nurses";
+export * from "./admin-audit-logs";
 export * from "./service-requests";
 export * from "./request-events";
 export * from "./nurse-locations";

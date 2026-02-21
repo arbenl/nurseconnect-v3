@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const { email, displayName, role } = parsed.data;
 
   try {
-    const response = NextResponse.json(
+  const response = NextResponse.json(
       {
         message: "Signup via legacy route is disabled. Please use Better-Auth flow.",
         hint: "Use client.signUp.email() instead.",

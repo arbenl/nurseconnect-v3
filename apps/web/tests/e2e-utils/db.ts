@@ -20,6 +20,7 @@ export async function resetDb() {
 
     try {
         await client.query("TRUNCATE TABLE service_request_events RESTART IDENTITY CASCADE");
+        await client.query("TRUNCATE TABLE admin_audit_logs RESTART IDENTITY CASCADE");
         await client.query("TRUNCATE TABLE service_requests RESTART IDENTITY CASCADE");
         await client.query("TRUNCATE TABLE nurse_locations RESTART IDENTITY CASCADE");
         await client.query("TRUNCATE TABLE nurses RESTART IDENTITY CASCADE");

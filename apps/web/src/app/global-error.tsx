@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { logClientError } from "@/server/telemetry/ops-logger";
+import { logClientError } from "@/lib/telemetry/client-error-logger";
 
 export default function GlobalError({
   error,
@@ -18,7 +18,7 @@ export default function GlobalError({
       requestId:
         typeof window === "undefined" || typeof window.crypto?.randomUUID !== "function"
           ? undefined
-          : window.crypto.randomUUID(),
+        : window.crypto.randomUUID(),
     });
   }, [error]);
 
