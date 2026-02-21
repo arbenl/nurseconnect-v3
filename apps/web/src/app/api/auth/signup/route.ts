@@ -5,6 +5,7 @@ import {
   createApiLogContext,
   logApiFailure,
   logApiStart,
+  logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
 
@@ -42,22 +43,16 @@ export async function POST(request: Request) {
   const { email, displayName, role } = parsed.data;
 
   try {
-    const response = NextResponse.json(
+  const response = NextResponse.json(
       {
         message: "Signup via legacy route is disabled. Please use Better-Auth flow.",
         hint: "Use client.signUp.email() instead.",
       },
       { status: 410 }, // Gone
     );
-    logApiFailure(
-      context,
-      "Signup via legacy route is disabled. Please use Better-Auth flow.",
-      410,
-      startedAt,
-      {
-        source: "auth.signup",
-      },
-    );
+    logApiSuccess(context, 410, startedAt, {
+      source: "auth.signup",
+    });
     return withRequestId(response, context.requestId);
   } catch (error: unknown) {
     logApiFailure(context, error, 500, startedAt, {

@@ -18,7 +18,7 @@ export default function Error({
       requestId:
         typeof window === "undefined" || typeof window.crypto?.randomUUID !== "function"
           ? undefined
-          : window.crypto.randomUUID(),
+        : window.crypto.randomUUID(),
     });
   }, [error]);
 
