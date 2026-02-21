@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+FAILURES=()
+
 log() {
   printf '[pr-finalizer] %s\n' "$*"
 }
