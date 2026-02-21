@@ -1,6 +1,7 @@
 import type { RequestStatus } from "@nurseconnect/contracts";
 import { db, eq, schema, sql } from "@nurseconnect/database";
 
+import { recordAdminAction } from "@/server/admin/audit";
 import { appendRequestEvent } from "./request-events";
 
 const { nurses, users, serviceRequests } = schema;
@@ -9,6 +10,7 @@ type LockedRequestRow = {
   id: string;
   status: string;
   assignedNurseUserId: string | null;
+  assignedAt: Date | null;
 };
 
 export class RequestReassignForbiddenError extends Error {
@@ -48,7 +50,8 @@ export async function reassignRequest(input: {
     const requestRows = await tx.execute<LockedRequestRow>(sql`
       SELECT id,
              status::text as status,
-             assigned_nurse_user_id as "assignedNurseUserId"
+             assigned_nurse_user_id as "assignedNurseUserId",
+             assigned_at as "assignedAt"
       FROM service_requests
       WHERE id = ${requestId}
       FOR UPDATE
@@ -86,16 +89,21 @@ export async function reassignRequest(input: {
     }
 
     const previousNurseUserId = request.assignedNurseUserId;
+    const previousAssignedAt = request.assignedAt;
     const previousStatus = request.status as RequestStatus;
     const nextStatus: RequestStatus = nurseUserId ? "assigned" : "open";
-    const shouldAssign = nurseUserId !== previousNurseUserId;
+    const isPreviouslyAssigned = request.status === "assigned";
+    const shouldReleasePreviousNurse = isPreviouslyAssigned && previousNurseUserId && nextStatus === "open";
+    const shouldAssignNewNurse =
+      nurseUserId !== null && (!isPreviouslyAssigned || nurseUserId !== previousNurseUserId);
     const now = new Date();
+    const nextAssignedAt = nurseUserId ? now : previousAssignedAt;
 
     const updatePayload = {
       status: nextStatus,
       updatedAt: now,
       assignedNurseUserId: nurseUserId,
-      assignedAt: nextStatus === "assigned" ? now : null,
+      assignedAt: nextAssignedAt,
     };
 
     const [updated] = await tx
@@ -107,20 +115,20 @@ export async function reassignRequest(input: {
       throw new RequestNotFoundError();
     }
 
-    if (shouldAssign) {
+    if (shouldReleasePreviousNurse) {
       if (previousNurseUserId) {
         await tx
           .update(nurses)
           .set({ isAvailable: true, updatedAt: now })
           .where(eq(nurses.userId, previousNurseUserId));
       }
+    }
 
-      if (nurseUserId) {
-        await tx
-          .update(nurses)
-          .set({ isAvailable: false, updatedAt: now })
-          .where(eq(nurses.userId, nurseUserId));
-      }
+    if (shouldAssignNewNurse) {
+      await tx
+        .update(nurses)
+        .set({ isAvailable: false, updatedAt: now })
+        .where(eq(nurses.userId, nurseUserId));
     }
 
     await appendRequestEvent(tx, {
@@ -134,6 +142,23 @@ export async function reassignRequest(input: {
         newNurseUserId: nurseUserId,
       },
     });
+
+    await recordAdminAction(
+      {
+        actorUserId,
+        action: "request_reassigned",
+        targetEntityType: "request",
+        targetEntityId: requestId,
+        details: {
+          requestId,
+          nurseUserId,
+          previousNurseUserId,
+          previousStatus,
+          nextStatus,
+        },
+      },
+      tx,
+    );
 
     return {
       request: updated,

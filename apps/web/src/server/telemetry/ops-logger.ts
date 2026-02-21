@@ -14,14 +14,6 @@ export type ApiLogContext = {
   actorRole?: string;
 };
 
-type ClientErrorContext = {
-  requestId?: string;
-  route?: string;
-  action?: string;
-  actorId?: string;
-  actorRole?: string;
-};
-
 function sanitizeRequestId(candidate: string | null): string | null {
   if (!candidate) {
     return null;
@@ -180,23 +172,4 @@ export function logApiFailure(
 export function withRequestId(response: Response, requestId: string) {
   response.headers.set("x-request-id", requestId);
   return response;
-}
-
-export function logClientError(
-  error: unknown,
-  context: ClientErrorContext = {},
-  details: Record<string, unknown> = {},
-) {
-  const { requestId, ...safeContext } = context;
-  const payload = {
-    level: "error",
-    event: "ui.request.error",
-    timestamp: new Date().toISOString(),
-    ...safeContext,
-    requestId: requestId ?? generateRequestId(),
-    details: details || {},
-    error: scrub(error),
-  };
-
-  console.error(JSON.stringify(payload));
 }

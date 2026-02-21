@@ -61,21 +61,26 @@ export async function POST(
       return withRequestId(response, context.requestId);
     }
 
-    await db
-      .update(nurses)
-      .set({ isAvailable: parsed.isAvailable, updatedAt: new Date() })
-      .where(eq(nurses.userId, targetUserId));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(nurses)
+        .set({ isAvailable: parsed.isAvailable, updatedAt: new Date() })
+        .where(eq(nurses.userId, targetUserId));
 
-    await recordAdminAction({
-      actorUserId: actor.id,
-      action: "nurse.availability.overridden",
-      targetEntityType: "user",
-      targetEntityId: targetUserId,
-      details: {
-        nurseUserId: targetUserId,
-        previousIsAvailable: nurseProfile.isAvailable,
-        nextIsAvailable: parsed.isAvailable,
-      },
+      await recordAdminAction(
+        {
+          actorUserId: actor.id,
+          action: "nurse.availability.overridden",
+          targetEntityType: "user",
+          targetEntityId: targetUserId,
+          details: {
+            nurseUserId: targetUserId,
+            previousIsAvailable: nurseProfile.isAvailable,
+            nextIsAvailable: parsed.isAvailable,
+          },
+        },
+        tx,
+      );
     });
 
     const response = NextResponse.json({ ok: true });

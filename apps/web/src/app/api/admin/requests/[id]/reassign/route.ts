@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { recordAdminAction } from "@/server/admin/audit";
 import { requireRole } from "@/server/auth";
 import {
   RequestNotFoundError,
@@ -37,22 +36,10 @@ export async function POST(
     const { id: requestId } = await params;
     const parsed = reassignSchema.parse(await request.json());
 
-    const { request: updatedRequest, previousNurseUserId } = await reassignRequest({
+    const { request: updatedRequest } = await reassignRequest({
       requestId,
       actorUserId: actor.id,
       nurseUserId: parsed.nurseUserId,
-    });
-
-    await recordAdminAction({
-      actorUserId: actor.id,
-      action: "request.reassigned",
-      targetEntityType: "request",
-      targetEntityId: requestId,
-      details: {
-        requestId,
-        nurseUserId: parsed.nurseUserId,
-        previousNurseUserId,
-      },
     });
 
     const response = NextResponse.json({ request: updatedRequest });

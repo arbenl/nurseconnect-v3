@@ -318,7 +318,7 @@ function stageTaskArtifacts(task) {
     throw new Error(`No artifacts were produced for task ${task}.`);
   }
 
-  runCommand("git", ["add", "-f", "--", ...stageTargets]);
+  runCommand("git", ["add", "--", ...stageTargets]);
 
   const staged = runCommandCapture("git", ["diff", "--cached", "--name-only"]).trim();
   if (!staged) {

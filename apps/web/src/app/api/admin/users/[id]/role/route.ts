@@ -76,21 +76,26 @@ export async function POST(
       return withRequestId(response, context.requestId);
     }
 
-    await db
-      .update(users)
-      .set({ role, updatedAt: new Date() })
-      .where(eq(users.id, targetUserId));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({ role, updatedAt: new Date() })
+        .where(eq(users.id, targetUserId));
 
-    await recordAdminAction({
-      actorUserId: actor.id,
-      action: "user.role.changed",
-      targetEntityType: "user",
-      targetEntityId: targetUserId,
-      details: {
-        previousRole: target.role,
-        nextRole: role,
-        targetEmail: target.email,
-      },
+      await recordAdminAction(
+        {
+          actorUserId: actor.id,
+          action: "user.role.changed",
+          targetEntityType: "user",
+          targetEntityId: targetUserId,
+          details: {
+            previousRole: target.role,
+            nextRole: role,
+            targetEmail: target.email,
+          },
+        },
+        tx,
+      );
     });
 
     const response = NextResponse.json({ ok: true });
