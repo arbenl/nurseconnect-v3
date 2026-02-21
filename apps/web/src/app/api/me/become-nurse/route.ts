@@ -35,7 +35,6 @@ export async function POST(request: Request) {
   const actorContext = {
     ...context,
     actorId: session.user.id,
-    actorRole: session.user.role,
   };
 
   try {
@@ -80,6 +79,11 @@ export async function POST(request: Request) {
     }
 
     // Transaction to update role and add nurse record
+    const actorContextWithRole = {
+      ...actorContext,
+      actorRole: user.role,
+    };
+
     await db.transaction(async (tx) => {
       // 1. Update user role
       await tx.update(schema.users).set({ role: "nurse" }).where(eq(schema.users.id, user.id));
@@ -95,7 +99,7 @@ export async function POST(request: Request) {
     });
 
     const response = NextResponse.json({ ok: true });
-    logApiSuccess(actorContext, 200, startedAt, {
+    logApiSuccess(actorContextWithRole, 200, startedAt, {
       source: "me.becomeNurse",
       targetUserId: user.id,
     });

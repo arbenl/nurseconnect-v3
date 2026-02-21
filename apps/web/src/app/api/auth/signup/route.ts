@@ -50,9 +50,15 @@ export async function POST(request: Request) {
       },
       { status: 410 }, // Gone
     );
-    logApiSuccess(context, 410, startedAt, {
-      source: "auth.signup",
-    });
+    logApiFailure(
+      context,
+      "Signup via legacy route is disabled. Please use Better-Auth flow.",
+      410,
+      startedAt,
+      {
+        source: "auth.signup",
+      },
+    );
     return withRequestId(response, context.requestId);
   } catch (error: unknown) {
     logApiFailure(context, error, 500, startedAt, {

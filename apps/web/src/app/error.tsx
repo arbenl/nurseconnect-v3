@@ -1,6 +1,7 @@
 "use client";
 
 import { logClientError } from "@/server/telemetry/ops-logger";
+import { useEffect } from "react";
 
 export default function Error({
   error,
@@ -9,14 +10,16 @@ export default function Error({
   error: Error;
   reset: () => void;
 }) {
-  const route = typeof window === "undefined" ? "/(app)" : window.location.pathname;
-  logClientError(error, {
-    route,
-    action: "ui.error",
-    requestId: typeof window === "undefined" || typeof window.crypto?.randomUUID !== "function"
-      ? undefined
-      : window.crypto.randomUUID(),
-  });
+  useEffect(() => {
+    logClientError(error, {
+      route: typeof window === "undefined" ? "/(app)" : window.location.pathname,
+      action: "ui.error",
+      requestId:
+        typeof window === "undefined" || typeof window.crypto?.randomUUID !== "function"
+          ? undefined
+          : window.crypto.randomUUID(),
+    });
+  }, [error]);
 
   return (
     <div style={{ padding: 20 }}>

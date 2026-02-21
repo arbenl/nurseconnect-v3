@@ -20,12 +20,17 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/api/me") ||
     pathname.startsWith("/api/admin") ||
     pathname.startsWith("/api/requests");
+  const isApiRoute = pathname.startsWith("/api/");
 
   let response: NextResponse;
   if (requiresSessionCookie && !hasSessionCookie) {
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("callbackUrl", pathname + (search || ""));
-    response = NextResponse.redirect(loginUrl);
+    if (isApiRoute) {
+      response = NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: requestHeaders });
+    } else {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("callbackUrl", pathname + (search || ""));
+      response = NextResponse.redirect(loginUrl);
+    }
   } else {
     response = NextResponse.next({
       request: {
@@ -35,7 +40,6 @@ export async function middleware(req: NextRequest) {
   }
 
   // authenticated (probably) → allow through to server layout for strict verification
-  response.headers.set("X-Request-ID", requestId);
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "no-referrer");

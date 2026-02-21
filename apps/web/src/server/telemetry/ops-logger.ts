@@ -43,6 +43,14 @@ function generateRequestId(): string {
   if (typeof globalThis.crypto?.randomUUID === "function") {
     return globalThis.crypto.randomUUID();
   }
+
+  if (typeof globalThis.crypto?.getRandomValues === "function") {
+    const bytes = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    const hex = Array.from(bytes).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    return `req_${hex}`;
+  }
+
   return `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
@@ -181,12 +189,13 @@ export function logClientError(
   context: ClientErrorContext = {},
   details: Record<string, unknown> = {},
 ) {
+  const { requestId, ...safeContext } = context;
   const payload = {
     level: "error",
     event: "ui.request.error",
     timestamp: new Date().toISOString(),
-    requestId: context.requestId ?? generateRequestId(),
-    ...context,
+    ...safeContext,
+    requestId: requestId ?? generateRequestId(),
     details: details || {},
     error: scrub(error),
   };

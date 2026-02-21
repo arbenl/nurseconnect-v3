@@ -1,6 +1,7 @@
 "use client";
 
 import { logClientError } from "@/server/telemetry/ops-logger";
+import { useEffect } from "react";
 
 export default function GlobalError({
   error,
@@ -9,14 +10,16 @@ export default function GlobalError({
   error: Error;
   reset: () => void;
 }) {
-  const route = typeof window === "undefined" ? "/global-error" : window.location.pathname;
-  logClientError(error, {
-    route,
-    action: "ui.global_error",
-    requestId: typeof window === "undefined" || typeof window.crypto?.randomUUID !== "function"
-      ? undefined
-      : window.crypto.randomUUID(),
-  });
+  useEffect(() => {
+    logClientError(error, {
+      route: typeof window === "undefined" ? "/global-error" : window.location.pathname,
+      action: "ui.global_error",
+      requestId:
+        typeof window === "undefined" || typeof window.crypto?.randomUUID !== "function"
+          ? undefined
+          : window.crypto.randomUUID(),
+    });
+  }, [error]);
 
   return (
     <html>
