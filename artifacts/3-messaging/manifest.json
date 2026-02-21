@@ -1,0 +1,70 @@
+{
+  "artifacts": [
+    "artifacts/3-messaging/agentOutputs.dev.json",
+    "artifacts/3-messaging/agent.dev.log.txt",
+    "artifacts/3-messaging/agentOutputs.qa.json",
+    "artifacts/3-messaging/agent.qa.log.txt",
+    "artifacts/3-messaging/manifest.json"
+  ],
+  "endedAt": "2026-02-21T08:00:56.523Z",
+  "hash": "95c73aa902b32c7e0c7a33fce6f59bc68560a1a44f74e68284747a83803edb69",
+  "profile": {
+    "optionalAgents": [],
+    "requiredAgents": [
+      "dev",
+      "qa"
+    ],
+    "requiredArtifacts": [
+      "manifest.json",
+      "agentOutputs.dev.json",
+      "agentOutputs.qa.json",
+      "signature.json",
+      "verification-gates.json"
+    ],
+    "resolvedAsOf": "2026-02-21T08:00:56.446Z"
+  },
+  "results": {
+    "agents": [
+      {
+        "artifact": "artifacts/3-messaging/agentOutputs.dev.json",
+        "id": "dev",
+        "log": "artifacts/3-messaging/agent.dev.log.txt",
+        "name": "Architect",
+        "source": "output/3-messaging/DEV.plan.json",
+        "summary": {
+          "actionCount": 1,
+          "summary": "Deterministic local plan for dev on 3-messaging"
+        }
+      },
+      {
+        "artifact": "artifacts/3-messaging/agentOutputs.qa.json",
+        "id": "qa",
+        "log": "artifacts/3-messaging/agent.qa.log.txt",
+        "name": "Verifier",
+        "source": "output/3-messaging/QA.plan.json",
+        "summary": {
+          "actionCount": 1,
+          "summary": "Deterministic local plan for qa on 3-messaging"
+        }
+      }
+    ]
+  },
+  "risk": "low",
+  "signature": {
+    "agents": [
+      {
+        "id": "dev",
+        "name": "Architect"
+      },
+      {
+        "id": "qa",
+        "name": "Verifier"
+      }
+    ],
+    "manifestHash": "95c73aa902b32c7e0c7a33fce6f59bc68560a1a44f74e68284747a83803edb69",
+    "risk": "low",
+    "task": "3-messaging"
+  },
+  "startedAt": "2026-02-21T08:00:56.445Z",
+  "task": "3-messaging"
+}

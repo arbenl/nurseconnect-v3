@@ -1,0 +1,10 @@
+{
+  "task": "3-messaging",
+  "risk": "low",
+  "status": "pass",
+  "startedAt": "2026-02-21T08:00:56.526Z",
+  "skipped": true,
+  "steps": [],
+  "skipReason": "Verification gates skipped by --skip-verification-gates or SKIP_VERIFICATION_GATES",
+  "completedAt": "2026-02-21T08:00:56.527Z"
+}

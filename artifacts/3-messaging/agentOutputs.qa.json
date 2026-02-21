@@ -1,0 +1,19 @@
+{
+  "agent": "QA",
+  "task": "3-messaging",
+  "summary": "Deterministic local plan for qa on 3-messaging",
+  "actions": [
+    {
+      "type": "append",
+      "path": "docs/steer-offline-3-messaging-qa.md",
+      "description": "Generate deterministic local artifact for qa",
+      "content": "\n- Planned by local mode.\n- Agent: qa\n- Task: 3-messaging\n- Risk: low"
+    }
+  ],
+  "verify": [
+    "node -e \"console.log('steer local verification hook')\""
+  ],
+  "notes": [
+    "Generated in STEER_LOCAL mode. No external LLM call was executed."
+  ]
+}
