@@ -1,62 +1,69 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  createApiLogContext,
+  logApiFailure,
+  logApiStart,
+  logApiSuccess,
+  withRequestId,
+} from "@/server/telemetry/ops-logger";
 
 // Input validation
 const SignupSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6), // Password handling is now delegated to Better-Auth client or separate flow, but generic signup might just upsert user profile if auth is handled elsewhere? 
-  // ACTUALLY: usage of this route implies custom signup. 
-  // If we are moving to Better-Auth, this route might be redundant if using Better-Auth's client.signIn.
-  // HOWEVER, to fix the build, we will keep it but remove firebase.
-  // Note: This route expects to create an auth user. 
-  // Since we don't have a Better-Auth server-side "admin create user" easily accessible here without headers, 
-  // and the user said "migrating to next and supabase", 
-  // we will assume this route is for syncing profile AFTER auth or just legacy.
-  // BUT, to be safe and compile-compliant:
+  password: z.string().min(6), // Password handling is now delegated to Better-Auth client or separate flow, but generic signup might just upsert user profile if auth is handled elsewhere?
+  // Usage of this route implies custom signup; kept as a legacy compatibility endpoint.
+  // Keep the schema shape for backward compatibility only.
   displayName: z.string().optional(),
   role: z.enum(["patient", "nurse"]).optional(),
-  // Password is unused in the profile-only sync, but kept for schema compatibility
+  // Password is unused in profile sync mode, kept for schema compatibility.
 });
 
 export async function POST(request: Request) {
-  // Parse & validate
+  const startedAt = Date.now();
+  const context = createApiLogContext(request, "/api/auth/signup", {
+    action: "auth.signup",
+  });
+  logApiStart(context, startedAt);
+
   const body = await request.json().catch(() => ({}));
   const parsed = SignupSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
+    const response = NextResponse.json(
       { message: "Invalid input", errors: parsed.error.flatten().fieldErrors },
-      { status: 400 }
+      { status: 400 },
     );
+    logApiFailure(context, parsed.error, 400, startedAt, {
+      source: "auth.signup",
+    });
+    return withRequestId(response, context.requestId);
   }
 
   const { email, displayName, role } = parsed.data;
 
   try {
-    // In the new architecture, Auth is handled by Better-Auth (client side or api/auth/*).
-    // This route seems to have been "Create Firebase Auth + Create Firestore Doc + Create Postgres Row".
-    // We are removing Firebase. 
-    // We can't easily "create Better-Auth user" here without the Better-Auth client or API.
-    // For now, we will return a 501 Not Implemented or just simulate success if this is just for testing.
-    // BUT the goal is to fix type errors. The dependencies on firebase are removed.
-
-    // Check if we can upsert the user in Postgres directly?
-    // We need an ID. Better-Auth generates it. 
-    // If this route is legacy, we might expect the caller to provide ID or we fail.
-
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: "Signup via legacy route is disabled. Please use Better-Auth flow.",
-        hint: "Use client.signUp.email() instead."
+        hint: "Use client.signUp.email() instead.",
       },
-      { status: 410 } // Gone
+      { status: 410 }, // Gone
     );
-
+    logApiSuccess(context, 410, startedAt, {
+      source: "auth.signup",
+    });
+    return withRequestId(response, context.requestId);
   } catch (error: unknown) {
-    console.error("Signup error:", error);
-    return NextResponse.json(
-      { message: (error as Error)?.message ?? "Unexpected error" },
-      { status: 500 }
+    logApiFailure(context, error, 500, startedAt, {
+      source: "auth.signup",
+      email,
+      role,
+      displayName,
+    });
+    return withRequestId(
+      NextResponse.json({ message: (error as Error)?.message ?? "Unexpected error" }, { status: 500 }),
+      context.requestId,
     );
   }
 }
