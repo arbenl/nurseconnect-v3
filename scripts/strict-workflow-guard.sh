@@ -7,6 +7,43 @@ log() {
   printf '[strict-guard] %s\n' "$*"
 }
 
+load_local_env_defaults() {
+  # Local Git hooks may not inherit interactive shell env vars.
+  if [[ -z "${DATABASE_URL:-}" ]]; then
+    if [[ -f "apps/web/.env.local" ]]; then
+      # shellcheck disable=SC1091
+      set -a
+      source "apps/web/.env.local"
+      set +a
+    elif [[ -f ".env.local" ]]; then
+      # shellcheck disable=SC1091
+      set -a
+      source ".env.local"
+      set +a
+    fi
+  fi
+
+  # Force gate execution against a safe test DB if URL is present but not test-like.
+  if [[ -n "${DATABASE_URL:-}" ]]; then
+    local db_name
+    db_name="$(node -e "const u=new URL(process.env.DATABASE_URL);console.log((u.pathname||'').replace(/^\\//,''));")"
+    case "$db_name" in
+      *ci*|*test*|*gate*)
+        ;;
+      *)
+        DATABASE_URL="$(node -e "const u=new URL(process.env.DATABASE_URL);const p=(u.pathname||'/').replace(/^\\//,'')||'nurseconnect';u.pathname='/' + p + '_test';process.stdout.write(u.toString());")"
+        export DATABASE_URL
+        ;;
+    esac
+  fi
+
+  export APP_URL="${APP_URL:-http://localhost:3010}"
+  export BETTER_AUTH_URL="${BETTER_AUTH_URL:-http://localhost:3010}"
+  export BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET:-ci_better_auth_secret_32_chars_minimum_123456}"
+  export E2E_TEST_MODE="${E2E_TEST_MODE:-1}"
+  export FIRST_ADMIN_EMAILS="${FIRST_ADMIN_EMAILS:-admin.bootstrap@test.com}"
+}
+
 require_clean_tree() {
   local phase="$1"
   local status
@@ -94,6 +131,11 @@ main() {
       require_clean_tree "post-commit"
       ;;
     pre-push)
+      load_local_env_defaults
+      if [[ -z "${DATABASE_URL:-}" ]]; then
+        log "DATABASE_URL is required for pre-push release gate."
+        exit 1
+      fi
       require_clean_tree "pre-push (before gate)"
       log "Running strict release gate (pnpm gate:release)."
       pnpm gate:release
