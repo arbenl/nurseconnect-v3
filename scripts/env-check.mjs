@@ -31,10 +31,17 @@ function loadLocalEnv(targetEnv) {
     resolve(repoRoot, "apps/web/.env.local"),
   ];
 
+  const mergedFromFiles = {};
   for (const file of candidates) {
     if (!existsSync(file)) continue;
     const parsed = dotenv.parse(readFileSync(file));
-    Object.assign(targetEnv, parsed);
+    Object.assign(mergedFromFiles, parsed);
+  }
+
+  for (const [key, value] of Object.entries(mergedFromFiles)) {
+    if (typeof targetEnv[key] === "undefined") {
+      targetEnv[key] = value;
+    }
   }
 }
 

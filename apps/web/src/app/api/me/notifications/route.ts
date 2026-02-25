@@ -64,18 +64,18 @@ export async function GET(request: Request) {
     return withRequestId(response, context.requestId);
   }
 
+  const actorContext = { ...context, actorId: user.id, actorRole: user.role };
   if (user.role !== "admin" && user.role !== "nurse" && user.role !== "patient") {
     const response = NextResponse.json({ error: "Forbidden" }, {
       status: 403,
       headers: NO_CACHE_HEADERS,
     });
-    logApiFailure(context, "Forbidden", 403, startedAt, {
+    logApiFailure(actorContext, "Forbidden", 403, startedAt, {
       source: "notifications",
     });
     return withRequestId(response, context.requestId);
   }
 
-  const actorContext = { ...context, actorId: user.id, actorRole: user.role };
   const query = new URL(request.url).searchParams;
   const sinceResult = parseSince(query.get("since"));
   if ("error" in sinceResult) {
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
       status: 400,
       headers: NO_CACHE_HEADERS,
     });
-    logApiFailure(context, sinceResult.error, 400, startedAt, {
+    logApiFailure(actorContext, sinceResult.error, 400, startedAt, {
       source: "notifications",
     });
     return withRequestId(response, context.requestId);
@@ -95,7 +95,7 @@ export async function GET(request: Request) {
       status: 400,
       headers: NO_CACHE_HEADERS,
     });
-    logApiFailure(context, limitResult.error, 400, startedAt, {
+    logApiFailure(actorContext, limitResult.error, 400, startedAt, {
       source: "notifications",
     });
     return withRequestId(response, context.requestId);

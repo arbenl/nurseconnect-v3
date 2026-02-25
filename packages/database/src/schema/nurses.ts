@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, index, uniqueIndex, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, uniqueIndex, boolean } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 export const nurses = pgTable(
@@ -19,7 +19,6 @@ export const nurses = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    userIdx: index("nurses_user_id_idx").on(t.userId),
     userUq: uniqueIndex("nurses_user_id_uq").on(t.userId),
   })
 );

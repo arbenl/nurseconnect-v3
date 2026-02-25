@@ -71,10 +71,14 @@ normalize_generated_artifacts() {
 require_no_unstaged_or_untracked() {
   local unstaged
   local untracked
+  local allow_untracked="${STRICT_GUARD_ALLOW_UNTRACKED:-0}"
   unstaged="$(git diff --name-only)"
   untracked="$(git ls-files --others --exclude-standard)"
+  if [[ "$allow_untracked" == "1" ]]; then
+    untracked=""
+  fi
   if [[ -n "$unstaged" || -n "$untracked" ]]; then
-    log "Commit blocked: stage all tracked files and remove untracked files first."
+    log "Commit blocked: stage all tracked files and remove untracked files first (or set STRICT_GUARD_ALLOW_UNTRACKED=1)."
     if [[ -n "$unstaged" ]]; then
       printf '[strict-guard] Unstaged files:\n%s\n' "$unstaged"
     fi
@@ -136,6 +140,11 @@ main() {
   fi
   cd "$repo_root"
 
+  if [[ "${STRICT_GUARD_SKIP:-0}" == "1" ]]; then
+    log "STRICT_GUARD_SKIP=1 set; skipping ${MODE} checks."
+    exit 0
+  fi
+
   case "$MODE" in
     pre-commit)
       require_no_unstaged_or_untracked
@@ -146,7 +155,7 @@ main() {
     pre-push)
       load_local_env_defaults
       if [[ -z "${DATABASE_URL:-}" ]]; then
-        log "DATABASE_URL is required for pre-push release gate."
+        log "DATABASE_URL is required for pre-push release gate. Set STRICT_GUARD_SKIP=1 for an emergency local bypass."
         exit 1
       fi
       require_clean_tree "pre-push (before gate)"

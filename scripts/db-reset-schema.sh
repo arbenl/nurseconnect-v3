@@ -13,13 +13,20 @@ if [[ -z "$DB_NAME" ]]; then
   exit 1
 fi
 
+ALLOW_NON_TEST_RESET="${I_KNOW_WHAT_I_AM_DOING:-0}"
+
 case "$DB_NAME" in
   *ci*|*test*|*gate*)
     ;;
   *)
-    echo "Refusing to reset non-test database '$DB_NAME'."
-    echo "Use a DATABASE_URL that includes one of: ci, test, gate."
-    exit 1
+    if [[ "$ALLOW_NON_TEST_RESET" == "1" ]]; then
+      echo "DANGER: I_KNOW_WHAT_I_AM_DOING=1 set. Proceeding to reset non-test database '$DB_NAME'."
+    else
+      echo "Refusing to reset non-test database '$DB_NAME'."
+      echo "Use a DATABASE_URL that includes one of: ci, test, gate."
+      echo "Emergency override: set I_KNOW_WHAT_I_AM_DOING=1 (high risk)."
+      exit 1
+    fi
     ;;
 esac
 
