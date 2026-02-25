@@ -44,10 +44,10 @@ try {
   const childEnv = { ...process.env };
   if (!childEnv.NODE_ENV) childEnv.NODE_ENV = "development";
   loadLocalEnv(childEnv);
-  execSync(`npx -y tsx -e "import('${envFile}')"`, {
+  execSync(`pnpm --filter @nurseconnect/database exec tsx -e "import('${envFile}')"`, {
     env: childEnv,
     stdio: ["pipe", "pipe", "pipe"],
-    cwd: resolve(__dirname, ".."),
+    cwd: repoRoot,
   });
   console.log("✅ Environment validation passed");
   process.exit(0);
