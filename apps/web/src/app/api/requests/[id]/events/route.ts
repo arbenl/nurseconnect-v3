@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getCachedUser } from "@/lib/auth/user";
+import { authErrorResponse, requireAnyRole } from "@/server/auth";
 import {
   RequestEventForbiddenError,
   RequestEventNotFoundError,
@@ -23,26 +23,12 @@ export async function GET(request: Request, { params }: Params) {
   });
   logApiStart(context, startedAt);
 
-  const user = await getCachedUser();
-  if (!user) {
-    const unauthorizedContext = { ...context, actorId: undefined, actorRole: undefined };
-    const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    logApiFailure(unauthorizedContext, "Unauthorized", 401, startedAt, {
-      source: "request-events",
-    });
-    return withRequestId(response, context.requestId);
-  }
-
-  const actorContext = { ...context, actorId: user.id, actorRole: user.role };
-  if (actorContext.actorRole !== "admin" && actorContext.actorRole !== "nurse" && actorContext.actorRole !== "patient") {
-    const response = NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    logApiFailure(actorContext, "Forbidden", 403, startedAt, {
-      source: "request-events",
-    });
-    return withRequestId(response, context.requestId);
-  }
+  let actorContext = context;
 
   try {
+    const { user } = await requireAnyRole(["admin", "nurse", "patient"]);
+    actorContext = { ...context, actorId: user.id, actorRole: user.role };
+
     const events = await getRequestEventsForUser({
       requestId: params.id,
       actorUserId: user.id,
@@ -52,6 +38,11 @@ export async function GET(request: Request, { params }: Params) {
     logApiSuccess(actorContext, 200, startedAt, { requestId: params.id });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "request-events");
+    if (authResponse) {
+      return authResponse;
+    }
+
     if (error instanceof RequestEventNotFoundError) {
       const response = NextResponse.json({ error: (error as Error).message }, { status: 404 });
       logApiFailure(actorContext, error, 404, startedAt, { source: "request-events" });

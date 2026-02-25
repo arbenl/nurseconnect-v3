@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { resetDb, seedNurse } from "../e2e-utils/db";
+import { getDbClient, resetDb, seedNurse } from "../e2e-utils/db";
 import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
 test.describe("Nurse API", () => {
@@ -33,6 +33,51 @@ test.describe("Nurse API", () => {
         expect(me.user.nurseProfile).toBeTruthy();
         expect(me.user.nurseProfile.licenseNumber).toBe("RN-API-TEST");
         expect(me.user.nurseProfile.isAvailable).toBe(false); // Default
+    });
+
+    test("become nurse is idempotent and keeps one nurse profile row", async ({ request }) => {
+        const email = `become-nurse-idempotent-${Date.now()}@test.local`;
+        const { userId } = await createTestUser(request, email, "Idempotent Nurse", "patient");
+        await loginTestUser(request, email);
+
+        const first = await request.post("/api/me/become-nurse", {
+            data: {
+                licenseNumber: "RN-IDEMP-1",
+                specialization: "Emergency",
+            },
+        });
+        expect(first.ok(), `First become-nurse failed: ${await first.text()}`).toBeTruthy();
+
+        const second = await request.post("/api/me/become-nurse", {
+            data: {
+                licenseNumber: "RN-IDEMP-2",
+                specialization: "ICU",
+            },
+        });
+        expect(second.ok(), `Second become-nurse failed: ${await second.text()}`).toBeTruthy();
+
+        await request.post("/api/auth/sign-out", { data: {} });
+        await loginTestUser(request, email);
+
+        const meResponse = await request.get("/api/me");
+        expect(meResponse.ok(), `Me fetch failed: ${await meResponse.text()}`).toBeTruthy();
+        const me = await meResponse.json();
+        expect(me.user.role).toBe("nurse");
+        expect(me.user.nurseProfile.licenseNumber).toBe("RN-IDEMP-2");
+        expect(me.user.nurseProfile.specialization).toBe("ICU");
+
+        const client = getDbClient();
+        await client.connect();
+        try {
+            const countResult = await client.query<{ count: string }>(
+                "SELECT COUNT(*)::text AS count FROM nurses WHERE user_id = $1",
+                [userId]
+            );
+            const nurseCount = Number(countResult.rows[0]?.count ?? "0");
+            expect(nurseCount).toBe(1);
+        } finally {
+            await client.end();
+        }
     });
 
     test("nurse can toggle availability", async ({ request }) => {

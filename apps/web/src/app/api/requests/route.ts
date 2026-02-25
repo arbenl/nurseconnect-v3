@@ -2,7 +2,7 @@ import { CreateRequestSchema } from "@nurseconnect/contracts";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getCachedUser } from "@/lib/auth/user";
+import { authErrorResponse, requireRole } from "@/server/auth";
 import { createAndAssignRequest } from "@/server/requests/allocate-request";
 import {
   createApiLogContext,
@@ -19,15 +19,12 @@ export async function POST(request: Request) {
   });
   logApiStart(context, startedAt);
 
-  try {
-    const user = await getCachedUser();
-    if (!user) {
-      const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      logApiFailure(context, "Unauthorized", 401, startedAt, { source: "requests.create" });
-      return withRequestId(response, context.requestId);
-    }
+  let actorContext = context;
 
-    const actorContext = { ...context, actorId: user.id, actorRole: user.role };
+  try {
+    const { user } = await requireRole("patient");
+    actorContext = { ...context, actorId: user.id, actorRole: user.role };
+
     const json = await request.json();
     const body = CreateRequestSchema.parse(json);
     const newRequest = await createAndAssignRequest({
@@ -41,15 +38,19 @@ export async function POST(request: Request) {
     logApiSuccess(actorContext, 200, startedAt, { action: "request.create", requestId: newRequest.id });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "requests.create");
+    if (authResponse) {
+      return authResponse;
+    }
     if (error instanceof z.ZodError) {
       const response = NextResponse.json(error.issues, { status: 400 });
-      logApiFailure(context, error, 400, startedAt, {
+      logApiFailure(actorContext, error, 400, startedAt, {
         source: "requests.create",
       });
       return withRequestId(response, context.requestId);
     }
 
-    logApiFailure(context, error, 500, startedAt, {
+    logApiFailure(actorContext, error, 500, startedAt, {
       source: "requests.create",
     });
     return withRequestId(

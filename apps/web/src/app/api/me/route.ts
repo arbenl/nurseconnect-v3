@@ -107,11 +107,11 @@ export async function GET(request: Request) {
     });
     return withRequestId(response, context.requestId);
   } catch (error) {
-    const fallback = { ok: true, session: null, user: null, error: "Sync failed" };
-    const response = NextResponse.json(fallback, { status: 200 });
-    logApiFailure(actorContext, error, 200, startedAt, {
-      status: 200,
-      fallback: true,
+    const fallback = { ok: false, session: null, user: null, error: "Internal Server Error" } as const;
+    const response = NextResponse.json(fallback, { status: 500 });
+    logApiFailure(actorContext, error, 500, startedAt, {
+      status: 500,
+      fallback: false,
       source: "api.me",
     });
     return withRequestId(response, context.requestId);

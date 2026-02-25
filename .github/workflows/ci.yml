@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_ci
+      BETTER_AUTH_SECRET: ci_better_auth_secret_32_chars_minimum_123456
+      APP_URL: http://localhost:3010
+      BETTER_AUTH_URL: http://localhost:3010
 
     steps:
       - name: Checkout repo
@@ -31,7 +35,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 10.15.0
           run_install: false
 
       - name: Get pnpm store directory
@@ -50,11 +54,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate Environment
+        run: pnpm env:check
+
       - name: Type Check
         run: pnpm -w type-check
 
       - name: Lint
         run: pnpm lint
+
+      - name: Build Web Application
+        run: pnpm --filter web build
 
   unit:
     name: Unit Tests (jsdom)
@@ -75,7 +85,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 10.15.0
           run_install: false
 
       - name: Get pnpm store directory
@@ -135,7 +145,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 10.15.0
           run_install: false
 
       - name: Get pnpm store directory
@@ -153,34 +163,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Verify Migration Meta
-        run: pnpm --filter @nurseconnect/database db:verify-meta
-
-      - name: DB Migrate
-        run: pnpm db:migrate
-
-      - name: Verify Migrations Applied
-        run: |
-          cd apps/web && pnpm exec node -e "
-          const { Client } = require('pg');
-          (async () => {
-            const c = new Client({ connectionString: process.env.DATABASE_URL });
-            await c.connect();
-            const r = await c.query(\`
-              SELECT
-                to_regclass('public.nurse_locations') as nurse_locations,
-                to_regclass('public.service_requests') as service_requests,
-                to_regclass('public.users') as users,
-                to_regclass('public.nurses') as nurses
-            \`);
-            if (!r.rows[0].nurse_locations || !r.rows[0].service_requests) {
-              console.error('Missing required tables after migration');
-              process.exit(2);
-            }
-            await c.end();
-          })();
-          "
 
       - name: Run DB/API Integration Tests
         run: pnpm test:api
@@ -226,7 +208,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 10.15.0
           run_install: false
 
       - name: Get pnpm store directory
@@ -244,9 +226,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: DB Migrate
-        run: pnpm db:migrate
 
       - name: Build Contracts Package
         run: pnpm --filter @nurseconnect/contracts build
@@ -305,7 +284,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 10.15.0
           run_install: false
 
       - name: Get pnpm store directory
@@ -327,8 +306,8 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm --filter web exec playwright install --with-deps chromium
 
-      - name: DB Migrate
-        run: pnpm db:migrate
+      - name: Prepare clean DB and migrate
+        run: pnpm db:from-clean
 
       - name: Build Contracts Package
         run: pnpm --filter @nurseconnect/contracts build
@@ -391,7 +370,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 10.15.0
           run_install: false
 
       - name: Get pnpm store directory
@@ -413,8 +392,8 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: DB Migrate
-        run: pnpm db:migrate
+      - name: Prepare clean DB and migrate
+        run: pnpm db:from-clean
 
       - name: Build Contracts Package
         run: pnpm --filter @nurseconnect/contracts build
@@ -453,7 +432,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 10.15.0
           run_install: false
 
       - name: Get pnpm store directory

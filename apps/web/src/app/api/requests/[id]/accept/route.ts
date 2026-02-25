@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { getCachedUser } from "@/lib/auth/user";
+import { authErrorResponse, requireRole } from "@/server/auth";
 import { requestActionErrorResponse } from "@/server/requests/request-action-http";
 import { applyRequestAction } from "@/server/requests/request-actions";
 import {
   createApiLogContext,
-  logApiFailure,
   logApiStart,
   logApiSuccess,
   withRequestId,
@@ -20,19 +19,12 @@ export async function POST(_: Request, { params }: Params) {
   });
   logApiStart(context, startedAt);
 
-  const user = await getCachedUser();
-  if (!user) {
-    const unauthorizedContext = { ...context, actorId: undefined, actorRole: undefined };
-    const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    logApiFailure(unauthorizedContext, "Unauthorized", 401, startedAt, {
-      source: "request-action",
-    });
-    return withRequestId(response, context.requestId);
-  }
-
-  const actorContext = { ...context, actorId: user.id, actorRole: user.role };
+  let actorContext = context;
 
   try {
+    const { user } = await requireRole("nurse");
+    actorContext = { ...context, actorId: user.id, actorRole: user.role };
+
     const updated = await applyRequestAction({
       requestId: params.id,
       actorUserId: user.id,
@@ -42,6 +34,11 @@ export async function POST(_: Request, { params }: Params) {
     logApiSuccess(actorContext, 200, startedAt, { action: "accept", requestId: params.id });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "request-action");
+    if (authResponse) {
+      return authResponse;
+    }
+
     return requestActionErrorResponse(error, actorContext, startedAt);
   }
 }

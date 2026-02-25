@@ -1,5 +1,5 @@
 import type { GetRequestEventsResponse, RequestEventType, RequestStatus } from "@nurseconnect/contracts";
-import { and, asc, db, desc, eq, gte, or, schema } from "@nurseconnect/database";
+import { and, asc, db, desc, eq, gte, schema } from "@nurseconnect/database";
 
 const { requestEvents, serviceRequests } = schema;
 
@@ -26,6 +26,10 @@ type ReadNotificationsInput = {
   sinceIso?: string | null;
   limit?: number | null;
 };
+
+const DEFAULT_NOTIFICATIONS_LIMIT = 25;
+const MIN_NOTIFICATIONS_LIMIT = 1;
+const MAX_NOTIFICATIONS_LIMIT = 100;
 
 export class RequestEventNotFoundError extends Error {
   constructor(message = "Request not found") {
@@ -105,62 +109,50 @@ export async function getRequestEventsForUser(
 }
 
 export async function getNotificationsForActor(input: ReadNotificationsInput): Promise<GetRequestEventsResponse> {
-  const { actorUserId, actorRole, sinceIso, limit = 25 } = input;
+  const { actorUserId, actorRole, sinceIso } = input;
 
-  const normalizedLimit = Math.min(Math.max(limit ?? 25, 1), 100);
+  const requestedLimit = input.limit ?? DEFAULT_NOTIFICATIONS_LIMIT;
+  const normalizedLimit = Math.min(
+    Math.max(requestedLimit, MIN_NOTIFICATIONS_LIMIT),
+    MAX_NOTIFICATIONS_LIMIT
+  );
   const sinceDate = sinceIso ? new Date(sinceIso) : null;
   const sinceCondition = sinceDate && Number.isFinite(sinceDate.getTime())
     ? gte(requestEvents.createdAt, sinceDate)
     : null;
 
   if (actorRole === "admin") {
-    const adminEvents = await (
-      sinceCondition
-        ? db
-            .select()
-            .from(requestEvents)
-            .where(sinceCondition)
-            .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
-            .limit(normalizedLimit)
-        : db
-            .select()
-            .from(requestEvents)
-            .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
-            .limit(normalizedLimit)
-    );
+    const adminEvents = sinceCondition
+      ? await db
+          .select()
+          .from(requestEvents)
+          .where(sinceCondition)
+          .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
+          .limit(normalizedLimit)
+      : await db
+          .select()
+          .from(requestEvents)
+          .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
+          .limit(normalizedLimit);
     return adminEvents.map((event) => serializeEvent(event));
   }
 
-  const requestIdRows = await db
-    .select({ requestId: serviceRequests.id })
+  const actorRequestCondition =
+    actorRole === "nurse"
+      ? eq(serviceRequests.assignedNurseUserId, actorUserId)
+      : eq(serviceRequests.patientUserId, actorUserId);
+
+  const visibilityCondition = sinceCondition
+    ? and(actorRequestCondition, sinceCondition)
+    : actorRequestCondition;
+
+  const events = await db
+    .select({ event: requestEvents })
     .from(serviceRequests)
-    .where(
-      actorRole === "nurse"
-        ? eq(serviceRequests.assignedNurseUserId, actorUserId)
-        : eq(serviceRequests.patientUserId, actorUserId),
-    );
+    .innerJoin(requestEvents, eq(requestEvents.requestId, serviceRequests.id))
+    .where(visibilityCondition)
+    .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
+    .limit(normalizedLimit);
 
-  if (requestIdRows.length === 0) {
-    return [];
-  }
-
-  const requestIdFilter = or(...requestIdRows.map((requestIdRow) => eq(requestEvents.requestId, requestIdRow.requestId)));
-
-  const events = await (
-    sinceCondition
-      ? db
-          .select()
-          .from(requestEvents)
-          .where(and(requestIdFilter, sinceCondition))
-          .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
-          .limit(normalizedLimit)
-      : db
-          .select()
-          .from(requestEvents)
-          .where(requestIdFilter)
-          .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
-          .limit(normalizedLimit)
-  );
-
-  return events.map((event) => serializeEvent(event));
+  return events.map((eventRow) => serializeEvent(eventRow.event));
 }

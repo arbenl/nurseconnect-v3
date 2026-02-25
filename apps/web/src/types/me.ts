@@ -1,5 +1,6 @@
 export type MeResponse =
     | { ok: true; session: null; user: null }
+    | { ok: false; session: null; user: null; error: string }
     | {
         ok: true;
         session: {

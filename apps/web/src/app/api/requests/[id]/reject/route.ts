@@ -1,12 +1,11 @@
 import { RejectRequestSchema } from "@nurseconnect/contracts";
 import { NextResponse } from "next/server";
 
-import { getCachedUser } from "@/lib/auth/user";
+import { authErrorResponse, requireRole } from "@/server/auth";
 import { requestActionErrorResponse } from "@/server/requests/request-action-http";
 import { applyRequestAction } from "@/server/requests/request-actions";
 import {
   createApiLogContext,
-  logApiFailure,
   logApiStart,
   logApiSuccess,
   withRequestId,
@@ -21,18 +20,11 @@ export async function POST(request: Request, { params }: Params) {
   });
   logApiStart(context, startedAt);
 
-  const user = await getCachedUser();
-  if (!user) {
-    const unauthorizedContext = { ...context, actorId: undefined, actorRole: undefined };
-    const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    logApiFailure(unauthorizedContext, "Unauthorized", 401, startedAt, {
-      source: "request-action",
-    });
-    return withRequestId(response, context.requestId);
-  }
-
-  const actorContext = { ...context, actorId: user.id, actorRole: user.role };
+  let actorContext = context;
   try {
+    const { user } = await requireRole("nurse");
+    actorContext = { ...context, actorId: user.id, actorRole: user.role };
+
     let json: unknown = {};
     try {
       json = await request.json();
@@ -51,6 +43,11 @@ export async function POST(request: Request, { params }: Params) {
     logApiSuccess(actorContext, 200, startedAt, { action: "reject", requestId: params.id });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "request-action");
+    if (authResponse) {
+      return authResponse;
+    }
+
     return requestActionErrorResponse(error, actorContext, startedAt);
   }
 }

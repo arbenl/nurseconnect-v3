@@ -81,6 +81,11 @@ if [[ -z "$PR_JSON" ]]; then
   print_failures
 fi
 
+log "Checking unresolved Copilot/Sentry review threads"
+if ! BOT_GUARD_OUTPUT=$(PR_NUMBER="$pr_number" node scripts/check-pr-bot-comments.mjs 2>&1); then
+  fail "Copilot/Sentry review thread validation failed:\n${BOT_GUARD_OUTPUT}"
+fi
+
 REPO_OWNER=$(gh repo view --json owner --jq '.owner.login')
 REPO_NAME=$(gh repo view --json name --jq '.name')
 THREADS_JSON=$(PR_NUMBER="$pr_number" REPO_OWNER="$REPO_OWNER" REPO_NAME="$REPO_NAME" node - <<'NODE'
