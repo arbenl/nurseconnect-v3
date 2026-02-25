@@ -2,7 +2,7 @@ import { NurseLocationUpdateRequestSchema } from "@nurseconnect/contracts";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getCachedUser } from "@/lib/auth/user";
+import { authErrorResponse, requireRole } from "@/server/auth";
 import {
   NurseLocationForbiddenError,
   updateMyNurseLocation,
@@ -22,18 +22,12 @@ export async function PATCH(request: Request) {
   });
   logApiStart(context, startedAt);
 
-  const user = await getCachedUser();
-  if (!user) {
-    const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    logApiFailure(context, "Unauthorized", 401, startedAt, {
-      source: "me.location",
-    });
-    return withRequestId(response, context.requestId);
-  }
-
-  const actorContext = { ...context, actorId: user.id, actorRole: user.role };
+  let actorContext = context;
 
   try {
+    const { user } = await requireRole("nurse");
+    actorContext = { ...context, actorId: user.id, actorRole: user.role };
+
     const json = await request.json();
     const body = NurseLocationUpdateRequestSchema.parse(json);
 
@@ -64,6 +58,10 @@ export async function PATCH(request: Request) {
         source: "me.location",
       });
       return withRequestId(response, context.requestId);
+    }
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "me.location");
+    if (authResponse) {
+      return authResponse;
     }
 
     logApiFailure(actorContext, error, 500, startedAt, { source: "me.location" });

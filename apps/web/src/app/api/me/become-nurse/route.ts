@@ -67,35 +67,38 @@ export async function POST(request: Request) {
       return withRequestId(response, context.requestId);
     }
 
-    if (user.role === "nurse") {
-      const response = NextResponse.json(
-        { error: "User is already a nurse" },
-        { status: 400 },
-      );
-      logApiFailure(actorContext, "User already nurse", 400, startedAt, {
-        source: "me.becomeNurse",
-      });
-      return withRequestId(response, context.requestId);
-    }
-
-    // Transaction to update role and add nurse record
+    // Transaction to update role and upsert nurse record (idempotent)
     const actorContextWithRole = {
       ...actorContext,
       actorRole: user.role,
     };
 
+    const now = new Date();
     await db.transaction(async (tx) => {
-      // 1. Update user role
-      await tx.update(schema.users).set({ role: "nurse" }).where(eq(schema.users.id, user.id));
+      await tx
+        .update(schema.users)
+        .set({ role: "nurse", updatedAt: now })
+        .where(eq(schema.users.id, user.id));
 
-      // 2. Create nurse record
-      await tx.insert(schema.nurses).values({
-        userId: user.id,
-        status: "pending", // Default to pending verification
-        licenseNumber,
-        specialization,
-        isAvailable: false,
-      });
+      await tx
+        .insert(schema.nurses)
+        .values({
+          userId: user.id,
+          status: "pending", // Default to pending verification
+          licenseNumber,
+          specialization,
+          isAvailable: false,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: schema.nurses.userId,
+          set: {
+            status: "pending",
+            licenseNumber,
+            specialization,
+            updatedAt: now,
+          },
+        });
     });
 
     const response = NextResponse.json({ ok: true });

@@ -65,6 +65,7 @@ export async function PATCH(request: Request) {
       where: eq(schema.nurses.userId, user.id),
     });
 
+    const now = new Date();
     if (existingNurse) {
       await db
         .update(schema.nurses)
@@ -72,9 +73,9 @@ export async function PATCH(request: Request) {
           ...(licenseNumber ? { licenseNumber } : {}),
           ...(specialization ? { specialization } : {}),
           isAvailable: isAvailable ?? existingNurse.isAvailable,
-          updatedAt: new Date(),
+          updatedAt: now,
         })
-        .where(eq(schema.nurses.id, existingNurse.id));
+        .where(eq(schema.nurses.userId, user.id));
     } else {
       if (!licenseNumber || !specialization) {
         const response = NextResponse.json({ error: "License number and specialization are required for initial profile." }, { status: 400 });
@@ -84,13 +85,25 @@ export async function PATCH(request: Request) {
         return withRequestId(response, context.requestId);
       }
 
-      await db.insert(schema.nurses).values({
-        userId: user.id,
-        status: "pending",
-        licenseNumber,
-        specialization,
-        isAvailable: isAvailable ?? false,
-      });
+      await db
+        .insert(schema.nurses)
+        .values({
+          userId: user.id,
+          status: "pending",
+          licenseNumber,
+          specialization,
+          isAvailable: isAvailable ?? false,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: schema.nurses.userId,
+          set: {
+            licenseNumber,
+            specialization,
+            isAvailable: isAvailable ?? false,
+            updatedAt: now,
+          },
+        });
     }
 
     const response = NextResponse.json({ ok: true });

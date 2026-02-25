@@ -57,6 +57,13 @@
       "when": 1771663298434,
       "tag": "0008_purple_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1772021216795,
+      "tag": "0009_giant_lily_hollister",
+      "breakpoints": true
     }
   ]
 }

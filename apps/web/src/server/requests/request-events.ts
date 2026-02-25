@@ -142,20 +142,17 @@ export async function getNotificationsForActor(input: ReadNotificationsInput): P
       ? eq(serviceRequests.assignedNurseUserId, actorUserId)
       : eq(serviceRequests.patientUserId, actorUserId);
 
-  let query = db
+  const visibilityCondition = sinceCondition
+    ? and(actorRequestCondition, sinceCondition)
+    : actorRequestCondition;
+
+  const events = await db
     .select({ event: requestEvents })
     .from(serviceRequests)
     .innerJoin(requestEvents, eq(requestEvents.requestId, serviceRequests.id))
+    .where(visibilityCondition)
     .orderBy(desc(requestEvents.createdAt), desc(requestEvents.id))
     .limit(normalizedLimit);
-
-  if (sinceCondition) {
-    query = query.where(and(actorRequestCondition, sinceCondition));
-  } else {
-    query = query.where(actorRequestCondition);
-  }
-
-  const events = await query;
 
   return events.map((eventRow) => serializeEvent(eventRow.event));
 }

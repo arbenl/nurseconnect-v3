@@ -4,6 +4,7 @@ import { getSession } from "./get-session";
 import { UnauthorizedError } from "./require-auth";
 
 const { users } = schema;
+type AppRole = "admin" | "nurse" | "patient";
 
 export class ForbiddenError extends Error {
   constructor(message = "Forbidden") {
@@ -12,7 +13,7 @@ export class ForbiddenError extends Error {
   }
 }
 
-export async function requireRole(role: "admin" | "nurse" | "patient") {
+export async function requireAnyRole(allowedRoles: AppRole[]) {
   const session = await getSession();
 
   if (!session) {
@@ -29,11 +30,13 @@ export async function requireRole(role: "admin" | "nurse" | "patient") {
     throw new UnauthorizedError("User profile not found");
   }
 
-  if (user.role !== role) {
-    // For now, strict equality. Later we might want hierarchy (admin > nurse).
-    // Specifically for "admin", only admin is allowed.
+  if (!allowedRoles.includes(user.role)) {
     throw new ForbiddenError();
   }
 
   return { session, user };
+}
+
+export async function requireRole(role: AppRole) {
+  return requireAnyRole([role]);
 }

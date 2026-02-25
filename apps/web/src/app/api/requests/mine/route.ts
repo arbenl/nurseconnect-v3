@@ -1,7 +1,7 @@
 import { db, eq, or, schema, desc } from "@nurseconnect/database";
 import { NextResponse } from "next/server";
 
-import { getCachedUser } from "@/lib/auth/user";
+import { authErrorResponse, requireAnyRole } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -19,15 +19,11 @@ export async function GET(request: Request) {
   });
   logApiStart(context, startedAt);
 
-  const user = await getCachedUser();
-  if (!user) {
-    const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    logApiFailure(context, "Unauthorized", 401, startedAt, { source: "requests.mine" });
-    return withRequestId(response, context.requestId);
-  }
-
-  const actorContext = { ...context, actorId: user.id, actorRole: user.role };
+  let actorContext = context;
   try {
+    const { user } = await requireAnyRole(["admin", "nurse", "patient"]);
+    actorContext = { ...context, actorId: user.id, actorRole: user.role };
+
     const requests = await db
       .select()
       .from(serviceRequests)
@@ -39,6 +35,11 @@ export async function GET(request: Request) {
     logApiSuccess(actorContext, 200, startedAt, { count: requests.length });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "requests.mine");
+    if (authResponse) {
+      return authResponse;
+    }
+
     logApiFailure(actorContext, error, 500, startedAt, { source: "requests.mine" });
     return withRequestId(NextResponse.json({ error: "Internal Server Error" }, { status: 500 }), context.requestId);
   }

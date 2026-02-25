@@ -15,15 +15,35 @@
 import { execSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync, readFileSync } from "node:fs";
+import dotenv from "dotenv";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envFile = resolve(__dirname, "../apps/web/src/env.ts");
+const repoRoot = resolve(__dirname, "..");
+
+function loadLocalEnv(targetEnv) {
+  // Load in explicit order so app-local values win over repo-root defaults.
+  const candidates = [
+    resolve(repoRoot, ".env"),
+    resolve(repoRoot, ".env.local"),
+    resolve(repoRoot, "apps/web/.env"),
+    resolve(repoRoot, "apps/web/.env.local"),
+  ];
+
+  for (const file of candidates) {
+    if (!existsSync(file)) continue;
+    const parsed = dotenv.parse(readFileSync(file));
+    Object.assign(targetEnv, parsed);
+  }
+}
 
 try {
   // Use tsx to run the TypeScript env module
   // NODE_ENV defaults to 'development' when running standalone (Next.js sets it automatically)
   const childEnv = { ...process.env };
   if (!childEnv.NODE_ENV) childEnv.NODE_ENV = "development";
+  loadLocalEnv(childEnv);
   execSync(`npx -y tsx -e "import('${envFile}')"`, {
     env: childEnv,
     stdio: ["pipe", "pipe", "pipe"],
