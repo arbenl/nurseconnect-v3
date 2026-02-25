@@ -55,6 +55,19 @@ require_clean_tree() {
   fi
 }
 
+normalize_generated_artifacts() {
+  # Keep strict clean-tree guarantees while allowing tool-generated noise.
+  local generated=(
+    "apps/web/tsconfig.tsbuildinfo"
+  )
+
+  for path in "${generated[@]}"; do
+    if [[ -n "$(git status --porcelain -- "$path")" ]]; then
+      git restore --worktree -- "$path"
+    fi
+  done
+}
+
 require_no_unstaged_or_untracked() {
   local unstaged
   local untracked
@@ -139,6 +152,7 @@ main() {
       require_clean_tree "pre-push (before gate)"
       log "Running strict release gate (pnpm gate:release)."
       pnpm gate:release
+      normalize_generated_artifacts
       require_clean_tree "pre-push (after gate)"
       run_pr_comment_gate
       ;;
