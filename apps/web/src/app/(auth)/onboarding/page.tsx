@@ -1,8 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -36,10 +35,18 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 type NurseFormValues = z.infer<typeof nurseSchema>;
 
 export default function OnboardingPage() {
-  const router = useRouter();
   const { data: session } = authClient.useSession();
   const { user, profileComplete, isLoading, mutateProfile, mutateNurseProfile } = useUserProfile();
   const [step, setStep] = useState(1);
+  const didRedirectRef = useRef(false);
+
+  const navigateToDashboard = useCallback(() => {
+    if (didRedirectRef.current) return;
+    didRedirectRef.current = true;
+    // Force a full navigation to avoid stale client-side route cache loops
+    // between /onboarding and /dashboard after profile completion.
+    window.location.assign("/dashboard");
+  }, []);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -82,9 +89,9 @@ export default function OnboardingPage() {
   // Redirect if already complete
   useEffect(() => {
     if (profileComplete) {
-      router.push("/dashboard");
+      navigateToDashboard();
     }
-  }, [profileComplete, router]);
+  }, [navigateToDashboard, profileComplete]);
 
   async function onProfileSubmit(data: ProfileFormValues) {
     try {
@@ -92,7 +99,7 @@ export default function OnboardingPage() {
       if (user?.role === "nurse") {
         setStep(2);
       } else {
-        router.push("/dashboard");
+        navigateToDashboard();
       }
     } catch (error) {
       console.error("Profile update error:", error);
@@ -103,7 +110,7 @@ export default function OnboardingPage() {
     try {
       if (mutateNurseProfile) {
         await mutateNurseProfile.mutateAsync(data);
-        router.push("/dashboard");
+        navigateToDashboard();
       }
     } catch (error) {
       console.error("Nurse profile update error:", error);

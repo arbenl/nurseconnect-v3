@@ -10,11 +10,15 @@ dotenv.config({ path: path.resolve(__dirname, ".env.local") });
  */
 export default defineConfig({
     testDir: "./tests",
+    outputDir: path.resolve(__dirname, "../../artifacts/playwright/test-results"),
     fullyParallel: true,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 1 : 0,
     workers: 1,
-    reporter: "html",
+    reporter: [
+        ["line"],
+        ["html", { outputFolder: path.resolve(__dirname, "../../artifacts/playwright/report"), open: "never" }],
+    ],
     use: {
         baseURL: "http://localhost:3010",
         trace: "retain-on-failure",

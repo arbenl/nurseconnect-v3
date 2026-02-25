@@ -11,8 +11,11 @@ export default function DashboardClientPage() {
 
   const { user, isLoading, error } = useUserProfile();
 
-  if (isLoading) return <div data-testid="dashboard-loading">Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+  // Keep the dashboard stable during background refetches.
+  const showInitialLoading = isLoading && !user && !error;
+
+  if (showInitialLoading) return <div data-testid="dashboard-loading">Loading...</div>;
+  if (error && !user) return <div>Error: {error.message}</div>;
 
   return (
     <div className="p-8" data-testid="dashboard-ready">
