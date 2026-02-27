@@ -5,6 +5,23 @@ import { expect, test } from "@playwright/test";
 import { getDbClient, resetDb, seedNurse } from "../e2e-utils/db";
 import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
+let contractsModulePromise: Promise<typeof import("@nurseconnect/contracts")> | null = null;
+
+async function loadContractsModule() {
+  if (!contractsModulePromise) {
+    contractsModulePromise = import("@nurseconnect/contracts");
+  }
+  return contractsModulePromise;
+}
+
+function asUuidOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function metadataKey(metadata: { previousNurseUserId: string | null; newNurseUserId: string | null }) {
+  return `${metadata.previousNurseUserId ?? "null"}->${metadata.newNurseUserId ?? "null"}`;
+}
+
 test.describe("Admin Request Reassign API", () => {
   test.beforeEach(async () => {
     await resetDb();
@@ -130,5 +147,48 @@ test.describe("Admin Request Reassign API", () => {
     const unassignBody = await unassignResponse.json();
     expect(unassignBody.request.status).toBe("open");
     expect(unassignBody.request.assignedNurseUserId).toBeNull();
+
+    const contracts = await loadContractsModule();
+
+    const eventsResponse = await request.get(`/api/requests/${requestId}/events`);
+    expect(eventsResponse.ok(), `Events fetch failed: ${await eventsResponse.text()}`).toBeTruthy();
+    const events = contracts.GetRequestEventsResponseSchema.parse(await eventsResponse.json());
+    const reassignmentEvents = events.filter((event) => event.type === "request_reassigned");
+
+    expect(reassignmentEvents.length).toBe(3);
+
+    const reassignmentEventMetadata = reassignmentEvents.map((event) =>
+      contracts.RequestReassignedMetadataSchema.parse({
+        previousNurseUserId: asUuidOrNull(event.meta?.previousNurseUserId),
+        newNurseUserId: asUuidOrNull(event.meta?.newNurseUserId),
+      }),
+    );
+    expect(reassignmentEventMetadata).toEqual([
+      { previousNurseUserId: null, newNurseUserId: nurseOneUserId },
+      { previousNurseUserId: nurseOneUserId, newNurseUserId: nurseTwoUserId },
+      { previousNurseUserId: nurseTwoUserId, newNurseUserId: null },
+    ]);
+
+    const activityResponse = await request.get("/api/admin/activity/reassignments?limit=200");
+    expect(activityResponse.ok(), `Activity feed failed: ${await activityResponse.text()}`).toBeTruthy();
+    const activity = contracts.AdminReassignmentActivityResponseSchema.parse(await activityResponse.json());
+    const requestActivity = activity.items.filter((item) => item.requestId === requestId);
+
+    expect(requestActivity.length).toBeGreaterThanOrEqual(6);
+
+    const requestEventMetadataKeys = new Set(
+      requestActivity
+        .filter((item) => item.source === "request-event")
+        .map((item) => metadataKey(item.metadata)),
+    );
+    const auditMetadataKeys = new Set(
+      requestActivity
+        .filter((item) => item.source === "admin-audit")
+        .map((item) => metadataKey(item.metadata)),
+    );
+    const expectedMetadataKeys = reassignmentEventMetadata.map((metadata) => metadataKey(metadata));
+
+    expect(requestEventMetadataKeys).toEqual(new Set(expectedMetadataKeys));
+    expect(auditMetadataKeys).toEqual(new Set(expectedMetadataKeys));
   });
 });
