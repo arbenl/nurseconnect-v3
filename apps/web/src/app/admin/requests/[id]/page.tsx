@@ -1,4 +1,4 @@
-import { db, eq, schema } from "@nurseconnect/database";
+import { asc, db, desc, eq, schema } from "@nurseconnect/database";
 import { notFound } from "next/navigation";
 
 import { requireRole } from "@/server/auth";
@@ -8,7 +8,9 @@ import {
 } from "@/server/requests/request-events";
 import { toLocationHint } from "@/server/requests/triage-severity";
 
-const { serviceRequests } = schema;
+import ReassignPanel from "./reassign-panel";
+
+const { nurses, serviceRequests, users } = schema;
 
 type PageProps = {
   params: {
@@ -40,6 +42,17 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
   if (!request) {
     notFound();
   }
+
+  const nurseCandidates = await db
+    .select({
+      userId: users.id,
+      email: users.email,
+      isAvailable: nurses.isAvailable,
+    })
+    .from(users)
+    .innerJoin(nurses, eq(nurses.userId, users.id))
+    .where(eq(users.role, "nurse"))
+    .orderBy(desc(nurses.isAvailable), asc(users.email));
 
   let events;
   try {
@@ -97,11 +110,18 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
         </div>
       </section>
 
+      <ReassignPanel
+        requestId={request.id}
+        currentAssignedNurseUserId={request.assignedNurseUserId}
+        nurseCandidates={nurseCandidates}
+      />
+
       <section
         style={{
           border: "1px solid #333",
           borderRadius: "8px",
           overflowX: "auto",
+          marginTop: "1rem",
         }}
       >
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>

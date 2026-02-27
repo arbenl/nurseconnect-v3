@@ -11,7 +11,7 @@ type LockedRequestRow = {
   id: string;
   status: string;
   assignedNurseUserId: string | null;
-  assignedAt: Date | null;
+  assignedAt: Date | string | null;
 };
 
 export class RequestReassignForbiddenError extends Error {
@@ -90,17 +90,23 @@ export async function reassignRequest(input: {
     }
 
     const previousNurseUserId = request.assignedNurseUserId;
-    const previousAssignedAt = request.assignedAt;
+    const previousAssignedAt =
+      request.assignedAt instanceof Date
+        ? request.assignedAt
+        : request.assignedAt
+          ? new Date(request.assignedAt)
+          : null;
     const previousStatus = request.status as RequestStatus;
     const nextStatus: RequestStatus = nurseUserId ? "assigned" : "open";
     const isPreviouslyAssigned = request.status === "assigned";
     const isReassignToSameNurse =
       isPreviouslyAssigned && nurseUserId !== null && nurseUserId === previousNurseUserId;
-    const shouldReleasePreviousNurse = isPreviouslyAssigned && previousNurseUserId && nurseUserId === null;
+    const shouldReleasePreviousNurse =
+      isPreviouslyAssigned && previousNurseUserId !== null && previousNurseUserId !== nurseUserId;
     const shouldAssignNewNurse = nurseUserId !== null && (!isPreviouslyAssigned || nurseUserId !== previousNurseUserId);
     const shouldRefreshAssignedAt = nurseUserId !== null && !isReassignToSameNurse;
     const now = new Date();
-    const nextAssignedAt = shouldRefreshAssignedAt ? now : previousAssignedAt;
+    const nextAssignedAt = nurseUserId === null ? null : shouldRefreshAssignedAt ? now : previousAssignedAt;
 
     const updatePayload = {
       status: nextStatus,
