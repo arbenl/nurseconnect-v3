@@ -67,6 +67,18 @@ and exits non-zero on any failure.
 
 `--include-optional` enables optional agents for the selected risk profile during run.
 
+### LLM provider
+
+`scripts/agent-runner.mjs` supports both Codex and Gemini backends:
+
+- Default: `STEER_LLM_PROVIDER=codex` (implicit default)
+- Alternative provider: `STEER_LLM_PROVIDER=gemini`
+- Model override: `STEER_MODEL=<model-id>` (or `AGENT_MODEL`, `CODEX_MODEL`, `GEMINI_MODEL`)
+- Codex tuning: `STEER_CODEX_REASONING_EFFORT=low|medium|high` and `STEER_AGENT_TIMEOUT_MS=<milliseconds>`
+- Codex execution workspace: `STEER_CODEX_WORKDIR=<path>` (defaults to `/tmp` to avoid repo-local instruction coupling)
+- Provider fallback safety: if `codex` is selected but the CLI is missing, runner falls back to Gemini via `npx` unless `STEER_ALLOW_PROVIDER_FALLBACK=0`.
+- Path safety: task prompts are resolved relative to repo root, so `agent-runner` can be invoked from subdirectories.
+
 ### Strict schema mode
 
 Both run and verify enforce schema validation locally:

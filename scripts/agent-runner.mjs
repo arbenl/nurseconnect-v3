@@ -12,7 +12,7 @@
 
 // top of file (ensure ESM imports, not require)
 import { readFileSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
@@ -20,7 +20,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // workspace root is parent of this scripts folder
-const root = join(__dirname, "..");
+const root = resolve(__dirname, "..");
 const STEER_CONFIG_PATH = join(root, "steer", "steer.config.json");
 const TASK_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 const AGENT = process.argv[2];
@@ -327,21 +327,23 @@ const context = readFileSync(contextFile, "utf8");
 
 function loadTaskPrompt(task, agent) {
   // Candidate order: specialized → nested → generic
-  const candidates = [
+  const relativeCandidates = [
     join("prompts", `${task}-${agent}.md`), // e.g. prompts/1-auth-roles-qa.md
     join("prompts", task, `${agent}.md`), // e.g. prompts/1-auth-roles/qa.md
     join("prompts", `${task}.md`), // fallback: prompts/1-auth-roles.md
   ];
 
-  for (const p of candidates) {
-    if (existsSync(p)) {
-      const content = readFileSync(p, "utf8");
-      console.log(`ℹ️  Using task prompt: ${p}`);
+  for (const relativePath of relativeCandidates) {
+    const absolutePath = join(root, relativePath);
+    if (existsSync(absolutePath)) {
+      const content = readFileSync(absolutePath, "utf8");
+      console.log(`ℹ️  Using task prompt: ${relativePath}`);
       return content;
     }
   }
 
-  throw new Error(`No prompt file found for task "${task}" (looked for: ${candidates.join(", ")})`);
+  const searched = relativeCandidates.map((candidate) => join(root, candidate)).join(", ");
+  throw new Error(`No prompt file found for task "${task}" (looked for: ${searched})`);
 }
 
 const taskPrompt = loadTaskPrompt(TASK, AGENT);
@@ -375,6 +377,7 @@ The schema is:
 Rules:
 - Output MUST be valid JSON only (UTF-8), no extra text or markdown.
 - No code fences.
+- Do NOT run shell commands, inspect files, or use tools; answer directly from the provided context.
 - Keep file paths accurate relative to the repository root.
 - Prefer minimal edits: only source/config files, never caches or node_modules.
 - If unknowns exist, propose sensible defaults and mention them in notes.
@@ -397,9 +400,46 @@ const outFile = join(outDir, `${AGENT.toUpperCase()}.plan.json`);
 const rawFile = join(outDir, `${AGENT.toUpperCase()}.raw.txt`);
 const policyFile = join(outDir, `${AGENT.toUpperCase()}.policy-violations.json`);
 
-const model = process.env.GEMINI_MODEL; // optional override via env
+const llmProvider = String(
+  process.env.STEER_LLM_PROVIDER || process.env.AGENT_LLM_PROVIDER || "codex"
+).toLowerCase();
 
-console.log(`▶️  Generating plan for agent=${AGENT} task=${TASK}`);
+function resolveModel(provider) {
+  const sharedModel = process.env.STEER_MODEL || process.env.AGENT_MODEL;
+  if (sharedModel) {
+    return sharedModel;
+  }
+  if (provider === "codex" || provider === "openai") {
+    return process.env.CODEX_MODEL || process.env.GEMINI_MODEL;
+  }
+  if (provider === "gemini" || provider === "google") {
+    return process.env.GEMINI_MODEL || process.env.CODEX_MODEL;
+  }
+  return process.env.CODEX_MODEL || process.env.GEMINI_MODEL;
+}
+
+const model = resolveModel(llmProvider);
+const codexReasoningEffort = process.env.STEER_CODEX_REASONING_EFFORT || "low";
+const codexTimeoutMsRaw = Number.parseInt(process.env.STEER_AGENT_TIMEOUT_MS || "180000", 10);
+const codexTimeoutMs = Number.isFinite(codexTimeoutMsRaw) && codexTimeoutMsRaw > 0 ? codexTimeoutMsRaw : 180_000;
+const codexWorkdirRaw = process.env.STEER_CODEX_WORKDIR || "/tmp";
+const codexWorkdirCandidate = isAbsolute(codexWorkdirRaw)
+  ? codexWorkdirRaw
+  : resolve(root, codexWorkdirRaw);
+const resolvedCodexWorkdir = existsSync(codexWorkdirCandidate) ? codexWorkdirCandidate : root;
+const allowProviderFallback = process.env.STEER_ALLOW_PROVIDER_FALLBACK !== "0";
+
+function commandExists(command) {
+  const probe = spawnSync(process.platform === "win32" ? "where" : "which", [command], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  return probe.status === 0;
+}
+
+console.log(
+  `▶️  Generating plan for agent=${AGENT} task=${TASK} provider=${llmProvider}${model ? ` model=${model}` : ""}${llmProvider === "codex" || llmProvider === "openai" ? ` workdir=${resolvedCodexWorkdir}` : ""}`
+);
 
 function runOnce() {
   if (LOCAL_AGENT_RUNNER) {
@@ -412,6 +452,78 @@ function runOnce() {
     };
   }
 
+  if (llmProvider === "codex" || llmProvider === "openai") {
+    if (!commandExists("codex")) {
+      if (allowProviderFallback && commandExists("npx")) {
+        console.warn(
+          "codex CLI not found in PATH; falling back to Gemini CLI via npx. Set STEER_ALLOW_PROVIDER_FALLBACK=0 to disable."
+        );
+        return runWithGeminiCli();
+      }
+      console.error(
+        'codex CLI is not available in PATH. Install Codex CLI or set STEER_LLM_PROVIDER=gemini.'
+      );
+      process.exit(2);
+    }
+    return runWithCodexCli();
+  }
+  if (llmProvider === "gemini" || llmProvider === "google") {
+    if (!commandExists("npx")) {
+      console.error('npx is not available in PATH; Gemini provider requires npx.');
+      process.exit(2);
+    }
+    return runWithGeminiCli();
+  }
+
+  console.error(
+    `Unknown LLM provider "${llmProvider}". Use STEER_LLM_PROVIDER=codex|gemini (or AGENT_LLM_PROVIDER).`
+  );
+  process.exit(2);
+}
+
+function runWithCodexCli() {
+  const codexLastMessage = join(outDir, `${AGENT.toUpperCase()}.codex-last.txt`);
+  const args = [
+    "exec",
+    "--dangerously-bypass-approvals-and-sandbox",
+    "--ephemeral",
+    "--skip-git-repo-check",
+    "-c",
+    `reasoning_effort="${codexReasoningEffort}"`,
+    "-C",
+    resolvedCodexWorkdir,
+    "-o",
+    codexLastMessage,
+  ];
+
+  if (model) {
+    args.push("--model", model);
+  }
+  args.push(fullPrompt);
+
+  const result = spawnSync("codex", args, {
+    encoding: "utf8",
+    cwd: resolvedCodexWorkdir,
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout: codexTimeoutMs,
+  });
+
+  let stdout = result.stdout || "";
+  if (existsSync(codexLastMessage)) {
+    try {
+      stdout = readFileSync(codexLastMessage, "utf8");
+    } catch {
+      // Fall back to captured stdout if the last-message file cannot be read.
+    }
+  }
+
+  return {
+    ...result,
+    stdout,
+  };
+}
+
+function runWithGeminiCli() {
   const args = [
     "-y",
     "@google/gemini-cli@latest",
@@ -503,9 +615,19 @@ if (!normalized) {
 }
 
 if (!normalized) {
-  console.error("Gemini returned non-JSON after retry. Raw output saved at:", rawFile);
+  console.error(
+    `LLM provider "${llmProvider}" returned non-JSON after retry. Raw output saved at:`,
+    rawFile
+  );
+  if (cli.error?.message) {
+    console.error("Provider invocation error:", cli.error.message);
+  }
   console.error("Trimmed stdout (first 2000 chars):\n");
   console.error((cli.stdout || "").slice(0, 2000));
+  if (cli.stderr) {
+    console.error("Trimmed stderr (first 2000 chars):\n");
+    console.error((cli.stderr || "").slice(0, 2000));
+  }
   process.exit(cli.status || 2);
 }
 
