@@ -1,0 +1,173 @@
+{
+  "repoRoot": "auto",
+  "paths": {
+    "tmpRoot": "tmp/multi-agent",
+    "eventsFile": "events.ndjson",
+    "roleScorecardFile": "role-scorecard.json",
+    "stepLogsDir": "steps",
+    "benchmarkRoot": "tmp/multi-agent/benchmarks",
+    "finalizerRoot": "tmp/multi-agent/finalizer"
+  },
+  "lanes": {
+    "ordered": [
+      "preflight-agent",
+      "gatekeeper",
+      "testing-agent",
+      "compliance-agent",
+      "verification-agent",
+      "finalizer-agent"
+    ],
+    "parallelizableInMultiMode": [
+      "gatekeeper",
+      "testing-agent"
+    ]
+  },
+  "gates": {
+    "preflightAgentCommands": [
+      "pnpm env:check"
+    ],
+    "gatekeeperCommands": [
+      "pnpm gate:fast"
+    ],
+    "testingAgentCommands": [
+      "pnpm test:ci"
+    ],
+    "verificationCommands": [
+      "pnpm gate:fast"
+    ],
+    "verificationRemediationCommands": [
+      "pnpm lint --fix",
+      "pnpm -w type-check"
+    ],
+    "finalizerCommands": []
+  },
+  "policy": {
+    "thresholds": {
+      "complexityMultiMin": 7,
+      "independentTasksMultiMin": 2,
+      "multiScoreMin": 3,
+      "complianceBoost": 2,
+      "overBudgetPenalty": 3
+    }
+  },
+  "retryLimits": {
+    "verificationAgent": 2,
+    "commandTimeoutMs": 900000
+  },
+  "roleCostProfile": {
+    "preflight-agent": {
+      "fixedUsd": 0.35,
+      "usdPerSecond": 0.0006
+    },
+    "gatekeeper": {
+      "fixedUsd": 0.65,
+      "usdPerSecond": 0.0008
+    },
+    "testing-agent": {
+      "fixedUsd": 0.75,
+      "usdPerSecond": 0.001
+    },
+    "compliance-agent": {
+      "fixedUsd": 0.55,
+      "usdPerSecond": 0.0009
+    },
+    "verification-agent": {
+      "fixedUsd": 0.85,
+      "usdPerSecond": 0.0011
+    },
+    "finalizer-agent": {
+      "fixedUsd": 0.3,
+      "usdPerSecond": 0.0005
+    }
+  },
+  "compliance": {
+    "phiLeakPatterns": [
+      {
+        "name": "possible-ssn",
+        "regex": "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+      },
+      {
+        "name": "possible-mrn",
+        "regex": "\\b(?:MRN|medical\\s*record\\s*number)\\s*[:=]\\s*[A-Za-z0-9-]{6,}"
+      },
+      {
+        "name": "possible-dob",
+        "regex": "\\b(?:DOB|date\\s*of\\s*birth)\\s*[:=]\\s*\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}"
+      }
+    ],
+    "secretPatterns": [
+      {
+        "name": "aws-access-key",
+        "regex": "\\bAKIA[0-9A-Z]{16}\\b"
+      },
+      {
+        "name": "generic-secret-assignment",
+        "regex": "(?:api[_-]?key|access[_-]?token|secret|password)\\s*[:=]\\s*['\"]?[A-Za-z0-9_./+=-]{10,}"
+      },
+      {
+        "name": "github-token",
+        "regex": "\\bgh[pousr]_[A-Za-z0-9]{36,}\\b"
+      }
+    ],
+    "auditRequiredLanes": [
+      "gatekeeper",
+      "testing-agent"
+    ],
+    "scanExtensions": [
+      ".log",
+      ".txt",
+      ".ndjson",
+      ".json",
+      ".md"
+    ],
+    "maxArtifactReadBytes": 262144
+  },
+  "benchmark": {
+    "scenarios": [
+      {
+        "id": "small-change",
+        "mode": "auto",
+        "complexity": 4,
+        "estimatedCostUsd": 4,
+        "budgetUsd": 20,
+        "independentTaskCount": 1,
+        "requiresComplianceReview": true
+      },
+      {
+        "id": "parallel-workstream",
+        "mode": "auto",
+        "complexity": 8,
+        "estimatedCostUsd": 12,
+        "budgetUsd": 25,
+        "independentTaskCount": 3,
+        "requiresComplianceReview": true
+      },
+      {
+        "id": "budget-pressure",
+        "mode": "auto",
+        "complexity": 5,
+        "estimatedCostUsd": 18,
+        "budgetUsd": 10,
+        "independentTaskCount": 2,
+        "requiresComplianceReview": false
+      }
+    ],
+    "scorecardFile": "scorecard.md"
+  },
+  "a2a": {
+    "protocolVersion": "a2a/1.0",
+    "requestKind": "nurseconnect.multiagent.request",
+    "resultKind": "nurseconnect.multiagent.result",
+    "defaultSource": "nurseconnect.multiagent",
+    "defaultTarget": "a2a.partner"
+  },
+  "finalizer": {
+    "requireCleanTree": true,
+    "requireBranchPushed": true,
+    "ciSnapshotCommand": "gh pr checks --json name,state,link",
+    "localCheckCommands": [
+      "pnpm type-check",
+      "pnpm test:ci"
+    ]
+  }
+}
