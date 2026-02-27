@@ -19,15 +19,28 @@ export async function resetDb() {
     await client.connect();
 
     try {
-        await client.query("TRUNCATE TABLE service_request_events RESTART IDENTITY CASCADE");
-        await client.query("TRUNCATE TABLE admin_audit_logs RESTART IDENTITY CASCADE");
-        await client.query("TRUNCATE TABLE service_requests RESTART IDENTITY CASCADE");
-        await client.query("TRUNCATE TABLE nurse_locations RESTART IDENTITY CASCADE");
-        await client.query("TRUNCATE TABLE nurses RESTART IDENTITY CASCADE");
-        await client.query("TRUNCATE TABLE users RESTART IDENTITY CASCADE");
-        await client.query("TRUNCATE TABLE auth_sessions RESTART IDENTITY CASCADE");
-        await client.query("TRUNCATE TABLE auth_accounts RESTART IDENTITY CASCADE");
-        await client.query("TRUNCATE TABLE auth_users RESTART IDENTITY CASCADE");
+        const tables = [
+            "service_request_events",
+            "admin_audit_logs",
+            "service_requests",
+            "nurse_locations",
+            "nurses",
+            "users",
+            "auth_sessions",
+            "auth_accounts",
+            "auth_users",
+        ] as const;
+
+        for (const table of tables) {
+            const result = await client.query<{ regclass: string | null }>(
+                "SELECT to_regclass($1) AS regclass",
+                [`public.${table}`],
+            );
+            if (!result.rows[0]?.regclass) {
+                continue;
+            }
+            await client.query(`TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`);
+        }
     } finally {
         await client.end();
     }
