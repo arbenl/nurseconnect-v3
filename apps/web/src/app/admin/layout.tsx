@@ -28,6 +28,7 @@ export default async function AdminLayout({
         <div style={{ fontWeight: "bold", fontSize: "1.2rem" }}>Admin</div>
         <nav style={{ display: "flex", gap: "1rem" }}>
           <Link href="/admin" style={{ opacity: 0.8 }}>Dashboard</Link>
+          <Link href="/admin/requests" style={{ opacity: 0.8 }}>Active Queue</Link>
           <Link href="/admin/users" style={{ opacity: 0.8 }}>Users</Link>
           <Link href="/admin/backfill" style={{ opacity: 0.8 }}>Backfill Status</Link>
         </nav>

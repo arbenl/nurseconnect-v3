@@ -50,3 +50,38 @@ export const RequestActionResponseSchema = z.object({
     request: ServiceRequestSchema,
 });
 export type RequestActionResponse = z.infer<typeof RequestActionResponseSchema>;
+
+export const ActiveRequestStatusInfo = z.enum([
+    "open",
+    "assigned",
+    "accepted",
+    "enroute",
+]);
+export type ActiveRequestStatus = z.infer<typeof ActiveRequestStatusInfo>;
+
+export const RequestSeverityBandInfo = z.enum([
+    "critical",
+    "high",
+    "medium",
+    "low",
+]);
+export type RequestSeverityBand = z.infer<typeof RequestSeverityBandInfo>;
+
+export const AdminActiveRequestQueueItemSchema = z.object({
+    requestId: z.string().uuid(),
+    status: ActiveRequestStatusInfo,
+    severityScore: z.number().int().nonnegative(),
+    severityBand: RequestSeverityBandInfo,
+    waitMinutes: z.number().int().nonnegative(),
+    lastEventAt: z.string().datetime({ offset: true }),
+    createdAt: z.string().datetime({ offset: true }),
+    assignedNurse: z.enum(["assigned", "unassigned"]),
+    locationHint: z.string().min(1),
+});
+export type AdminActiveRequestQueueItem = z.infer<typeof AdminActiveRequestQueueItemSchema>;
+
+export const AdminActiveRequestQueueResponseSchema = z.object({
+    generatedAt: z.string().datetime({ offset: true }),
+    items: z.array(AdminActiveRequestQueueItemSchema),
+});
+export type AdminActiveRequestQueueResponse = z.infer<typeof AdminActiveRequestQueueResponseSchema>;

@@ -60,6 +60,10 @@ export default async function AdminDashboardPage() {
           <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "#888" }}>Management</h2>
           <ul style={{ paddingLeft: "1.2rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             <li>
+              <a href="/admin/requests" style={{ textDecoration: "underline" }}>Active Requests Queue</a>
+              <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Read-only triage ordering</span>
+            </li>
+            <li>
               <a href="/admin/users" style={{ textDecoration: "underline" }}>Manage Users</a>
               <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Promote/demote roles</span>
             </li>
