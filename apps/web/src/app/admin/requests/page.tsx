@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { requireRole } from "@/server/auth";
 import { getAdminActiveRequestQueue } from "@/server/requests/admin-active-queue";
 
@@ -49,7 +51,14 @@ export default async function AdminRequestsPage() {
               const colors = severityColor(item.severityBand);
               return (
                 <tr key={item.requestId} style={{ borderBottom: "1px solid #222" }}>
-                  <td style={{ padding: "12px", fontFamily: "monospace" }}>{item.requestId}</td>
+                  <td style={{ padding: "12px", fontFamily: "monospace" }}>
+                    <Link
+                      href={`/admin/requests/${item.requestId}`}
+                      style={{ textDecoration: "underline", textUnderlineOffset: "2px" }}
+                    >
+                      {item.requestId}
+                    </Link>
+                  </td>
                   <td style={{ padding: "12px" }}>{item.status}</td>
                   <td style={{ padding: "12px" }}>
                     <span
