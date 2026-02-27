@@ -64,6 +64,10 @@ export default async function AdminDashboardPage() {
               <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Read-only triage ordering</span>
             </li>
             <li>
+              <a href="/admin/activity" style={{ textDecoration: "underline" }}>Reassignment Activity Feed</a>
+              <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Unified request/audit event history</span>
+            </li>
+            <li>
               <a href="/admin/users" style={{ textDecoration: "underline" }}>Manage Users</a>
               <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Promote/demote roles</span>
             </li>
