@@ -8,6 +8,31 @@ test.describe("Authentication", () => {
     await resetDb();
   });
 
+  test("signin redirects to the canonical login route", async ({ page }) => {
+    await page.goto("/signin");
+
+    await page.waitForURL(/\/login$/);
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole("heading", { name: /welcome back/i })).toBeVisible();
+  });
+
+  test("login and signup link to the canonical auth routes", async ({ page }) => {
+    await page.goto("/login");
+
+    const signUpLink = page.getByRole("link", { name: /sign up/i });
+    await expect(signUpLink).toHaveAttribute("href", "/signup");
+    await signUpLink.click();
+
+    await page.waitForURL(/\/signup$/);
+
+    const signInLink = page.getByRole("link", { name: /sign in/i });
+    await expect(signInLink).toHaveAttribute("href", "/login");
+    await signInLink.click();
+
+    await page.waitForURL(/\/login$/);
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
   test("patient signup redirects to onboarding", async ({ page }) => {
     await page.goto("/signup");
 
