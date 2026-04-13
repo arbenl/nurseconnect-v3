@@ -4,6 +4,11 @@ export const CreateRequestSchema = z.object({
     address: z.string().min(5, "Address must be at least 5 characters"),
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),
+    requestType: z.enum(["scheduled", "same_day"]).default("same_day"),
+    scheduledFor: z.string().datetime({ offset: true }).nullable().optional(),
+    referralSource: z.enum(["consumer", "partner"]).default("consumer"),
+    referralPartnerId: z.string().uuid().nullable().optional(),
+    careType: z.string().min(1).optional(),
 });
 
 export type CreateRequestInput = z.infer<typeof CreateRequestSchema>;
@@ -27,6 +32,11 @@ export const ServiceRequestSchema = z.object({
     address: z.string(),
     lat: z.string(),
     lng: z.string(),
+    requestType: z.string(),
+    scheduledFor: z.string().datetime({ offset: true }).nullable(),
+    referralSource: z.string(),
+    referralPartnerId: z.string().uuid().nullable(),
+    careType: z.string().nullable(),
     assignedAt: z.string().datetime({ offset: true }).nullable(),
     acceptedAt: z.string().datetime({ offset: true }).nullable(),
     enrouteAt: z.string().datetime({ offset: true }).nullable(),

@@ -32,6 +32,11 @@ export async function POST(request: Request) {
       address: body.address,
       lat: body.lat,
       lng: body.lng,
+      requestType: body.requestType,
+      scheduledFor: body.scheduledFor ?? null,
+      referralSource: body.referralSource,
+      referralPartnerId: body.referralPartnerId ?? null,
+      careType: body.careType ?? null,
     });
 
     const response = NextResponse.json(newRequest);

@@ -37,7 +37,6 @@ export async function ensureDomainUserFromSession(data: {
     .returning();
 
   return user;
-  return user;
 }
 
 export const upsertUser = ensureDomainUserFromSession;
@@ -55,7 +54,7 @@ export async function createNurseRecord(userId: string) {
     .insert(nurses)
     .values({
       userId,
-      status: "pending", // Default status
+      status: "draft",
     })
     .returning();
   return nurse;

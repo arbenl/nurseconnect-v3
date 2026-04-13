@@ -4,3 +4,4 @@ export * from "./request-events";
 export * from "./admin-activity";
 export * from "./geo/haversine";
 export * from "./location";
+export * from "./nurse-credential";

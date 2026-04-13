@@ -2,6 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -29,10 +30,12 @@ import { useToast } from "@/components/ui/use-toast";
 const formSchema = z.object({
   licenseNumber: z.string().min(1, "License number is required"),
   specialization: z.string().min(1, "Specialization is required"),
+  licenseJurisdiction: z.string().min(1, "Jurisdiction is required"),
 });
 
 export function BecomeNurseCard() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,6 +43,7 @@ export function BecomeNurseCard() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       licenseNumber: "",
+      licenseJurisdiction: "",
       specialization: "",
     },
   });
@@ -61,14 +65,12 @@ export function BecomeNurseCard() {
       }
 
       toast({
-        title: "Success!",
-        description: "You are now registered as a nurse.",
+        title: "Application submitted",
+        description: "You'll be notified when your application is reviewed.",
       });
 
-      // Refresh to update role in session/UI
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
       router.refresh();
-      // Force hard reload to ensure session is updated if using client-side session caching strongly
-      window.location.reload(); 
     } catch (error) {
       console.error(error);
       toast({
@@ -84,9 +86,9 @@ export function BecomeNurseCard() {
   return (
     <Card data-testid="become-nurse-card">
       <CardHeader>
-        <CardTitle>Become a Nurse</CardTitle>
+        <CardTitle>Apply to Join as a Nurse</CardTitle>
         <CardDescription>
-            Join our network of healthcare professionals. Please provide your details below.
+            Submit your credentials to join our care network. We will review your application shortly.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -107,6 +109,19 @@ export function BecomeNurseCard() {
             />
             <FormField
               control={form.control}
+              name="licenseJurisdiction"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>License Jurisdiction</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. CA, NY" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="specialization"
               render={({ field }) => (
                 <FormItem>
@@ -119,7 +134,7 @@ export function BecomeNurseCard() {
               )}
             />
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Updating..." : "Register as Nurse"}
+              {isLoading ? "Submitting..." : "Submit Application"}
             </Button>
           </form>
         </Form>

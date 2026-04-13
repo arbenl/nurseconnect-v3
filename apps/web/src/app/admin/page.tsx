@@ -75,6 +75,10 @@ export default async function AdminDashboardPage() {
               <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Promote/demote roles</span>
             </li>
             <li>
+              <a href="/admin/nurses" style={{ textDecoration: "underline" }}>Nurse Credential Review Queue</a>
+              <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Review and verify nurse application supply</span>
+            </li>
+            <li>
               <a href="/admin/backfill" style={{ textDecoration: "underline" }}>Backfill Status</a>
               <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— View migration progress</span>
             </li>

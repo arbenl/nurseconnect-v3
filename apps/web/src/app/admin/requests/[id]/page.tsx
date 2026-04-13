@@ -1,4 +1,4 @@
-import { asc, db, desc, eq, schema } from "@nurseconnect/database";
+import { asc, db, desc, eq, schema, and, or, isNull, gt } from "@nurseconnect/database";
 import { notFound } from "next/navigation";
 
 import { requirePortalAccessOrRedirect } from "@/server/auth";
@@ -54,7 +54,13 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
     })
     .from(users)
     .innerJoin(nurses, eq(nurses.userId, users.id))
-    .where(eq(users.role, "nurse"))
+    .where(
+      and(
+        eq(users.role, "nurse"),
+        eq(nurses.status, "verified"),
+        or(isNull(nurses.licenseValidUntil), gt(nurses.licenseValidUntil, new Date()))
+      )
+    )
     .orderBy(desc(nurses.isAvailable), asc(users.email));
 
   let events;

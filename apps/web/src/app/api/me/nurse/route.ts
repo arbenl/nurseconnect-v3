@@ -13,9 +13,7 @@ import {
 } from "@/server/telemetry/ops-logger";
 
 const nurseProfileSchema = z.object({
-  licenseNumber: z.string().min(1, "License number is required").optional(),
-  specialization: z.string().min(1, "Specialization is required").optional(),
-  isAvailable: z.boolean().optional(),
+  isAvailable: z.boolean(),
 });
 
 export async function PATCH(request: Request) {
@@ -46,7 +44,7 @@ export async function PATCH(request: Request) {
       return withRequestId(response, context.requestId);
     }
 
-    const { licenseNumber, specialization, isAvailable } = result.data;
+    const { isAvailable } = result.data;
 
     const user = await ensureDomainUserFromSession({
       id: session.user.id,
@@ -65,46 +63,37 @@ export async function PATCH(request: Request) {
       where: eq(schema.nurses.userId, user.id),
     });
 
-    const now = new Date();
-    if (existingNurse) {
-      await db
-        .update(schema.nurses)
-        .set({
-          ...(licenseNumber ? { licenseNumber } : {}),
-          ...(specialization ? { specialization } : {}),
-          isAvailable: isAvailable ?? existingNurse.isAvailable,
-          updatedAt: now,
-        })
-        .where(eq(schema.nurses.userId, user.id));
-    } else {
-      if (!licenseNumber || !specialization) {
-        const response = NextResponse.json({ error: "License number and specialization are required for initial profile." }, { status: 400 });
-        logApiFailure(actorContext, "License number and specialization are required for initial profile.", 400, startedAt, {
-          source: "me.nurse",
-        });
-        return withRequestId(response, context.requestId);
-      }
-
-      await db
-        .insert(schema.nurses)
-        .values({
-          userId: user.id,
-          status: "pending",
-          licenseNumber,
-          specialization,
-          isAvailable: isAvailable ?? false,
-          updatedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: schema.nurses.userId,
-          set: {
-            licenseNumber,
-            specialization,
-            isAvailable: isAvailable ?? false,
-            updatedAt: now,
-          },
-        });
+    if (!existingNurse) {
+      const response = NextResponse.json({ error: "Nurse profile not found" }, { status: 404 });
+      logApiFailure(actorContext, "Nurse profile not found", 404, startedAt, {
+        source: "me.nurse",
+      });
+      return withRequestId(response, context.requestId);
     }
+
+    if (existingNurse.status !== "verified") {
+      const response = NextResponse.json({ error: "Forbidden: Nurse is not verified" }, { status: 403 });
+      logApiFailure(actorContext, "Forbidden: Nurse is not verified", 403, startedAt, {
+        source: "me.nurse",
+      });
+      return withRequestId(response, context.requestId);
+    }
+
+    if (existingNurse.licenseValidUntil && existingNurse.licenseValidUntil <= new Date()) {
+      const response = NextResponse.json({ error: "Forbidden: Nurse license has expired" }, { status: 403 });
+      logApiFailure(actorContext, "Forbidden: Nurse license has expired", 403, startedAt, {
+        source: "me.nurse",
+      });
+      return withRequestId(response, context.requestId);
+    }
+
+    await db
+      .update(schema.nurses)
+      .set({
+        isAvailable,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.nurses.userId, user.id));
 
     const response = NextResponse.json({ ok: true });
     logApiSuccess(actorContext, 200, startedAt, { source: "me.nurse" });

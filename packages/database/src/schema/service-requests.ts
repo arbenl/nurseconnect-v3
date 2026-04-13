@@ -23,6 +23,13 @@ export const serviceRequests = pgTable(
         address: text("address").notNull(),
         lat: numeric("lat", { precision: 9, scale: 6 }).notNull(),
         lng: numeric("lng", { precision: 9, scale: 6 }).notNull(),
+
+        // Intake fields
+        requestType: text("request_type").notNull().default("same_day"),
+        scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
+        referralSource: text("referral_source").notNull().default("consumer"),
+        referralPartnerId: uuid("referral_partner_id").references(() => users.id),
+        careType: text("care_type"),
         assignedAt: timestamp("assigned_at", { withTimezone: true }),
         acceptedAt: timestamp("accepted_at", { withTimezone: true }),
         enrouteAt: timestamp("enroute_at", { withTimezone: true }),
