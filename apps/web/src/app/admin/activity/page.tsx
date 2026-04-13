@@ -1,5 +1,5 @@
 import { getAdminReassignmentActivityFeed } from "@/server/admin/activity-feed";
-import { requireRole } from "@/server/auth";
+import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 function shortId(value: string | null) {
   if (!value) {
@@ -13,7 +13,7 @@ function transitionLabel(previousNurseUserId: string | null, newNurseUserId: str
 }
 
 export default async function AdminActivityPage() {
-  await requireRole("admin");
+  await requirePortalAccessOrRedirect({ portal: "admin", currentPath: "/admin/activity" });
   const activity = await getAdminReassignmentActivityFeed(200);
 
   return (

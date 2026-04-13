@@ -1,19 +1,16 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { requireRole } from "@/server/auth";
+import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  try {
-    await requireRole("admin");
-  } catch {
-    // Basic protection: redirect to smoke page (or login) if not admin
-    redirect("/smoke/auth");
-  }
+  await requirePortalAccessOrRedirect({
+    portal: "admin",
+    currentPath: "/admin",
+  });
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>

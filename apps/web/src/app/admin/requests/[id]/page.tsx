@@ -1,7 +1,7 @@
 import { asc, db, desc, eq, schema } from "@nurseconnect/database";
 import { notFound } from "next/navigation";
 
-import { requireRole } from "@/server/auth";
+import { requirePortalAccessOrRedirect } from "@/server/auth";
 import {
   RequestEventNotFoundError,
   getRequestEventsForUser,
@@ -33,7 +33,10 @@ function actorLabel(actorUserId: string | null) {
 }
 
 export default async function AdminRequestDetailPage({ params }: PageProps) {
-  const { user } = await requireRole("admin");
+  const { user } = await requirePortalAccessOrRedirect({
+    portal: "admin",
+    currentPath: `/admin/requests/${params.id}`,
+  });
 
   const request = await db.query.serviceRequests.findFirst({
     where: eq(serviceRequests.id, params.id),

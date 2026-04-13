@@ -1,7 +1,10 @@
-import { requireRole } from "@/server/auth";
+import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 export default async function AdminDashboardPage() {
-  const { user, session: _session } = await requireRole("admin");
+  const { user } = await requirePortalAccessOrRedirect({
+    portal: "admin",
+    currentPath: "/admin",
+  });
 
   return (
     <div>

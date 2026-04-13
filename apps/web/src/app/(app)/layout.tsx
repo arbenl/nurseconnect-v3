@@ -2,12 +2,18 @@ import { Home, Users, Calendar, Bell } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { requirePortalAccessOrRedirect } from "@/server/auth";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await requirePortalAccessOrRedirect({
+    portal: "app",
+    currentPath: "/dashboard",
+  });
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
