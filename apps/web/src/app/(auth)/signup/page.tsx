@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -9,29 +8,39 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import { resolvePostAuthRedirectTarget } from "@/lib/post-auth-redirect";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSignup = async () => {
     setLoading(true);
-    await authClient.signUp.email({
+    await authClient.signUp.email(
+      {
         email,
         password,
         name,
-    }, {
-        onSuccess: () => {
-            router.push("/dashboard");
+      },
+      {
+        onSuccess: async () => {
+          try {
+            const callbackUrl = new URL(window.location.href).searchParams.get("callbackUrl");
+            const target = await resolvePostAuthRedirectTarget(callbackUrl);
+            window.location.assign(target);
+            return;
+          } catch {
+            window.location.assign("/dashboard");
+          }
         },
         onError: (ctx) => {
-            alert(ctx.error.message);
-            setLoading(false);
+          alert(ctx.error.message);
+          setLoading(false);
         },
-    });
+      },
+    );
   };
 
   return (
@@ -59,9 +68,12 @@ export default function SignupPage() {
             </Button>
         </CardContent>
         <CardFooter className="justify-center">
-            <p className="text-sm text-gray-500">
-                Already have an account? <Link href="/auth/login" className="text-blue-600 hover:underline">Sign in</Link>
-            </p>
+          <p className="text-sm text-gray-500">
+            Already have an account?{" "}
+            <Link href="/login" className="text-blue-600 hover:underline">
+              Sign in
+            </Link>
+          </p>
         </CardFooter>
       </Card>
     </div>

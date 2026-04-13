@@ -9,26 +9,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
-import { normalizeCallbackUrlForRole } from "@/lib/canonical-routes";
+import { resolvePostAuthRedirectTarget } from "@/lib/post-auth-redirect";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
-  const resolveLoginRedirectTarget = async () => {
-    const currentUrl = new URL(window.location.href);
-    const callbackUrl = currentUrl.searchParams.get("callbackUrl");
-    const response = await fetch("/api/me", { credentials: "include" });
-
-    if (!response.ok) {
-      throw new Error("Failed to resolve signed-in user");
-    }
-
-    const payload = await response.json();
-    return normalizeCallbackUrlForRole(payload?.user?.role ?? null, callbackUrl);
-  };
 
   const handleLogin = async () => {
     setLoading(true);
@@ -40,7 +27,8 @@ export default function LoginPage() {
       {
         onSuccess: async () => {
           try {
-            const target = await resolveLoginRedirectTarget();
+            const callbackUrl = new URL(window.location.href).searchParams.get("callbackUrl");
+            const target = await resolvePostAuthRedirectTarget(callbackUrl);
             window.location.assign(target);
             return;
           } catch {
@@ -89,7 +77,7 @@ export default function LoginPage() {
         <CardFooter className="justify-center">
           <p className="text-sm text-gray-500">
             Don&apos;t have an account?{" "}
-            <Link href="/auth/signup" className="text-blue-600 hover:underline">
+            <Link href="/signup" className="text-blue-600 hover:underline">
               Sign up
             </Link>
           </p>
