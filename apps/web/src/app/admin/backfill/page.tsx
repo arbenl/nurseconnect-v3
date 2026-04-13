@@ -1,11 +1,11 @@
 import { db, schema, isNotNull, isNull, count } from "@nurseconnect/database";
 
-import { requireRole } from "@/server/auth";
+import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 const { users } = schema;
 
 export default async function AdminBackfillPage() {
-  await requireRole("admin");
+  await requirePortalAccessOrRedirect({ portal: "admin", currentPath: "/admin/backfill" });
 
   // DB Counts
   const [totalRes] = await db.select({ value: count() }).from(users);

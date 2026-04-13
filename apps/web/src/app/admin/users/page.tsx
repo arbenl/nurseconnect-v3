@@ -1,6 +1,6 @@
 import { db, schema, ilike, or } from "@nurseconnect/database";
 
-import { requireRole } from "@/server/auth";
+import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 import UserTable from "./user-table"; // Client Component
 
@@ -11,7 +11,7 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  await requireRole("admin");
+  await requirePortalAccessOrRedirect({ portal: "admin", currentPath: "/admin/users" });
   const query = (await searchParams).q || "";
 
   // Simple search implementation

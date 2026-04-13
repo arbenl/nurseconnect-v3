@@ -1,9 +1,6 @@
-import { db, schema, eq } from "@nurseconnect/database";
-
-import { getSession } from "./get-session";
 import { UnauthorizedError } from "./require-auth";
+import { resolveCurrentSessionUser } from "./session-user";
 
-const { users } = schema;
 type AppRole = "admin" | "nurse" | "patient";
 
 export class ForbiddenError extends Error {
@@ -14,21 +11,11 @@ export class ForbiddenError extends Error {
 }
 
 export async function requireAnyRole(allowedRoles: AppRole[]) {
-  const session = await getSession();
-
-  if (!session) {
+  const resolved = await resolveCurrentSessionUser();
+  if (!resolved) {
     throw new UnauthorizedError();
   }
-
-  // Fetch domain user to check role
-  const user = await db.query.users.findFirst({
-    where: eq(users.authId, session.user.id),
-  });
-
-  if (!user) {
-    // Session exists but no domain user? Should have been bootstrapped.
-    throw new UnauthorizedError("User profile not found");
-  }
+  const { session, user } = resolved;
 
   if (!allowedRoles.includes(user.role)) {
     throw new ForbiddenError();

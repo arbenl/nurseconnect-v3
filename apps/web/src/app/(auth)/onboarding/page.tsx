@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { authClient } from "@/lib/auth-client";
+import { getCanonicalRouteForRole } from "@/lib/canonical-routes";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -45,8 +46,9 @@ export default function OnboardingPage() {
     didRedirectRef.current = true;
     // Force a full navigation to avoid stale client-side route cache loops
     // between /onboarding and /dashboard after profile completion.
-    window.location.assign("/dashboard");
-  }, []);
+    const target = getCanonicalRouteForRole(user?.role) ?? "/dashboard";
+    window.location.assign(target);
+  }, [user?.role]);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),

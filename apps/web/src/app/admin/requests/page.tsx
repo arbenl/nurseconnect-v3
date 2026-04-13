@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { requireRole } from "@/server/auth";
+import { requirePortalAccessOrRedirect } from "@/server/auth";
 import { getAdminActiveRequestQueue } from "@/server/requests/admin-active-queue";
 
 function severityColor(band: "critical" | "high" | "medium" | "low") {
@@ -17,7 +17,7 @@ function severityColor(band: "critical" | "high" | "medium" | "low") {
 }
 
 export default async function AdminRequestsPage() {
-  await requireRole("admin");
+  await requirePortalAccessOrRedirect({ portal: "admin", currentPath: "/admin/requests" });
   const queue = await getAdminActiveRequestQueue({ limit: 200 });
 
   return (

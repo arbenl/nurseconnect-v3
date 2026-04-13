@@ -1,0 +1,70 @@
+import { getSessionCookie } from "better-auth/cookies";
+import { NextResponse, type NextRequest } from "next/server";
+
+import { getRequestId, withRequestId } from "@/server/telemetry/ops-logger";
+
+export function proxyLogic(req: NextRequest) {
+  const { pathname, search } = req.nextUrl;
+  const requestId = getRequestId(req.headers);
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-request-id", requestId);
+
+  const hasSessionCookie = !!getSessionCookie(req);
+  const isAuthRoute =
+    pathname.startsWith("/api/better-auth") || pathname.startsWith("/api/auth");
+  const isTestRoute = pathname.startsWith("/api/test/");
+  const isHealthRoute =
+    pathname === "/api/health" || pathname.startsWith("/api/health/");
+  const requiresSessionCookie =
+    !isAuthRoute &&
+    !isTestRoute &&
+    !isHealthRoute &&
+    (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/api/me") ||
+      pathname.startsWith("/api/admin") ||
+      pathname.startsWith("/api/requests"));
+  const isApiRoute = pathname.startsWith("/api/");
+  const isDev = process.env.NODE_ENV !== "production";
+
+  let response: NextResponse;
+  if (requiresSessionCookie && !hasSessionCookie) {
+    if (isApiRoute) {
+      response = NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401, headers: requestHeaders },
+      );
+    } else {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("callbackUrl", pathname + (search || ""));
+      response = NextResponse.redirect(loginUrl);
+    }
+  } else {
+    response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "no-referrer");
+  response.headers.set(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains; preload",
+  );
+  const apiCsp =
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests";
+  const appCsp = isDev
+    ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none';"
+    : "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests";
+
+  response.headers.set("Content-Security-Policy", isApiRoute ? apiCsp : appCsp);
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), fullscreen=(), accelerometer=(), gyroscope=(), magnetometer=()",
+  );
+  return withRequestId(response, requestId);
+}
