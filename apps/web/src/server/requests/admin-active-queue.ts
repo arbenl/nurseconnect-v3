@@ -17,6 +17,9 @@ import {
 type ActiveQueueDbRow = {
   requestId: string;
   status: string;
+  requestType: "scheduled" | "same_day";
+  referralSource: "consumer" | "partner";
+  careType: string | null;
   assignedNurseUserId: string | null;
   createdAt: Date | string;
   lastEventAt: Date | string;
@@ -56,6 +59,9 @@ export async function getAdminActiveRequestQueue(
     SELECT
       sr.id AS "requestId",
       sr.status::text AS status,
+      sr.request_type AS "requestType",
+      sr.referral_source AS "referralSource",
+      sr.care_type AS "careType",
       sr.assigned_nurse_user_id AS "assignedNurseUserId",
       sr.created_at AS "createdAt",
       COALESCE(MAX(sre.created_at), sr.created_at) AS "lastEventAt",
@@ -66,7 +72,16 @@ export async function getAdminActiveRequestQueue(
     WHERE sr.status::text IN (
       ${sql.join(ACTIVE_REQUEST_STATUSES.map((status) => sql`${status}`), sql`, `)}
     )
-    GROUP BY sr.id, sr.status, sr.assigned_nurse_user_id, sr.created_at, sr.lat, sr.lng
+    GROUP BY
+      sr.id,
+      sr.status,
+      sr.request_type,
+      sr.referral_source,
+      sr.care_type,
+      sr.assigned_nurse_user_id,
+      sr.created_at,
+      sr.lat,
+      sr.lng
     LIMIT ${limit}
   `);
 
@@ -77,6 +92,9 @@ export async function getAdminActiveRequestQueue(
         {
           requestId: row.requestId,
           status: parsedStatus,
+          requestType: row.requestType,
+          referralSource: row.referralSource,
+          careType: row.careType,
           assignedNurseUserId: row.assignedNurseUserId,
           createdAt: toIsoString(row.createdAt),
           lastEventAt: toIsoString(row.lastEventAt),

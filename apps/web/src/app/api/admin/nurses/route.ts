@@ -39,6 +39,7 @@ export async function GET(request: Request) {
         verifiedAt: item.verifiedAt?.toISOString() ?? null,
         suspendedAt: item.suspendedAt?.toISOString() ?? null,
         suspensionReason: item.suspensionReason,
+        isAvailable: item.isAvailable,
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString(),
         user: {

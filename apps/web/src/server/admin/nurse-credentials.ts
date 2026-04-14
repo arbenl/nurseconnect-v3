@@ -53,6 +53,7 @@ export async function listNurseCredentials(statuses?: string[]) {
       verifiedAt: nurses.verifiedAt,
       suspendedAt: nurses.suspendedAt,
       suspensionReason: nurses.suspensionReason,
+      isAvailable: nurses.isAvailable,
       createdAt: nurses.createdAt,
       updatedAt: nurses.updatedAt,
       userName: users.name,

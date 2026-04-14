@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label";
 type NurseCandidate = {
   userId: string;
   email: string;
+  status: string;
   isAvailable: boolean;
+  licenseValidUntil: string | null;
 };
 
 type ReassignPanelProps = {
@@ -45,6 +47,11 @@ export default function ReassignPanel({
     const found = nurseCandidates.find((candidate) => candidate.userId === selectedNurseUserId);
     return found ? found.email : "";
   }, [nurseCandidates, selectedNurseUserId]);
+
+  const selectedNurse = useMemo(
+    () => nurseCandidates.find((candidate) => candidate.userId === selectedNurseUserId) ?? null,
+    [nurseCandidates, selectedNurseUserId],
+  );
 
   useEffect(() => {
     setIsHydrated(true);
@@ -139,6 +146,29 @@ export default function ReassignPanel({
           >
             Unassign Request
           </Button>
+        </div>
+
+        <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700 sm:grid-cols-3">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Selected nurse</div>
+            <div className="mt-1 font-medium text-slate-950">
+              {selectedNurse?.email ?? "No nurse selected"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Eligibility</div>
+            <div className="mt-1 capitalize">
+              {selectedNurse ? `${selectedNurse.status} • ${selectedNurse.isAvailable ? "available" : "busy"}` : "-"}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">License valid until</div>
+            <div className="mt-1">
+              {selectedNurse?.licenseValidUntil
+                ? new Date(selectedNurse.licenseValidUntil).toLocaleString()
+                : "No expiry on file"}
+            </div>
+          </div>
         </div>
 
         <div

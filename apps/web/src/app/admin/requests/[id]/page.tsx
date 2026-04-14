@@ -52,7 +52,9 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
     .select({
       userId: users.id,
       email: users.email,
+      status: nurses.status,
       isAvailable: nurses.isAvailable,
+      licenseValidUntil: nurses.licenseValidUntil,
     })
     .from(users)
     .innerJoin(nurses, eq(nurses.userId, users.id))
@@ -106,6 +108,18 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
             <strong>Assigned:</strong> {request.assignedNurseUserId ? "assigned" : "unassigned"}
           </div>
           <div>
+            <strong>Dispatch mode:</strong> <span className="capitalize">{request.requestType.replace("_", "-")}</span>
+          </div>
+          <div>
+            <strong>Referral source:</strong> <span className="capitalize">{request.referralSource}</span>
+          </div>
+          <div>
+            <strong>Care type:</strong> {request.careType ?? "-"}
+          </div>
+          <div>
+            <strong>Scheduled for:</strong> {formatDate(request.scheduledFor)}
+          </div>
+          <div>
             <strong>Location Hint:</strong>{" "}
             <span className="font-mono text-xs">
               {toLocationHint(request.lat, request.lng, 2)}
@@ -123,7 +137,10 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
       <ReassignPanel
         requestId={request.id}
         currentAssignedNurseUserId={request.assignedNurseUserId}
-        nurseCandidates={nurseCandidates}
+        nurseCandidates={nurseCandidates.map((candidate) => ({
+          ...candidate,
+          licenseValidUntil: candidate.licenseValidUntil?.toISOString() ?? null,
+        }))}
       />
 
       <AdminSectionCard title="Timeline" description="Request lifecycle events and actor transitions.">
