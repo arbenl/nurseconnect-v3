@@ -62,6 +62,7 @@ test.describe("Service Requests", () => {
 
     const requestsResponse = await page.request.get("/api/requests/mine");
     const requests = await requestsResponse.json();
+    expect(requests).toHaveLength(1);
 
     expect(requests[0].status).toBe("assigned");
     expect(requests[0].assignedNurseUserId).toBe(nearNurseId);
@@ -94,6 +95,7 @@ test.describe("Service Requests", () => {
 
     const requestsResponse = await page.request.get("/api/requests/mine");
     const requests = await requestsResponse.json();
+    expect(requests).toHaveLength(1);
 
     expect(requests[0].status).toBe("open");
     expect(requests[0].assignedNurseUserId).toBeNull();

@@ -51,14 +51,23 @@ export default function AdminNurseDetailPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/nurses");
+      if (!res.ok) {
+        throw new Error("Failed to load nurse review queue");
+      }
       const data = await res.json();
       if (data.items) {
         const item = data.items.find((i: QueueItem) => i.id === nurseId);
         if (item) {
           setNurse(item);
           setJurisdiction(item.licenseJurisdiction || "");
+          setFeedback(null);
+        } else {
+          setNurse(null);
         }
       }
+    } catch (error: unknown) {
+      setNurse(null);
+      setFeedback({ tone: "error", message: getErrorMessage(error) });
     } finally {
       setLoading(false);
     }
