@@ -12,9 +12,29 @@ interface ServiceRequest {
   address: string;
   status: string;
   createdAt: string;
+  requestType: string;
+  scheduledFor: string | null;
+  careType: string | null;
 }
 
-export function NurseAssignmentCard() {
+interface NurseAssignmentCardProps {
+  isAvailable: boolean;
+  specialization?: string | null;
+}
+
+function formatRequestType(requestType: string) {
+  return requestType === "scheduled" ? "Scheduled" : "Same day";
+}
+
+function formatRequestedFor(request: ServiceRequest) {
+  if (request.requestType === "scheduled" && request.scheduledFor) {
+    return new Date(request.scheduledFor).toLocaleString();
+  }
+
+  return "As soon as possible";
+}
+
+export function NurseAssignmentCard({ isAvailable, specialization }: NurseAssignmentCardProps) {
   const [assignment, setAssignment] = useState<ServiceRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<null | "accept" | "reject" | "enroute" | "complete">(null);
@@ -78,7 +98,7 @@ export function NurseAssignmentCard() {
 
   if (loading) {
     return (
-      <Card>
+      <Card data-testid="nurse-assignment-card">
         <CardHeader>
           <CardTitle>Current Assignment</CardTitle>
         </CardHeader>
@@ -91,22 +111,30 @@ export function NurseAssignmentCard() {
 
   if (!assignment) {
     return (
-      <Card>
+      <Card data-testid="nurse-assignment-card">
         <CardHeader>
           <CardTitle>Current Assignment</CardTitle>
-          <CardDescription>No active assignments</CardDescription>
+          <CardDescription>No active visit right now</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            You don&apos;t have any active assignments at the moment.
+            {isAvailable
+              ? "Stay available and keep your phone nearby. New visit requests will appear here."
+              : "You are currently paused for new visit requests. Turn on dispatch availability when you are ready."}
           </p>
+          {specialization ? (
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Specialization</span>
+              <Badge variant="outline">{specialization}</Badge>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card data-testid="nurse-assignment-card">
       <CardHeader>
         <CardTitle>Current Assignment</CardTitle>
         <CardDescription>Active visit request</CardDescription>
@@ -123,10 +151,22 @@ export function NurseAssignmentCard() {
           </Badge>
         </div>
         <div>
+          <p className="text-sm font-medium">Visit type</p>
+          <p className="text-sm text-muted-foreground">{formatRequestType(assignment.requestType)}</p>
+        </div>
+        <div>
+          <p className="text-sm font-medium">Care type</p>
+          <p className="text-sm text-muted-foreground">{assignment.careType ?? "General visit"}</p>
+        </div>
+        <div>
           <p className="text-sm font-medium">Requested</p>
           <p className="text-sm text-muted-foreground">
             {new Date(assignment.createdAt).toLocaleString()}
           </p>
+        </div>
+        <div>
+          <p className="text-sm font-medium">Requested for</p>
+          <p className="text-sm text-muted-foreground">{formatRequestedFor(assignment)}</p>
         </div>
         {assignment.status === "assigned" && (
           <div className="flex gap-2">

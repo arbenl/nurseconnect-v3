@@ -65,6 +65,19 @@ test.describe("Dashboard UX", () => {
     await expect(page.locator("pre")).toHaveCount(0);
   });
 
+  test("nurse dashboard copy stays operationally precise", async ({ page }) => {
+    const nurseEmail = `nurse-dashboard-${Date.now()}@test.local`;
+    await seedVerifiedNurse(page, nurseEmail);
+
+    await loginTestUser(page.request, nurseEmail);
+    await page.goto("/dashboard");
+
+    await expect(page.getByText("Dispatch availability")).toBeVisible();
+    await expect(page.getByText("Availability does not guarantee an assignment.")).toBeVisible();
+    await expect(page.getByText("visible to patients in your area.")).toHaveCount(0);
+    await expect(page.getByText("hidden from search results.")).toHaveCount(0);
+  });
+
   test("mobile shell avoids dead bottom-nav links", async ({ page }) => {
     const patientEmail = `patient-mobile-shell-${Date.now()}@test.local`;
     await seedPatient(page, patientEmail);

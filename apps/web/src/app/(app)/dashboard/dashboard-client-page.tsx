@@ -30,7 +30,10 @@ export default function DashboardClientPage() {
       {user.role === "nurse" && (
         <div className="grid gap-6 md:grid-cols-2 mb-6">
           <NurseStatusCard isAvailable={user.nurseProfile?.isAvailable ?? false} />
-          <NurseAssignmentCard />
+          <NurseAssignmentCard
+            isAvailable={user.nurseProfile?.isAvailable ?? false}
+            specialization={user.nurseProfile?.specialization ?? null}
+          />
         </div>
       )}
 

@@ -37,7 +37,9 @@ export function NurseStatusCard({ isAvailable: initialAvailability }: NurseStatu
 
       toast({
         title: "Status updated",
-        description: `You are now ${checked ? "active and valid for new jobs" : "unavailable"}.`,
+        description: checked
+          ? "You can now receive new visit requests."
+          : "You will stop receiving new visit requests.",
       });
       
       router.refresh(); // Refresh server state
@@ -56,19 +58,19 @@ export function NurseStatusCard({ isAvailable: initialAvailability }: NurseStatu
   };
 
   return (
-    <Card>
+    <Card data-testid="nurse-status-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="space-y-1">
-          <CardTitle>Availability Status</CardTitle>
+          <CardTitle>Dispatch availability</CardTitle>
           <CardDescription>
-            {isAvailable 
-              ? "You are visible to patients in your area." 
-              : "You are currently hidden from search results."}
+            {isAvailable
+              ? "You can receive new visit requests right now."
+              : "Turn this on when you are ready to receive new visit requests."}
           </CardDescription>
         </div>
         <div className={`h-3 w-3 rounded-full ${isAvailable ? "bg-green-500" : "bg-gray-300"}`} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         <div className="flex items-center space-x-4">
           <Switch
             checked={isAvailable}
@@ -77,9 +79,12 @@ export function NurseStatusCard({ isAvailable: initialAvailability }: NurseStatu
             aria-label="Toggle availability"
           />
           <span className="text-sm font-medium">
-            {isAvailable ? "Active" : "Inactive"}
+            {isAvailable ? "Available for new requests" : "Not receiving requests"}
           </span>
         </div>
+        <p className="text-sm text-muted-foreground">
+          Availability does not guarantee an assignment.
+        </p>
       </CardContent>
     </Card>
   );
