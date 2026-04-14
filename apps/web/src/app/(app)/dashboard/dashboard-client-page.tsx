@@ -1,6 +1,7 @@
 "use client";
 
 import { BecomeNurseCard } from "@/components/dashboard/become-nurse-card";
+import { NurseApplicationStatusCard } from "@/components/dashboard/nurse-application-status-card";
 import { NurseAssignmentCard } from "@/components/dashboard/nurse-assignment-card";
 import { NurseStatusCard } from "@/components/dashboard/nurse-status-card";
 import { PatientRequestCard } from "@/components/dashboard/patient-request-card";
@@ -34,7 +35,11 @@ export default function DashboardClientPage() {
       {user?.role !== "nurse" && (
         <div className="grid gap-6 md:grid-cols-2 mb-6">
           <PatientRequestCard />
-          <BecomeNurseCard />
+          {user?.nurseProfile?.status && user.nurseProfile.status !== "verified" ? (
+            <NurseApplicationStatusCard status={user.nurseProfile.status} />
+          ) : (
+            <BecomeNurseCard />
+          )}
         </div>
       )}
 

@@ -1,5 +1,4 @@
-
-import { db, eq, schema } from "@nurseconnect/database";
+import { db, schema } from "@nurseconnect/database";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -16,6 +15,7 @@ import {
 const becomeNurseSchema = z.object({
   licenseNumber: z.string().min(1, "License number is required"),
   specialization: z.string().min(1, "Specialization is required"),
+  licenseJurisdiction: z.string().min(1, "Jurisdiction is required"),
 });
 
 export async function POST(request: Request) {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       return withRequestId(response, context.requestId);
     }
 
-    const { licenseNumber, specialization } = result.data;
+    const { licenseNumber, specialization, licenseJurisdiction } = result.data;
 
     const user = await ensureDomainUserFromSession({
       id: session.user.id,
@@ -76,16 +76,12 @@ export async function POST(request: Request) {
     const now = new Date();
     await db.transaction(async (tx) => {
       await tx
-        .update(schema.users)
-        .set({ role: "nurse", updatedAt: now })
-        .where(eq(schema.users.id, user.id));
-
-      await tx
         .insert(schema.nurses)
         .values({
           userId: user.id,
-          status: "pending", // Default to pending verification
+          status: "submitted", // Application submitted to admin queue
           licenseNumber,
+          licenseJurisdiction,
           specialization,
           isAvailable: false,
           updatedAt: now,
@@ -93,15 +89,16 @@ export async function POST(request: Request) {
         .onConflictDoUpdate({
           target: schema.nurses.userId,
           set: {
-            status: "pending",
+            status: "submitted",
             licenseNumber,
+            licenseJurisdiction,
             specialization,
             updatedAt: now,
           },
         });
     });
 
-    const response = NextResponse.json({ ok: true });
+    const response = NextResponse.json({ ok: true, status: "submitted" });
     logApiSuccess(actorContextWithRole, 200, startedAt, {
       source: "me.becomeNurse",
       targetUserId: user.id,

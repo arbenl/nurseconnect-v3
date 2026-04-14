@@ -111,6 +111,45 @@ describe.sequential("createAndAssignRequest", () => {
         expect(req.assignedNurseUserId ?? null).toBeNull();
     });
 
+    it("does not assign a verified nurse record when the linked user is not in the nurse role", async () => {
+        const [patient] = await db
+            .insert(users)
+            .values({ email: "p3@test.local", role: "patient" })
+            .returning();
+
+        const [nonNurseUser] = await db
+            .insert(users)
+            .values({
+                email: "not-a-nurse@test.local",
+                role: "patient",
+            })
+            .returning();
+
+        await db.insert(nurses).values({
+            userId: nonNurseUser!.id,
+            status: "verified",
+            isAvailable: true,
+            licenseNumber: "PATIENT-ROW",
+            specialization: "general",
+        });
+
+        await db.insert(nurseLocations).values({
+            nurseUserId: nonNurseUser!.id,
+            lat: "0.000000",
+            lng: "0.000000",
+        });
+
+        const req = await createAndAssignRequest({
+            patientUserId: patient!.id,
+            address: "Role mismatch",
+            lat: 0,
+            lng: 0,
+        });
+
+        expect(req.status).toBe("open");
+        expect(req.assignedNurseUserId ?? null).toBeNull();
+    });
+
     // Note: Concurrency testing with FOR UPDATE SKIP LOCKED is challenging in unit tests
     // because Promise.all() doesn't guarantee true parallel execution at the DB level.
     // The lock mechanism is verified through:

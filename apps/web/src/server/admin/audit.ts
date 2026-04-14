@@ -8,12 +8,15 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type AdminAuditAction =
   | "user.role.changed"
   | "request.reassigned"
-  | "nurse.availability.overridden";
+  | "nurse.availability.overridden"
+  | "nurse.credential.verified"
+  | "nurse.credential.rejected"
+  | "nurse.credential.suspended";
 
 type RecordAdminActionInput = {
   actorUserId: string;
   action: AdminAuditAction;
-  targetEntityType: "user" | "request";
+  targetEntityType: "user" | "request" | "nurse";
   targetEntityId: string;
   details?: Record<string, unknown> | null;
 };

@@ -89,15 +89,33 @@ export async function seedNurse(params: {
     licenseNumber: string;
     specialization: string;
     isAvailable: boolean;
+    status?: "draft" | "submitted" | "under_review" | "verified" | "rejected" | "suspended" | "expired" | "renewal_pending";
+    licenseJurisdiction?: string | null;
+    licenseValidUntil?: string | Date | null;
 }) {
     const client = getDbClient();
     await client.connect();
 
     try {
         await client.query(
-            `INSERT INTO nurses (user_id, status, license_number, specialization, is_available) 
-       VALUES ($1, 'verified', $2, $3, $4)`,
-            [params.userId, params.licenseNumber, params.specialization, params.isAvailable]
+            `INSERT INTO nurses (
+                user_id,
+                status,
+                license_number,
+                license_jurisdiction,
+                specialization,
+                license_valid_until,
+                is_available
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+                params.userId,
+                params.status ?? "verified",
+                params.licenseNumber,
+                params.licenseJurisdiction ?? null,
+                params.specialization,
+                params.licenseValidUntil ? new Date(params.licenseValidUntil) : null,
+                params.isAvailable,
+            ]
         );
     } finally {
         await client.end();

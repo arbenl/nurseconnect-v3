@@ -191,4 +191,83 @@ test.describe("Admin Request Reassign API", () => {
     expect(requestEventMetadataKeys).toEqual(new Set(expectedMetadataKeys));
     expect(auditMetadataKeys).toEqual(new Set(expectedMetadataKeys));
   });
+
+  test("admin cannot reassign to a submitted or expired nurse", async ({ request }) => {
+    const adminEmail = `reassign-block-admin-${Date.now()}@test.local`;
+    await createTestUser(request, adminEmail, "Reassign Block Admin", "admin");
+
+    const patientEmail = `reassign-block-patient-${Date.now()}@test.local`;
+    const { userId: patientUserId } = await createTestUser(
+      request,
+      patientEmail,
+      "Reassign Block Patient",
+      "patient",
+    );
+
+    const submittedNurseEmail = `reassign-submitted-${Date.now()}@test.local`;
+    const { userId: submittedNurseUserId } = await createTestUser(
+      request,
+      submittedNurseEmail,
+      "Submitted Nurse",
+      "nurse",
+    );
+    await seedNurse({
+      userId: submittedNurseUserId,
+      licenseNumber: "RN-REASSIGN-SUBMITTED",
+      specialization: "General",
+      isAvailable: true,
+      status: "submitted",
+      licenseJurisdiction: "CA",
+    });
+
+    const expiredNurseEmail = `reassign-expired-${Date.now()}@test.local`;
+    const { userId: expiredNurseUserId } = await createTestUser(
+      request,
+      expiredNurseEmail,
+      "Expired Nurse",
+      "nurse",
+    );
+    await seedNurse({
+      userId: expiredNurseUserId,
+      licenseNumber: "RN-REASSIGN-EXPIRED",
+      specialization: "Cardio",
+      isAvailable: true,
+      status: "verified",
+      licenseJurisdiction: "CA",
+      licenseValidUntil: "2020-01-01T00:00:00.000Z",
+    });
+
+    const requestId = randomUUID();
+    const client = getDbClient();
+    await client.connect();
+    try {
+      await client.query(
+        `INSERT INTO service_requests
+          (id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, created_at, updated_at)
+         VALUES
+          ($1, $2, NULL, 'open', 'Admin Reassign Block Street', '42.662900', '21.165500', NOW(), NOW())`,
+        [requestId, patientUserId],
+      );
+    } finally {
+      await client.end();
+    }
+
+    await loginTestUser(request, adminEmail);
+
+    const submittedResponse = await request.post(`/api/admin/requests/${requestId}/reassign`, {
+      data: { nurseUserId: submittedNurseUserId },
+    });
+    expect(submittedResponse.status()).toBe(400);
+    await expect(submittedResponse.json()).resolves.toMatchObject({
+      error: "Target nurse is not verified",
+    });
+
+    const expiredResponse = await request.post(`/api/admin/requests/${requestId}/reassign`, {
+      data: { nurseUserId: expiredNurseUserId },
+    });
+    expect(expiredResponse.status()).toBe(400);
+    await expect(expiredResponse.json()).resolves.toMatchObject({
+      error: "Target nurse license has expired",
+    });
+  });
 });

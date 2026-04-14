@@ -84,8 +84,17 @@ export async function reassignRequest(input: {
         .select()
         .from(nurses)
         .where(eq(nurses.userId, nurseUserId));
-      if (!nurseRows[0]) {
+        
+      const nurseRecord = nurseRows[0];
+      if (!nurseRecord) {
         throw new RequestReassignValidationError("Nurse profile not found");
+      }
+      if (nurseRecord.status !== "verified") {
+        throw new RequestReassignValidationError("Target nurse is not verified");
+      }
+      const now = new Date();
+      if (nurseRecord.licenseValidUntil && new Date(nurseRecord.licenseValidUntil) <= now) {
+        throw new RequestReassignValidationError("Target nurse license has expired");
       }
     }
 

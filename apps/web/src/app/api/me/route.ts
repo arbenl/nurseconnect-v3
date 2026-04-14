@@ -56,15 +56,16 @@ export async function GET(request: Request) {
     };
 
     let nurseProfile = null;
-    if (finalUser.role === "nurse") {
-      const nurse = await getNurseByUserId(finalUser.id);
-      if (nurse) {
-        nurseProfile = {
-          licenseNumber: nurse.licenseNumber,
-          specialization: nurse.specialization,
-          isAvailable: nurse.isAvailable,
-        };
-      }
+    const nurse = await getNurseByUserId(finalUser.id);
+    if (nurse) {
+      nurseProfile = {
+        status: nurse.status,
+        licenseNumber: nurse.licenseNumber,
+        licenseJurisdiction: nurse.licenseJurisdiction,
+        specialization: nurse.specialization,
+        licenseValidUntil: nurse.licenseValidUntil?.toISOString() ?? null,
+        isAvailable: nurse.isAvailable,
+      };
     }
 
     const isPatientComplete = !!(

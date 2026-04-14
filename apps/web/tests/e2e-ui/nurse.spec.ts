@@ -8,7 +8,7 @@ test.describe("Nurse Features", () => {
         await resetDb();
     });
 
-    test("become nurse and toggle availability", async ({ page }) => {
+    test("patient can apply to join as a nurse and sees under-review state", async ({ page }) => {
         // Seed patient user
         const email = `future-nurse-${Date.now()}@test.local`;
         await createTestUser(page.request, email, "Future Nurse", "patient");
@@ -32,28 +32,34 @@ test.describe("Nurse Features", () => {
         await expect(page.getByTestId("dashboard-loading")).toHaveCount(0);
         await expect(page.getByTestId("dashboard-ready")).toBeVisible();
 
-        // 4. Check if Become a Nurse card is visible using stable selector
+        // 4. Check if application card is visible using stable selector
         await expect(page.getByTestId("become-nurse-card")).toBeVisible();
 
-        // Fill nurse onboarding form
+        // Fill nurse application form
         await page.fill('input[name="licenseNumber"]', "RN-12345");
+        await page.fill('input[name="licenseJurisdiction"]', "CA");
         await page.fill('input[name="specialization"]', "General Care");
 
-        // Submit
-        await page.click('button[type="submit"]');
+        // Submit application
+        await page.getByRole("button", { name: "Submit Application" }).click();
 
-        // Wait for nurse card to appear
-        await expect(page.locator("text=Availability Status")).toBeVisible();
+        // Application card should be replaced by an under-review state
+        await expect(page.getByText("Application Under Review")).toBeVisible();
+        await expect(page.getByTestId("become-nurse-card")).toHaveCount(0);
+        await expect(page.locator("text=Availability Status")).toHaveCount(0);
 
-        // Toggle availability ON
-        await page.getByRole("switch", { name: "Toggle availability" }).click();
-
-        // Verify via API that isAvailable is true
-        // Use page.request
+        // Verify via API that applicant is still a patient with a submitted nurse profile
         const response = await page.request.get("/api/me");
         const data = await response.json();
 
-        expect(data.nurse?.isAvailable).toBe(true);
+        expect(data.user.role).toBe("patient");
+        expect(data.user.nurseProfile).toMatchObject({
+            status: "submitted",
+            licenseNumber: "RN-12345",
+            licenseJurisdiction: "CA",
+            specialization: "General Care",
+            isAvailable: false,
+        });
     });
 
     test("nurse can see their location on dashboard", async ({ page }) => {

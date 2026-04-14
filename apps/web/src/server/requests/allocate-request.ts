@@ -11,6 +11,11 @@ export type CreateRequestInput = {
     address: string;
     lat: number;
     lng: number;
+    requestType?: "scheduled" | "same_day";
+    scheduledFor?: string | null;
+    referralSource?: "consumer" | "partner";
+    referralPartnerId?: string | null;
+    careType?: string | null;
 };
 
 // Small helper to keep deterministic tie-breaks.
@@ -39,6 +44,11 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
                 lat: String(lat), // NUMERIC in db; store as string for drizzle numeric
                 lng: String(lng),
                 status: "open",
+                requestType: input.requestType ?? "same_day",
+                scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
+                referralSource: input.referralSource ?? "consumer",
+                referralPartnerId: input.referralPartnerId ?? null,
+                careType: input.careType ?? null,
             })
             .returning();
 
@@ -65,7 +75,11 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
           SELECT nl.nurse_user_id, nl.lat::text as lat, nl.lng::text as lng
           FROM nurse_locations nl
           JOIN nurses n ON n.user_id = nl.nurse_user_id
+          JOIN users u ON u.id = nl.nurse_user_id
           WHERE n.is_available = true
+            AND u.role = 'nurse'
+            AND n.status = 'verified'
+            AND (n.license_valid_until IS NULL OR n.license_valid_until > NOW())
           FOR UPDATE OF nl SKIP LOCKED
         `);
 

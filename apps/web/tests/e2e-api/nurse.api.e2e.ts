@@ -8,34 +8,40 @@ test.describe("Nurse API", () => {
         await resetDb();
     });
 
-    test("user can become a nurse", async ({ request }) => {
+    test("patient can submit a nurse application without being promoted", async ({ request }) => {
         const email = `become-nurse-${Date.now()}@test.local`;
         await createTestUser(request, email, "Future Nurse", "patient");
         await loginTestUser(request, email);
 
-        // 1. Become Nurse
         const response = await request.post("/api/me/become-nurse", {
             data: {
                 licenseNumber: "RN-API-TEST",
+                licenseJurisdiction: "CA",
                 specialization: "Emergency",
             },
         });
         expect(response.ok()).toBeTruthy();
+        await expect(response.json()).resolves.toMatchObject({
+            ok: true,
+            status: "submitted",
+        });
 
-        // Refresh session to get new role
-        await request.post("/api/auth/sign-out", { data: {} });
-        await loginTestUser(request, email);
-
-        // 2. Verify Role Update via /api/me
         const meResponse = await request.get("/api/me");
+        expect(meResponse.ok()).toBeTruthy();
         const me = await meResponse.json();
-        expect(me.user.role).toBe("nurse");
-        expect(me.user.nurseProfile).toBeTruthy();
-        expect(me.user.nurseProfile.licenseNumber).toBe("RN-API-TEST");
-        expect(me.user.nurseProfile.isAvailable).toBe(false); // Default
+
+        expect(me.user.role).toBe("patient");
+        expect(me.user.nurseProfile).toMatchObject({
+            status: "submitted",
+            licenseNumber: "RN-API-TEST",
+            licenseJurisdiction: "CA",
+            specialization: "Emergency",
+            isAvailable: false,
+            licenseValidUntil: null,
+        });
     });
 
-    test("become nurse is idempotent and keeps one nurse profile row", async ({ request }) => {
+    test("nurse application is idempotent and keeps one nurse profile row", async ({ request }) => {
         const email = `become-nurse-idempotent-${Date.now()}@test.local`;
         const { userId } = await createTestUser(request, email, "Idempotent Nurse", "patient");
         await loginTestUser(request, email);
@@ -43,6 +49,7 @@ test.describe("Nurse API", () => {
         const first = await request.post("/api/me/become-nurse", {
             data: {
                 licenseNumber: "RN-IDEMP-1",
+                licenseJurisdiction: "CA",
                 specialization: "Emergency",
             },
         });
@@ -51,19 +58,20 @@ test.describe("Nurse API", () => {
         const second = await request.post("/api/me/become-nurse", {
             data: {
                 licenseNumber: "RN-IDEMP-2",
+                licenseJurisdiction: "NY",
                 specialization: "ICU",
             },
         });
         expect(second.ok(), `Second become-nurse failed: ${await second.text()}`).toBeTruthy();
 
-        await request.post("/api/auth/sign-out", { data: {} });
-        await loginTestUser(request, email);
-
         const meResponse = await request.get("/api/me");
         expect(meResponse.ok(), `Me fetch failed: ${await meResponse.text()}`).toBeTruthy();
         const me = await meResponse.json();
-        expect(me.user.role).toBe("nurse");
+
+        expect(me.user.role).toBe("patient");
+        expect(me.user.nurseProfile.status).toBe("submitted");
         expect(me.user.nurseProfile.licenseNumber).toBe("RN-IDEMP-2");
+        expect(me.user.nurseProfile.licenseJurisdiction).toBe("NY");
         expect(me.user.nurseProfile.specialization).toBe("ICU");
 
         const client = getDbClient();
@@ -80,41 +88,80 @@ test.describe("Nurse API", () => {
         }
     });
 
-    test("nurse can toggle availability", async ({ request }) => {
-        const email = `toggle-nurse-${Date.now()}@test.local`;
-        await createTestUser(request, email, "Toggle Nurse", "patient");
+    test("submitted applicants cannot toggle nurse availability", async ({ request }) => {
+        const email = `toggle-applicant-${Date.now()}@test.local`;
+        await createTestUser(request, email, "Toggle Applicant", "patient");
         await loginTestUser(request, email);
 
-        // Become Nurse first
-        await request.post("/api/me/become-nurse", {
-            data: { licenseNumber: "RN-TOGGLE", specialization: "ICU" },
+        const application = await request.post("/api/me/become-nurse", {
+            data: {
+                licenseNumber: "RN-TOGGLE-APPLY",
+                licenseJurisdiction: "CA",
+                specialization: "ICU",
+            },
         });
+        expect(application.ok(), `Application failed: ${await application.text()}`).toBeTruthy();
 
-        // Refresh session
-        await request.post("/api/auth/sign-out", { data: {} });
+        const toggle = await request.patch("/api/me/nurse", {
+            data: { isAvailable: true },
+        });
+        expect(toggle.status()).toBe(403);
+    });
+
+    test("verified nurses can toggle availability", async ({ request }) => {
+        const email = `toggle-verified-${Date.now()}@test.local`;
+        const { userId } = await createTestUser(request, email, "Toggle Nurse", "nurse");
+        await seedNurse({
+            userId,
+            licenseNumber: "RN-TOGGLE-VERIFIED",
+            specialization: "ICU",
+            isAvailable: false,
+            status: "verified",
+            licenseJurisdiction: "CA",
+            licenseValidUntil: "2027-12-31T00:00:00.000Z",
+        });
         await loginTestUser(request, email);
 
-        // 1. Toggle ON
         const toggleOn = await request.patch("/api/me/nurse", {
             data: { isAvailable: true },
         });
-        expect(toggleOn.ok()).toBeTruthy();
+        expect(toggleOn.ok(), `Toggle on failed: ${await toggleOn.text()}`).toBeTruthy();
 
-        // Verify
         const check1 = await request.get("/api/me");
         const data1 = await check1.json();
         expect(data1.user.nurseProfile.isAvailable).toBe(true);
 
-        // 2. Toggle OFF
         const toggleOff = await request.patch("/api/me/nurse", {
             data: { isAvailable: false },
         });
-        expect(toggleOff.ok()).toBeTruthy();
+        expect(toggleOff.ok(), `Toggle off failed: ${await toggleOff.text()}`).toBeTruthy();
 
-        // Verify
         const check2 = await request.get("/api/me");
         const data2 = await check2.json();
         expect(data2.user.nurseProfile.isAvailable).toBe(false);
+    });
+
+    test("nurse route does not create a missing nurse profile", async ({ request }) => {
+        const email = `toggle-missing-profile-${Date.now()}@test.local`;
+        const { userId } = await createTestUser(request, email, "Missing Profile Nurse", "nurse");
+        await loginTestUser(request, email);
+
+        const response = await request.patch("/api/me/nurse", {
+            data: { isAvailable: true },
+        });
+        expect(response.status()).toBe(404);
+
+        const client = getDbClient();
+        await client.connect();
+        try {
+            const countResult = await client.query<{ count: string }>(
+                "SELECT COUNT(*)::text AS count FROM nurses WHERE user_id = $1",
+                [userId],
+            );
+            expect(Number(countResult.rows[0]?.count ?? "0")).toBe(0);
+        } finally {
+            await client.end();
+        }
     });
 
     test("forbids location updates for non-nurse users", async ({ request }) => {

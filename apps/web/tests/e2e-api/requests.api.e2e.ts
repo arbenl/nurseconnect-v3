@@ -73,6 +73,112 @@ test.describe("Requests API", () => {
         expect(data.assignedNurseUserId).toBeNull();
     });
 
+    test("create request does not assign a submitted nurse applicant", async ({ request }) => {
+        const applicantEmail = `nurse-submitted-${Date.now()}@test.local`;
+        const { userId: applicantUserId } = await createTestUser(
+            request,
+            applicantEmail,
+            "Submitted Applicant",
+            "patient",
+        );
+        await seedNurse({
+            userId: applicantUserId,
+            licenseNumber: "RN-SUBMITTED",
+            specialization: "General",
+            isAvailable: true,
+            status: "submitted",
+            licenseJurisdiction: "CA",
+        });
+        await seedNurseLocation({
+            nurseUserId: applicantUserId,
+            lat: "42.6629",
+            lng: "21.1655",
+        });
+
+        const patientEmail = `patient-submitted-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Submitted", "patient");
+        await markProfileComplete(patientEmail);
+        await loginTestUser(request, patientEmail);
+
+        const response = await request.post("/api/requests", {
+            data: {
+                address: "Submitted Applicant Street",
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+        expect(response.ok(), `Create request failed: ${await response.text()}`).toBeTruthy();
+        const data = await response.json();
+
+        expect(data.status).toBe("open");
+        expect(data.assignedNurseUserId).toBeNull();
+    });
+
+    test("create request does not assign a nurse with an expired license", async ({ request }) => {
+        const nurseEmail = `nurse-expired-${Date.now()}@test.local`;
+        const { userId: nurseId } = await createTestUser(request, nurseEmail, "Expired Nurse", "nurse");
+        await seedNurse({
+            userId: nurseId,
+            licenseNumber: "RN-EXPIRED",
+            specialization: "General",
+            isAvailable: true,
+            status: "verified",
+            licenseJurisdiction: "CA",
+            licenseValidUntil: "2020-01-01T00:00:00.000Z",
+        });
+        await seedNurseLocation({
+            nurseUserId: nurseId,
+            lat: "42.6629",
+            lng: "21.1655",
+        });
+
+        const patientEmail = `patient-expired-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Expired", "patient");
+        await markProfileComplete(patientEmail);
+        await loginTestUser(request, patientEmail);
+
+        const response = await request.post("/api/requests", {
+            data: {
+                address: "Expired Nurse Street",
+                lat: 42.6629,
+                lng: 21.1655,
+            },
+        });
+        expect(response.ok(), `Create request failed: ${await response.text()}`).toBeTruthy();
+        const data = await response.json();
+
+        expect(data.status).toBe("open");
+        expect(data.assignedNurseUserId).toBeNull();
+    });
+
+    test("create request persists scheduling and referral intake fields", async ({ request }) => {
+        const patientEmail = `patient-intake-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Intake", "patient");
+        await markProfileComplete(patientEmail);
+        await loginTestUser(request, patientEmail);
+
+        const response = await request.post("/api/requests", {
+            data: {
+                address: "789 Intake St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+                requestType: "scheduled",
+                scheduledFor: "2027-01-15T09:30:00.000Z",
+                referralSource: "partner",
+                referralPartnerId: null,
+                careType: "wound_care",
+            },
+        });
+        expect(response.ok(), `Create request failed: ${await response.text()}`).toBeTruthy();
+        const data = await response.json();
+
+        expect(data.requestType).toBe("scheduled");
+        expect(data.scheduledFor).toBe("2027-01-15T09:30:00.000Z");
+        expect(data.referralSource).toBe("partner");
+        expect(data.referralPartnerId).toBeNull();
+        expect(data.careType).toBe("wound_care");
+    });
+
     test("full flow: assigned nurse accepts and patient sees accepted", async ({ request }) => {
         const nurseEmail = `nurse-accept-${Date.now()}@test.local`;
         const { userId: nurseId } = await createTestUser(request, nurseEmail, "Nurse Accept", "nurse");
