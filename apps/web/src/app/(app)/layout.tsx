@@ -1,7 +1,8 @@
-import { Home, Users, Calendar, Bell } from "lucide-react";
+import { Home } from "lucide-react";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { getAppShellConfig } from "@/lib/app-shell-nav";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 export default async function DashboardLayout({
@@ -9,84 +10,63 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requirePortalAccessOrRedirect({
+  const { user } = await requirePortalAccessOrRedirect({
     portal: "app",
     currentPath: "/dashboard",
   });
 
+  const shellRole = user.role === "nurse" ? "nurse" : "patient";
+  const shell = getAppShellConfig(shellRole);
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
+      <aside className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+          <div className="flex min-h-24 flex-col items-start justify-center gap-2 border-b px-4 py-4 lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <span>NurseConnect</span>
             </Link>
+            <Badge variant="secondary" className="rounded-full">
+              {shell.portalLabel}
+            </Badge>
+            <p className="text-sm text-muted-foreground">{shell.summary}</p>
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
-              >
-                <Home className="h-4 w-4" />
-                Dashboard
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <Calendar className="h-4 w-4" />
-                Schedule
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <Users className="h-4 w-4" />
-                Patients
-              </Link>
+              {shell.navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
+                >
+                  <Home className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
             </nav>
           </div>
         </div>
-      </div>
+      </aside>
       <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-          {/* Mobile Nav Toggle and Search can go here */}
-          <div className="w-full flex-1">{/* Search Bar can go here */}</div>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Bell className="h-4 w-4" />
-            <span className="sr-only">Toggle notifications</span>
-          </Button>
-          {/* User Dropdown can go here */}
+        <header className="flex min-h-16 items-center border-b bg-muted/40 px-4 py-3 lg:px-6">
+          <div className="flex flex-col gap-1">
+            <Link href="/" className="font-semibold md:hidden">
+              NurseConnect
+            </Link>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-foreground" data-testid="app-shell-role">
+                {shell.portalLabel}
+              </p>
+              <Badge variant="outline" className="hidden rounded-full sm:inline-flex">
+                {user.role}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">{shell.summary}</p>
+          </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <main className="flex flex-1 flex-col gap-4 p-4 pb-8 lg:gap-6 lg:p-6">
           {children}
         </main>
-      </div>
-      {/* Mobile Bottom Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background p-2 flex justify-around">
-        <Link
-          href="/dashboard"
-          className="flex flex-col items-center text-primary"
-        >
-          <Home className="h-6 w-6" />
-          <span className="text-xs">Home</span>
-        </Link>
-        <Link
-          href="#"
-          className="flex flex-col items-center text-muted-foreground"
-        >
-          <Calendar className="h-6 w-6" />
-          <span className="text-xs">Schedule</span>
-        </Link>
-        <Link
-          href="#"
-          className="flex flex-col items-center text-muted-foreground"
-        >
-          <Users className="h-6 w-6" />
-          <span className="text-xs">Patients</span>
-        </Link>
       </div>
     </div>
   );
