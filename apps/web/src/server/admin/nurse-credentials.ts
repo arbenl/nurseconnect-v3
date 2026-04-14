@@ -17,6 +17,13 @@ const NURSE_CREDENTIAL_STATUSES = [
 
 export type NurseCredentialStatus = (typeof NURSE_CREDENTIAL_STATUSES)[number];
 
+export class NurseCredentialValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NurseCredentialValidationError";
+  }
+}
+
 function assertValidStatuses(statuses: string[]): NurseCredentialStatus[] {
   return statuses.filter((status): status is NurseCredentialStatus =>
     NURSE_CREDENTIAL_STATUSES.includes(status as NurseCredentialStatus),
@@ -24,9 +31,12 @@ function assertValidStatuses(statuses: string[]): NurseCredentialStatus[] {
 }
 
 export async function listNurseCredentials(statuses?: string[]) {
-  const validStatuses = statuses ? assertValidStatuses(statuses) : null;
+  const validStatuses = statuses ? assertValidStatuses(statuses) : [];
+  if (statuses && validStatuses.length === 0) {
+    return [];
+  }
   const whereClause =
-    validStatuses?.length
+    validStatuses.length
       ? or(...validStatuses.map((status) => eq(nurses.status, status)))
       : undefined;
 
@@ -96,6 +106,12 @@ export async function verifyNurseCredential(input: {
 
   const now = new Date();
   const validUntil = new Date(input.licenseValidUntil);
+  if (Number.isNaN(validUntil.getTime())) {
+    throw new NurseCredentialValidationError("licenseValidUntil must be a valid datetime");
+  }
+  if (validUntil <= now) {
+    throw new NurseCredentialValidationError("licenseValidUntil must be in the future");
+  }
 
   await db.transaction(async (tx) => {
     await tx

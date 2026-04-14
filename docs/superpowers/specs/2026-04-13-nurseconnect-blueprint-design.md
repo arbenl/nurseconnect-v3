@@ -35,13 +35,13 @@ This blueprint governs a brownfield V3 codebase, not a greenfield build.
 
 The current repo still contains contradictions that the blueprint is meant to eliminate:
 
-- a legacy profile UI still exposes a role selector in [profile/page.tsx](/Users/arbenlila/development/nurseconnect-v3/apps/web/src/app/profile/page.tsx:84), even though the backing `PUT /api/profile` route is deprecated in [api/profile/route.ts](/Users/arbenlila/development/nurseconnect-v3/apps/web/src/app/api/profile/route.ts:24)
-- active self-serve nurse conversion still exists in [api/me/become-nurse/route.ts](/Users/arbenlila/development/nurseconnect-v3/apps/web/src/app/api/me/become-nurse/route.ts:16) and [become-nurse-card.tsx](/Users/arbenlila/development/nurseconnect-v3/apps/web/src/components/dashboard/become-nurse-card.tsx:24)
-- nurse onboarding still collects license data and proceeds directly through profile completion in [onboarding/page.tsx](/Users/arbenlila/development/nurseconnect-v3/apps/web/src/app/(auth)/onboarding/page.tsx:30) and [api/me/nurse/route.ts](/Users/arbenlila/development/nurseconnect-v3/apps/web/src/app/api/me/nurse/route.ts:15)
-- allocation currently matches on `is_available` only in [allocate-request.ts](/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/allocate-request.ts:64)
-- admin tooling currently supports requests, reassignment, and user-role changes, but not credential review, in [admin/page.tsx](/Users/arbenlila/development/nurseconnect-v3/apps/web/src/app/admin/page.tsx:63)
-- the request contract only captures address and coordinates in [packages/contracts/src/requests.ts](/Users/arbenlila/development/nurseconnect-v3/packages/contracts/src/requests.ts:3)
-- legacy Firestore artifacts still exist, including permissive rules in [firestore.rules](/Users/arbenlila/development/nurseconnect-v3/packages/database/firestore.rules:1), but they are not the governing trust model for V3 and must not drive new design decisions
+- a legacy profile UI still exposes a role selector in `apps/web/src/app/profile/page.tsx:84`, even though the backing `PUT /api/profile` route is deprecated in `apps/web/src/app/api/profile/route.ts:24`
+- active self-serve nurse conversion still exists in `apps/web/src/app/api/me/become-nurse/route.ts:16` and `apps/web/src/components/dashboard/become-nurse-card.tsx:24`
+- nurse onboarding still collects license data and proceeds directly through profile completion in `apps/web/src/app/(auth)/onboarding/page.tsx:30` and `apps/web/src/app/api/me/nurse/route.ts:15`
+- allocation currently matches on `is_available` only in `apps/web/src/server/requests/allocate-request.ts:64`
+- admin tooling currently supports requests, reassignment, and user-role changes, but not credential review, in `apps/web/src/app/admin/page.tsx:63`
+- the request contract only captures address and coordinates in `packages/contracts/src/requests.ts:3`
+- legacy Firestore artifacts still exist, including permissive rules in `packages/database/firestore.rules:1`, but they are not the governing trust model for V3 and must not drive new design decisions
 
 This means the blueprint is not implementation-ready by itself. It must also specify the transition mechanics that bring the current repo into alignment.
 

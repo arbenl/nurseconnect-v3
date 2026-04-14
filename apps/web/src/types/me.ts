@@ -20,14 +20,16 @@ export type MeResponse =
                 city: string | null;
                 address: string | null;
             };
-            nurseProfile?: {
-                status: string;
-                licenseNumber: string | null;
-                licenseJurisdiction: string | null;
-                specialization: string | null;
-                licenseValidUntil: string | null;
-                isAvailable: boolean;
-            };
+            nurseProfile:
+                | {
+                    status: string;
+                    licenseNumber: string | null;
+                    licenseJurisdiction: string | null;
+                    specialization: string | null;
+                    licenseValidUntil: string | null;
+                    isAvailable: boolean;
+                }
+                | null;
             profileComplete: boolean;
         };
     };

@@ -49,6 +49,11 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return withRequestId(response, context.requestId);
   } catch (error) {
     const err = error as { name?: string };
+    if (err?.name === "NurseCredentialValidationError") {
+      const response = NextResponse.json({ error: error instanceof Error ? error.message : "Invalid nurse credential" }, { status: 400 });
+      logApiFailure(actorContext, error, 400, startedAt, { source: "admin.nurses.verify" });
+      return withRequestId(response, context.requestId);
+    }
     if (err?.name === "UnauthorizedError") {
       const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       logApiFailure(context, "Unauthorized", 401, startedAt, { source: "admin.nurses.verify" });

@@ -112,6 +112,53 @@ test.describe("Admin Nurse Credential API", () => {
     expect(await countAdminAuditActions("nurse.credential.verified", queueItem.id)).toBe(1);
   });
 
+  test("invalid nurse status filters do not return the full queue", async ({ request }) => {
+    const adminEmail = `admin-filter-${Date.now()}@test.local`;
+    await createTestUser(request, adminEmail, "Filter Admin", "admin");
+
+    const applicantEmail = `applicant-filter-${Date.now()}@test.local`;
+    await createTestUser(request, applicantEmail, "Filter Applicant", "patient");
+    await submitNurseApplication(request, applicantEmail);
+
+    await loginTestUser(request, adminEmail);
+    const response = await request.get("/api/admin/nurses?status=not-a-real-status");
+    expect(response.ok(), `Filter failed: ${await response.text()}`).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.items).toEqual([]);
+  });
+
+  test("admin cannot verify a nurse with an expired credential date", async ({ request }) => {
+    const adminEmail = `admin-expired-${Date.now()}@test.local`;
+    await createTestUser(request, adminEmail, "Expired Admin", "admin");
+
+    const applicantEmail = `applicant-expired-${Date.now()}@test.local`;
+    const { userId: applicantUserId } = await createTestUser(
+      request,
+      applicantEmail,
+      "Expired Applicant",
+      "patient",
+    );
+    await submitNurseApplication(request, applicantEmail);
+
+    const nurseRecordBefore = await getNurseRecord(applicantUserId);
+    expect(nurseRecordBefore).toBeTruthy();
+
+    await loginTestUser(request, adminEmail);
+    const verifyResponse = await request.post(`/api/admin/nurses/${nurseRecordBefore!.id}/verify`, {
+      data: {
+        licenseValidUntil: "2020-01-01T00:00:00.000Z",
+        licenseJurisdiction: "CA",
+      },
+    });
+    expect(verifyResponse.status(), `Verify should fail: ${await verifyResponse.text()}`).toBe(400);
+
+    const nurseRecord = await getNurseRecord(applicantUserId);
+    expect(nurseRecord?.status).toBe("submitted");
+    expect(nurseRecord?.user_role).toBe("patient");
+    expect(await countAdminAuditActions("nurse.credential.verified", nurseRecordBefore!.id)).toBe(0);
+  });
+
   test("admin can reject a submitted applicant without role promotion", async ({ request }) => {
     const adminEmail = `admin-reject-${Date.now()}@test.local`;
     await createTestUser(request, adminEmail, "Reject Admin", "admin");

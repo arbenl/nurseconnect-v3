@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { use, useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,8 +28,9 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Request failed";
 }
 
-export default function AdminNurseDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
+export default function AdminNurseDetailPage() {
+  const params = useParams<{ id: string }>();
+  const nurseId = params.id;
   const router = useRouter();
   const [nurse, setNurse] = useState<QueueItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +48,7 @@ export default function AdminNurseDetailPage({ params }: { params: Promise<{ id:
       .then((res) => res.json())
       .then((data) => {
         if (data.items) {
-          const item = data.items.find((i: QueueItem) => i.id === resolvedParams.id);
+          const item = data.items.find((i: QueueItem) => i.id === nurseId);
           if (item) {
             setNurse(item);
             setJurisdiction(item.licenseJurisdiction || "");
@@ -55,13 +56,13 @@ export default function AdminNurseDetailPage({ params }: { params: Promise<{ id:
         }
       })
       .finally(() => setLoading(false));
-  }, [resolvedParams.id]);
+  }, [nurseId]);
 
   const onVerify = async () => {
     if (!validUntil) return alert("Valid until date is required");
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/nurses/${resolvedParams.id}/verify`, {
+      const res = await fetch(`/api/admin/nurses/${nurseId}/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -81,7 +82,7 @@ export default function AdminNurseDetailPage({ params }: { params: Promise<{ id:
   const onReject = async () => {
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/nurses/${resolvedParams.id}/reject`, {
+      const res = await fetch(`/api/admin/nurses/${nurseId}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason }),
@@ -99,7 +100,7 @@ export default function AdminNurseDetailPage({ params }: { params: Promise<{ id:
     if (!reason) return alert("Suspend reason is required");
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/nurses/${resolvedParams.id}/suspend`, {
+      const res = await fetch(`/api/admin/nurses/${nurseId}/suspend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason }),

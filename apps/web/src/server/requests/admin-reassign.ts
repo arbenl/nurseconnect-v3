@@ -92,7 +92,8 @@ export async function reassignRequest(input: {
       if (nurseRecord.status !== "verified") {
         throw new RequestReassignValidationError("Target nurse is not verified");
       }
-      if (nurseRecord.licenseValidUntil && new Date(nurseRecord.licenseValidUntil) < new Date()) {
+      const now = new Date();
+      if (nurseRecord.licenseValidUntil && new Date(nurseRecord.licenseValidUntil) <= now) {
         throw new RequestReassignValidationError("Target nurse license has expired");
       }
     }
