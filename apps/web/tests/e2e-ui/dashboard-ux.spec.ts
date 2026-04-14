@@ -132,9 +132,10 @@ test.describe("Dashboard UX", () => {
     await page.goto("/admin");
 
     await expect(page.getByTestId("admin-shell")).toBeVisible();
-    await expect(page.getByTestId("admin-section-card")).toHaveCount(2);
+    expect(await page.getByTestId("admin-section-card").count()).toBeGreaterThanOrEqual(6);
     await expect(page.getByRole("heading", { name: "Operations Console" })).toBeVisible();
-    await expect(page.getByText("Nurse Credential Review Queue")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Immediate attention" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Credential review queue" })).toBeVisible();
     await expect(page.locator('[style*="#0a0a0a"]')).toHaveCount(0);
   });
 
@@ -146,8 +147,10 @@ test.describe("Dashboard UX", () => {
     await page.goto("/admin/requests");
 
     await expect(page.getByTestId("admin-shell")).toBeVisible();
-    await expect(page.getByTestId("admin-section-card")).toHaveCount(1);
+    expect(await page.getByTestId("admin-section-card").count()).toBeGreaterThanOrEqual(5);
     await expect(page.getByRole("heading", { name: "Active Requests Queue" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Filters" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Queue snapshot" })).toBeVisible();
     await expect(page.locator('[style*="#111"]')).toHaveCount(0);
   });
 });
