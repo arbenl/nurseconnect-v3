@@ -94,6 +94,109 @@ describe.sequential("createAndAssignRequest", () => {
         expect(req.assignedNurseUserId).toBe(nurseAUser!.id);
     });
 
+    it("marks the chosen nurse unavailable before the next request is matched", async () => {
+        const [firstPatient] = await db
+            .insert(users)
+            .values({
+                email: "p-auto-1@test.local",
+                role: "patient",
+            })
+            .returning();
+
+        const [secondPatient] = await db
+            .insert(users)
+            .values({
+                email: "p-auto-2@test.local",
+                role: "patient",
+            })
+            .returning();
+
+        const [nurseAUser] = await db
+            .insert(users)
+            .values({
+                email: "nurse-auto-a@test.local",
+                role: "nurse",
+            })
+            .returning();
+
+        await db.insert(nurses).values({
+            userId: nurseAUser!.id,
+            status: "verified",
+            isAvailable: true,
+            licenseNumber: "AUTO-A",
+            specialization: "general",
+        });
+
+        await db.insert(nurseLocations).values({
+            nurseUserId: nurseAUser!.id,
+            lat: "0.000000",
+            lng: "0.000000",
+        });
+
+        const [nurseBUser] = await db
+            .insert(users)
+            .values({
+                email: "nurse-auto-b@test.local",
+                role: "nurse",
+            })
+            .returning();
+
+        await db.insert(nurses).values({
+            userId: nurseBUser!.id,
+            status: "verified",
+            isAvailable: true,
+            licenseNumber: "AUTO-B",
+            specialization: "general",
+        });
+
+        await db.insert(nurseLocations).values({
+            nurseUserId: nurseBUser!.id,
+            lat: "1.000000",
+            lng: "1.000000",
+        });
+
+        const firstRequest = await createAndAssignRequest({
+            patientUserId: firstPatient!.id,
+            address: "First request",
+            lat: 0,
+            lng: 0,
+        });
+
+        expect(firstRequest.status).toBe("assigned");
+        expect(firstRequest.assignedNurseUserId).toBe(nurseAUser!.id);
+
+        const secondRequest = await createAndAssignRequest({
+            patientUserId: secondPatient!.id,
+            address: "Second request",
+            lat: 0,
+            lng: 0,
+        });
+
+        expect(secondRequest.status).toBe("assigned");
+        expect(secondRequest.assignedNurseUserId).toBe(nurseBUser!.id);
+
+        const nurseStates = await db
+            .select({
+                userId: nurses.userId,
+                isAvailable: nurses.isAvailable,
+            })
+            .from(nurses)
+            .orderBy(nurses.userId);
+
+        expect(nurseStates).toEqual(
+            expect.arrayContaining([
+                {
+                    userId: nurseAUser!.id,
+                    isAvailable: false,
+                },
+                {
+                    userId: nurseBUser!.id,
+                    isAvailable: false,
+                },
+            ])
+        );
+    });
+
     it("leaves request open if no nurses are available", async () => {
         const [patient] = await db
             .insert(users)
