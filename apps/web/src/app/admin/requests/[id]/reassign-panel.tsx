@@ -3,6 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { AdminSectionCard } from "@/components/admin/admin-section-card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+
 type NurseCandidate = {
   userId: string;
   email: string;
@@ -86,96 +90,72 @@ export default function ReassignPanel({
   }
 
   return (
-    <section
+    <div
       data-testid="reassign-panel"
       data-hydrated={isHydrated ? "true" : "false"}
-      style={{
-        border: "1px solid #333",
-        borderRadius: "8px",
-        padding: "1rem",
-      }}
+      className="mt-6"
     >
-      <h2 style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>Triage Actions</h2>
-      <p style={{ opacity: 0.7, fontSize: "0.85rem", marginBottom: "0.75rem" }}>
-        Reassign requests without exposing PHI fields. Availability is updated automatically.
-      </p>
-
-      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
-        <label htmlFor="reassign-select" style={{ fontSize: "0.85rem" }}>
-          Nurse
-        </label>
-        <select
-          id="reassign-select"
-          data-testid="reassign-select"
-          ref={selectRef}
-          value={selectedNurseUserId}
-          onChange={(event) => setSelectedNurseUserId(event.target.value)}
-          disabled={isSubmitting || nurseCandidates.length === 0}
-          style={{
-            minWidth: "320px",
-            padding: "8px",
-            borderRadius: "4px",
-            border: "1px solid #333",
-            background: "#000",
-            color: "#fff",
-          }}
-        >
-          {nurseCandidates.length === 0 && <option value="">No nurse candidates</option>}
-          {nurseCandidates.map((candidate) => (
-            <option key={candidate.userId} value={candidate.userId}>
-              {candidate.email} ({candidate.isAvailable ? "available" : "busy"}) [{candidate.userId.slice(0, 8)}]
-            </option>
-          ))}
-        </select>
-
-        <button
-          type="button"
-          onClick={() => {
-            const latestSelected = selectRef.current?.value ?? selectedNurseUserId;
-            void submitReassignment(latestSelected || null);
-          }}
-          disabled={isSubmitting || nurseCandidates.length === 0 || !selectedNurseUserId}
-          style={{
-            padding: "8px 12px",
-            borderRadius: "4px",
-            border: "1px solid #2f6f44",
-            background: "#103420",
-            color: "#d7ffe6",
-            cursor: isSubmitting ? "not-allowed" : "pointer",
-          }}
-        >
-          Assign Selected Nurse
-        </button>
-
-        <button
-          type="button"
-          onClick={() => void submitReassignment(null)}
-          disabled={isSubmitting}
-          style={{
-            padding: "8px 12px",
-            borderRadius: "4px",
-            border: "1px solid #704040",
-            background: "#2f1717",
-            color: "#ffd8d8",
-            cursor: isSubmitting ? "not-allowed" : "pointer",
-          }}
-        >
-          Unassign Request
-        </button>
-      </div>
-
-      <div
-        data-testid="reassign-feedback"
-        style={{
-          minHeight: "1.5rem",
-          marginTop: "0.75rem",
-          fontSize: "0.85rem",
-          color: feedback?.tone === "error" ? "#ff8a8a" : "#9dffbc",
-        }}
-        aria-live="polite"
+      <AdminSectionCard
+        title="Triage Actions"
+        description="Reassign requests without exposing PHI fields. Availability is updated automatically."
       >
-        {feedback?.message ?? ""}
-      </div>
-    </section>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end">
+          <div className="grid gap-2">
+            <Label htmlFor="reassign-select">Nurse</Label>
+            <select
+              id="reassign-select"
+              data-testid="reassign-select"
+              ref={selectRef}
+              value={selectedNurseUserId}
+              onChange={(event) => setSelectedNurseUserId(event.target.value)}
+              disabled={isSubmitting || nurseCandidates.length === 0}
+              className="min-h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background"
+            >
+              {nurseCandidates.length === 0 && <option value="">No nurse candidates</option>}
+              {nurseCandidates.map((candidate) => (
+                <option key={candidate.userId} value={candidate.userId}>
+                  {candidate.email} ({candidate.isAvailable ? "available" : "busy"}) [{candidate.userId.slice(0, 8)}]
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Button
+            type="button"
+            onClick={() => {
+              const latestSelected = selectRef.current?.value ?? selectedNurseUserId;
+              void submitReassignment(latestSelected || null);
+            }}
+            disabled={isSubmitting || nurseCandidates.length === 0 || !selectedNurseUserId}
+          >
+            Assign Selected Nurse
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => void submitReassignment(null)}
+            disabled={isSubmitting}
+            variant="outline"
+          >
+            Unassign Request
+          </Button>
+        </div>
+
+        <div
+          data-testid="reassign-feedback"
+          aria-live="polite"
+          className={[
+            "mt-3 min-h-10 rounded-lg border px-4 py-3 text-sm",
+            feedback?.tone === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : feedback?.tone === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-dashed border-slate-200 bg-slate-50 text-slate-500",
+          ].join(" ")}
+        >
+          {feedback?.message ?? "Assignment feedback appears here after triage actions run."}
+        </div>
+      </AdminSectionCard>
+    </div>
   );
 }

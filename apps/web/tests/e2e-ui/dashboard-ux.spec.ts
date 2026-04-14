@@ -22,6 +22,10 @@ async function seedVerifiedNurse(page: Page, email: string) {
   });
 }
 
+async function seedAdmin(page: Page, email: string) {
+  await createTestUser(page.request, email, "Admin User", "admin");
+}
+
 test.describe("Dashboard UX", () => {
   test.beforeEach(async () => {
     await resetDb();
@@ -91,5 +95,34 @@ test.describe("Dashboard UX", () => {
     await expect(page.getByRole("link", { name: "Schedule" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Patients" })).toHaveCount(0);
     await expect(page.locator('a[href="#"]')).toHaveCount(0);
+  });
+
+  test("admin dashboard uses readable section cards instead of inline dark blocks", async ({
+    page,
+  }) => {
+    const adminEmail = `admin-dashboard-${Date.now()}@test.local`;
+    await seedAdmin(page, adminEmail);
+
+    await loginTestUser(page.request, adminEmail);
+    await page.goto("/admin");
+
+    await expect(page.getByTestId("admin-shell")).toBeVisible();
+    await expect(page.getByTestId("admin-section-card")).toHaveCount(2);
+    await expect(page.getByRole("heading", { name: "Operations Console" })).toBeVisible();
+    await expect(page.getByText("Nurse Credential Review Queue")).toBeVisible();
+    await expect(page.locator('[style*="#0a0a0a"]')).toHaveCount(0);
+  });
+
+  test("admin shell keeps the active queue readable", async ({ page }) => {
+    const adminEmail = `admin-queue-${Date.now()}@test.local`;
+    await seedAdmin(page, adminEmail);
+
+    await loginTestUser(page.request, adminEmail);
+    await page.goto("/admin/requests");
+
+    await expect(page.getByTestId("admin-shell")).toBeVisible();
+    await expect(page.getByTestId("admin-section-card")).toHaveCount(1);
+    await expect(page.getByRole("heading", { name: "Active Requests Queue" })).toBeVisible();
+    await expect(page.locator('[style*="#111"]')).toHaveCount(0);
   });
 });
