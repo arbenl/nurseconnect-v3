@@ -3,9 +3,65 @@ import { expect, test } from "@playwright/test";
 import { getDbClient, resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
 import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
+async function submitNurseApplication(
+  request: Parameters<typeof test>[0]["request"],
+  email: string,
+) {
+  await loginTestUser(request, email);
+  const response = await request.post("/api/me/become-nurse", {
+    data: {
+      licenseNumber: "RN-ADMIN-UI-001",
+      licenseJurisdiction: "CA",
+      specialization: "General",
+    },
+  });
+  expect(response.ok(), `Application failed: ${await response.text()}`).toBeTruthy();
+  await request.post("/api/auth/sign-out", { data: {} });
+}
+
 test.describe("Admin Requests UI", () => {
   test.beforeEach(async () => {
     await resetDb();
+  });
+
+  test("admin credential review shows inline validation errors without browser alerts", async ({
+    page,
+  }) => {
+    const adminEmail = `admin-review-ui-${Date.now()}@test.local`;
+    await createTestUser(page.request, adminEmail, "Admin Review UI", "admin");
+
+    const applicantEmail = `applicant-review-ui-${Date.now()}@test.local`;
+    const { userId: applicantUserId } = await createTestUser(
+      page.request,
+      applicantEmail,
+      "Applicant Review UI",
+      "patient",
+    );
+    await submitNurseApplication(page.request, applicantEmail);
+
+    await loginTestUser(page.request, adminEmail);
+    const queueResponse = await page.request.get("/api/admin/nurses");
+    const queue = await queueResponse.json();
+    const applicant = queue.items.find((item: { userId: string }) => item.userId === applicantUserId);
+    expect(applicant).toBeTruthy();
+
+    let dialogMessage: string | null = null;
+    page.on("dialog", async (dialog) => {
+      dialogMessage = dialog.message();
+      await dialog.dismiss();
+    });
+
+    await page.goto(`/admin/nurses/${applicant.id}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: "Review Application" })).toBeVisible();
+
+    await page.getByLabel("License Valid Until").fill("2020-01-01");
+    await page.getByRole("button", { name: "Verify & Approve" }).click();
+
+    await expect(page.getByTestId("credential-review-feedback")).toContainText(
+      "licenseValidUntil must be in the future",
+    );
+    expect(dialogMessage).toBeNull();
+    await expect(page).toHaveURL(new RegExp(`/admin/nurses/${applicant.id}$`));
   });
 
   test("admin can drill into a queue item and see request timeline", async ({ page }) => {
@@ -122,8 +178,15 @@ test.describe("Admin Requests UI", () => {
     await expect(page.getByRole("heading", { name: "Request Detail" })).toBeVisible();
     await expect(page.getByTestId("reassign-panel")).toHaveAttribute("data-hydrated", "true");
 
+    let dialogMessage: string | null = null;
+    page.on("dialog", async (dialog) => {
+      dialogMessage = dialog.message();
+      await dialog.dismiss();
+    });
+
     await page.getByTestId("reassign-select").selectOption(nurseBUserId);
     await page.getByRole("button", { name: "Assign Selected Nurse" }).click();
+    await expect(page.getByTestId("reassign-feedback")).toContainText("Request reassigned to");
 
     await expect
       .poll(async () => {
@@ -142,6 +205,7 @@ test.describe("Admin Requests UI", () => {
       .toBe(nurseBUserId);
 
     await page.getByRole("button", { name: "Unassign Request" }).click();
+    await expect(page.getByTestId("reassign-feedback")).toHaveText("Request unassigned.");
     await expect
       .poll(async () => {
         const client = getDbClient();
@@ -157,5 +221,6 @@ test.describe("Admin Requests UI", () => {
         }
       })
       .toBe(null);
+    expect(dialogMessage).toBeNull();
   });
 });

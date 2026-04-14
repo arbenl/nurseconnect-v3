@@ -8,7 +8,7 @@ test.describe("Nurse Features", () => {
         await resetDb();
     });
 
-    test("patient can apply to join as a nurse and sees under-review state", async ({ page }) => {
+    test("applicant dashboard explains the review state after nurse application", async ({ page }) => {
         // Seed patient user
         const email = `future-nurse-${Date.now()}@test.local`;
         await createTestUser(page.request, email, "Future Nurse", "patient");
@@ -44,7 +44,18 @@ test.describe("Nurse Features", () => {
         await page.getByRole("button", { name: "Submit Application" }).click();
 
         // Application card should be replaced by an under-review state
-        await expect(page.getByText("Application Under Review")).toBeVisible();
+        const applicationStatusCard = page.getByTestId("nurse-application-status-card");
+        await expect(applicationStatusCard.getByText("Application Under Review")).toBeVisible();
+        await expect(
+            applicationStatusCard.getByText(
+                "You can still request care as a patient while we review your credentials.",
+            ),
+        ).toBeVisible();
+        await expect(
+            applicationStatusCard.getByText(
+                "Nurse access will only be enabled after license verification is complete.",
+            ),
+        ).toBeVisible();
         await expect(page.getByTestId("become-nurse-card")).toHaveCount(0);
         await expect(page.locator("text=Availability Status")).toHaveCount(0);
 
@@ -62,7 +73,7 @@ test.describe("Nurse Features", () => {
         });
     });
 
-    test("nurse can see their location on dashboard", async ({ page }) => {
+    test("nurse dashboard shows operational context without overstating dispatch behavior", async ({ page }) => {
         // Seed nurse user with location
         const email = `nurse-${Date.now()}@test.local`;
         const { userId } = await createTestUser(page.request, email, "Test Nurse", "nurse");
@@ -88,8 +99,19 @@ test.describe("Nurse Features", () => {
         // Go to dashboard
         await page.goto("/dashboard");
 
-        // Verify nurse info is visible
-        await expect(page.locator("text=Availability Status")).toBeVisible();
-        await expect(page.locator("text=Pediatrics")).toBeVisible();
+        const statusCard = page.getByTestId("nurse-status-card");
+        const assignmentCard = page.getByTestId("nurse-assignment-card");
+
+        await expect(statusCard.getByText("Dispatch availability")).toBeVisible();
+        await expect(statusCard.getByText("You can receive new visit requests right now.")).toBeVisible();
+        await expect(statusCard.getByText("Availability does not guarantee an assignment.")).toBeVisible();
+        await expect(assignmentCard.getByText("No active visit right now")).toBeVisible();
+        await expect(
+            assignmentCard.getByText(
+                "Stay available and keep your phone nearby. New visit requests will appear here.",
+            ),
+        ).toBeVisible();
+        await expect(assignmentCard.getByText("Pediatrics")).toBeVisible();
+        await expect(page.getByText("visible to patients in your area.")).toHaveCount(0);
     });
 });

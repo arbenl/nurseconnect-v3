@@ -1,3 +1,7 @@
+import Link from "next/link";
+
+import { AdminSectionCard } from "@/components/admin/admin-section-card";
+import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 export default async function AdminDashboardPage() {
@@ -7,83 +11,93 @@ export default async function AdminDashboardPage() {
   });
 
   return (
-    <div>
-      <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Dashboard</h1>
-      
-      <div style={{ display: "grid", gap: "1.5rem", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        {/* Current Admin Session Card */}
-        <section style={{ 
-          border: "1px solid #333", 
-          padding: "1.5rem", 
-          borderRadius: "8px",
-          background: "#0a0a0a"
-        }}>
-          <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "#888" }}>You (Session)</h2>
-          <div style={{ display: "grid", gap: "0.5rem", fontSize: "0.9rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.6 }}>ID:</span>
-              <span style={{ fontFamily: "monospace" }}>{user.id}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.6 }}>Email:</span>
-              <span>{user.email}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.6 }}>Role:</span>
-              <span style={{ 
-                background: "#332b00", 
-                color: "#ffc", 
-                padding: "2px 6px", 
-                borderRadius: "4px",
-                fontSize: "0.8rem"
-              }}>{user.role}</span>
-            </div>
-            {user.firebaseUid && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ opacity: 0.6 }}>Firebase UID:</span>
-                <span style={{ fontFamily: "monospace", fontSize: "0.8rem" }}>{user.firebaseUid}</span>
-              </div>
-            )}
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.6 }}>Provider:</span>
-              <span style={{ fontFamily: "monospace" }}>
-                Better-Auth
-              </span>
-            </div>
-          </div>
-        </section>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">Operations Console</h1>
+        <p className="max-w-3xl text-sm text-slate-600">
+          Run the day-to-day admin lane from one readable surface: credential review, active request
+          monitoring, role management, and migration oversight.
+        </p>
+      </div>
 
-        {/* Quick Actions / Links */}
-        <section style={{ 
-          border: "1px solid #333", 
-          padding: "1.5rem", 
-          borderRadius: "8px",
-          background: "#0a0a0a"
-        }}>
-          <h2 style={{ fontSize: "1.2rem", marginBottom: "1rem", color: "#888" }}>Management</h2>
-          <ul style={{ paddingLeft: "1.2rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            <li>
-              <a href="/admin/requests" style={{ textDecoration: "underline" }}>Active Requests Queue</a>
-              <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Read-only triage ordering</span>
-            </li>
-            <li>
-              <a href="/admin/activity" style={{ textDecoration: "underline" }}>Reassignment Activity Feed</a>
-              <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Unified request/audit event history</span>
-            </li>
-            <li>
-              <a href="/admin/users" style={{ textDecoration: "underline" }}>Manage Users</a>
-              <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Promote/demote roles</span>
-            </li>
-            <li>
-              <a href="/admin/nurses" style={{ textDecoration: "underline" }}>Nurse Credential Review Queue</a>
-              <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— Review and verify nurse application supply</span>
-            </li>
-            <li>
-              <a href="/admin/backfill" style={{ textDecoration: "underline" }}>Backfill Status</a>
-              <span style={{ marginLeft: "0.5rem", opacity: 0.6 }}>— View migration progress</span>
-            </li>
-          </ul>
-        </section>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.4fr)]">
+        <AdminSectionCard
+          title="Current session"
+          description="The authenticated admin context currently driving this workspace."
+        >
+          <dl className="grid gap-4 text-sm text-slate-700">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <dt className="font-medium text-slate-500">ID</dt>
+              <dd className="font-mono text-xs text-slate-900">{user.id}</dd>
+            </div>
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <dt className="font-medium text-slate-500">Email</dt>
+              <dd className="text-right text-slate-900">{user.email}</dd>
+            </div>
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <dt className="font-medium text-slate-500">Role</dt>
+              <dd>
+                <Badge variant="secondary" className="capitalize">
+                  {user.role}
+                </Badge>
+              </dd>
+            </div>
+            {user.firebaseUid ? (
+              <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+                <dt className="font-medium text-slate-500">Firebase UID</dt>
+                <dd className="font-mono text-xs text-slate-900">{user.firebaseUid}</dd>
+              </div>
+            ) : null}
+            <div className="flex items-start justify-between gap-4">
+              <dt className="font-medium text-slate-500">Provider</dt>
+              <dd className="font-mono text-slate-900">Better Auth</dd>
+            </div>
+          </dl>
+        </AdminSectionCard>
+
+        <AdminSectionCard
+          title="Management lanes"
+          description="Primary operator paths for trust, dispatch, and account control."
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              {
+                href: "/admin/requests",
+                label: "Active Requests Queue",
+                detail: "Review the live triage feed and drill into request timelines.",
+              },
+              {
+                href: "/admin/nurses",
+                label: "Nurse Credential Review Queue",
+                detail: "Verify pending nurse applications and control trusted supply.",
+              },
+              {
+                href: "/admin/activity",
+                label: "Reassignment Activity Feed",
+                detail: "Inspect request changes and audit-linked operational history.",
+              },
+              {
+                href: "/admin/users",
+                label: "Manage Users",
+                detail: "Review roles and access for patient, nurse, and admin accounts.",
+              },
+              {
+                href: "/admin/backfill",
+                label: "Backfill Status",
+                detail: "Check migration and backfill progress before operator-facing changes.",
+              },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-sky-300 hover:bg-white"
+              >
+                <div className="font-medium text-slate-950">{item.label}</div>
+                <p className="mt-2 text-sm text-slate-600">{item.detail}</p>
+              </Link>
+            ))}
+          </div>
+        </AdminSectionCard>
       </div>
     </div>
   );

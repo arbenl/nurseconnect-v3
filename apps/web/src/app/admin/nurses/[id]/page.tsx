@@ -1,11 +1,11 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -28,6 +28,11 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Request failed";
 }
 
+type FeedbackState = {
+  tone: "success" | "error";
+  message: string;
+} | null;
+
 export default function AdminNurseDetailPage() {
   const params = useParams<{ id: string }>();
   const nurseId = params.id;
@@ -40,27 +45,45 @@ export default function AdminNurseDetailPage() {
   const [jurisdiction, setJurisdiction] = useState("");
   const [reason, setReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState>(null);
 
-  useEffect(() => {
-    // A real app might have a direct GET /api/admin/nurses/[id] 
-    // Here we fetch the queue and find the item
-    fetch("/api/admin/nurses")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.items) {
-          const item = data.items.find((i: QueueItem) => i.id === nurseId);
-          if (item) {
-            setNurse(item);
-            setJurisdiction(item.licenseJurisdiction || "");
-          }
+  const loadNurse = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/nurses");
+      if (!res.ok) {
+        throw new Error("Failed to load nurse review queue");
+      }
+      const data = await res.json();
+      if (data.items) {
+        const item = data.items.find((i: QueueItem) => i.id === nurseId);
+        if (item) {
+          setNurse(item);
+          setJurisdiction(item.licenseJurisdiction || "");
+          setFeedback(null);
+        } else {
+          setNurse(null);
         }
-      })
-      .finally(() => setLoading(false));
+      }
+    } catch (error: unknown) {
+      setNurse(null);
+      setFeedback({ tone: "error", message: getErrorMessage(error) });
+    } finally {
+      setLoading(false);
+    }
   }, [nurseId]);
 
+  useEffect(() => {
+    void loadNurse();
+  }, [loadNurse]);
+
   const onVerify = async () => {
-    if (!validUntil) return alert("Valid until date is required");
+    if (!validUntil) {
+      setFeedback({ tone: "error", message: "Valid until date is required." });
+      return;
+    }
     setActionLoading(true);
+    setFeedback(null);
     try {
       const res = await fetch(`/api/admin/nurses/${nurseId}/verify`, {
         method: "POST",
@@ -70,10 +93,18 @@ export default function AdminNurseDetailPage() {
           licenseJurisdiction: jurisdiction || undefined,
         }),
       });
-      if (!res.ok) throw new Error("Failed to verify");
-      router.push("/admin/nurses");
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof body?.error === "string" ? body.error : "Failed to verify");
+      }
+      setFeedback({
+        tone: "success",
+        message: "Nurse verified and promoted into the dispatchable supply pool.",
+      });
+      await loadNurse();
+      router.refresh();
     } catch (error: unknown) {
-      alert(getErrorMessage(error));
+      setFeedback({ tone: "error", message: getErrorMessage(error) });
     } finally {
       setActionLoading(false);
     }
@@ -81,34 +112,52 @@ export default function AdminNurseDetailPage() {
 
   const onReject = async () => {
     setActionLoading(true);
+    setFeedback(null);
     try {
       const res = await fetch(`/api/admin/nurses/${nurseId}/reject`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason }),
       });
-      if (!res.ok) throw new Error("Failed to reject");
-      router.push("/admin/nurses");
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof body?.error === "string" ? body.error : "Failed to reject");
+      }
+      setFeedback({ tone: "success", message: "Application rejected. The user remains in patient mode." });
+      await loadNurse();
+      router.refresh();
     } catch (error: unknown) {
-      alert(getErrorMessage(error));
+      setFeedback({ tone: "error", message: getErrorMessage(error) });
     } finally {
       setActionLoading(false);
     }
   };
 
   const onSuspend = async () => {
-    if (!reason) return alert("Suspend reason is required");
+    if (!reason) {
+      setFeedback({ tone: "error", message: "Suspend reason is required." });
+      return;
+    }
     setActionLoading(true);
+    setFeedback(null);
     try {
       const res = await fetch(`/api/admin/nurses/${nurseId}/suspend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason }),
       });
-      if (!res.ok) throw new Error("Failed to suspend");
-      router.push("/admin/nurses");
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof body?.error === "string" ? body.error : "Failed to suspend");
+      }
+      setFeedback({
+        tone: "success",
+        message: "Nurse suspended and removed from new dispatches.",
+      });
+      await loadNurse();
+      router.refresh();
     } catch (error: unknown) {
-      alert(getErrorMessage(error));
+      setFeedback({ tone: "error", message: getErrorMessage(error) });
     } finally {
       setActionLoading(false);
     }
@@ -126,79 +175,98 @@ export default function AdminNurseDetailPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            <span>Profile Details</span>
-            <Badge variant="outline" className="uppercase">{nurse.status}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-muted-foreground">User ID</Label>
-              <div className="font-mono text-sm">{nurse.userId}</div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">Nurse ID</Label>
-              <div className="font-mono text-sm">{nurse.id}</div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">Name</Label>
-              <div>{nurse.user.name || "N/A"}</div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">Email</Label>
-              <div>{nurse.user.email}</div>
-            </div>
+      <AdminSectionCard
+        title="Profile details"
+        description="Submitted nurse credential information and identity context."
+      >
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">Current status</div>
+          <Badge variant="outline" className="uppercase">
+            {nurse.status}
+          </Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-muted-foreground">User ID</Label>
+            <div className="font-mono text-sm">{nurse.userId}</div>
           </div>
-          <hr />
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-muted-foreground">License Number</Label>
-              <div className="font-mono">{nurse.licenseNumber || "N/A"}</div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">Specialization</Label>
-              <div>{nurse.specialization || "N/A"}</div>
-            </div>
+          <div>
+            <Label className="text-muted-foreground">Nurse ID</Label>
+            <div className="font-mono text-sm">{nurse.id}</div>
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <Label className="text-muted-foreground">Name</Label>
+            <div>{nurse.user.name || "N/A"}</div>
+          </div>
+          <div>
+            <Label className="text-muted-foreground">Email</Label>
+            <div>{nurse.user.email}</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 border-t pt-4">
+          <div>
+            <Label className="text-muted-foreground">License Number</Label>
+            <div className="font-mono">{nurse.licenseNumber || "N/A"}</div>
+          </div>
+          <div>
+            <Label className="text-muted-foreground">Specialization</Label>
+            <div>{nurse.specialization || "N/A"}</div>
+          </div>
+        </div>
+      </AdminSectionCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Verification Action</CardTitle>
-          <CardDescription>
-            Input the verified details to approve, or provide a reason to reject/suspend.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="jurisdiction">License Jurisdiction (State/Region)</Label>
-            <Input id="jurisdiction" value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="validUntil">License Valid Until</Label>
-            <Input id="validUntil" type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
-          </div>
-          <div className="grid gap-2 mt-4 pt-4 border-t">
-            <Label htmlFor="reason">Reject / Suspend Reason</Label>
-            <Input id="reason" placeholder="Required for suspension, optional for rejection" value={reason} onChange={(e) => setReason(e.target.value)} />
-          </div>
-        </CardContent>
-        <CardFooter className="flex gap-2 border-t pt-6">
-          <Button onClick={onVerify} disabled={actionLoading || !validUntil} className="bg-green-600 hover:bg-green-700">
-            Verify & Approve
+      <AdminSectionCard
+        title="Verification Action"
+        description="Approve, reject, or suspend this applicant with in-page feedback."
+      >
+        <div
+          data-testid="credential-review-feedback"
+          aria-live="polite"
+          className={[
+            "min-h-10 rounded-lg border px-4 py-3 text-sm",
+            feedback?.tone === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : feedback?.tone === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-dashed border-slate-200 bg-slate-50 text-slate-500",
+          ].join(" ")}
+        >
+          {feedback?.message ?? "Actions render feedback here instead of using browser alerts."}
+        </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="jurisdiction">License Jurisdiction (State/Region)</Label>
+          <Input id="jurisdiction" value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="validUntil">License Valid Until</Label>
+          <Input id="validUntil" type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+        </div>
+        <div className="grid gap-2 border-t pt-4">
+          <Label htmlFor="reason">Reject / Suspend Reason</Label>
+          <Input
+            id="reason"
+            placeholder="Required for suspension, optional for rejection"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2 border-t pt-6">
+          <Button onClick={onVerify} disabled={actionLoading} className="bg-green-600 hover:bg-green-700">
+            {actionLoading ? "Submitting..." : "Verify & Approve"}
           </Button>
           <Button onClick={onReject} disabled={actionLoading} variant="outline" className="text-red-600 border-red-200">
-            Reject
+            {actionLoading ? "Submitting..." : "Reject"}
           </Button>
-          <Button onClick={onSuspend} disabled={actionLoading || !reason} variant="destructive">
-            Suspend
+          <Button onClick={onSuspend} disabled={actionLoading} variant="destructive">
+            {actionLoading ? "Submitting..." : "Suspend"}
           </Button>
-        </CardFooter>
-      </Card>
+          <Button variant="ghost" onClick={() => router.push("/admin/nurses")} disabled={actionLoading}>
+            Back to queue
+          </Button>
+        </div>
+      </AdminSectionCard>
     </div>
   );
 }

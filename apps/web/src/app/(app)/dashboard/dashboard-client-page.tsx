@@ -1,6 +1,7 @@
 "use client";
 
 import { BecomeNurseCard } from "@/components/dashboard/become-nurse-card";
+import { DashboardWelcomeCard } from "@/components/dashboard/dashboard-welcome-card";
 import { NurseApplicationStatusCard } from "@/components/dashboard/nurse-application-status-card";
 import { NurseAssignmentCard } from "@/components/dashboard/nurse-assignment-card";
 import { NurseStatusCard } from "@/components/dashboard/nurse-status-card";
@@ -9,7 +10,6 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 
 
 export default function DashboardClientPage() {
-
   const { user, isLoading, error } = useUserProfile();
 
   // Keep the dashboard stable during background refetches.
@@ -17,40 +17,36 @@ export default function DashboardClientPage() {
 
   if (showInitialLoading) return <div data-testid="dashboard-loading">Loading...</div>;
   if (error && !user) return <div>Error: {error.message}</div>;
+  if (!user) return <div data-testid="dashboard-empty">Dashboard unavailable.</div>;
 
   return (
-    <div className="p-8" data-testid="dashboard-ready">
+    <div className="space-y-6" data-testid="dashboard-ready">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
       </div>
-      
 
-      {user?.role === "nurse" && (
+      <DashboardWelcomeCard user={user} />
+
+      {user.role === "nurse" && (
         <div className="grid gap-6 md:grid-cols-2 mb-6">
           <NurseStatusCard isAvailable={user.nurseProfile?.isAvailable ?? false} />
-          <NurseAssignmentCard />
+          <NurseAssignmentCard
+            isAvailable={user.nurseProfile?.isAvailable ?? false}
+            specialization={user.nurseProfile?.specialization ?? null}
+          />
         </div>
       )}
 
-      {user?.role !== "nurse" && (
+      {user.role !== "nurse" && (
         <div className="grid gap-6 md:grid-cols-2 mb-6">
           <PatientRequestCard />
-          {user?.nurseProfile?.status && user.nurseProfile.status !== "verified" ? (
+          {user.nurseProfile?.status && user.nurseProfile.status !== "verified" ? (
             <NurseApplicationStatusCard status={user.nurseProfile.status} />
           ) : (
             <BecomeNurseCard />
           )}
         </div>
       )}
-
-      <p className="mt-4">Welcome, {user?.name || user?.email}!</p>
-      <p>
-        Your assigned role is: <strong>{user?.role}</strong>
-      </p>
-      <div className="mt-6 p-4 bg-gray-50 rounded-md overflow-x-auto">
-        <h3 className="font-semibold">User Details:</h3>
-        <pre className="text-sm">{JSON.stringify(user, null, 2)}</pre>
-      </div>
     </div>
   );
 }

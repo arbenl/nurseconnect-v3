@@ -88,7 +88,8 @@ export function BecomeNurseCard() {
       <CardHeader>
         <CardTitle>Apply to Join as a Nurse</CardTitle>
         <CardDescription>
-            Submit your credentials to join our care network. We will review your application shortly.
+          Submit your license details to apply for nurse access. You will stay in the patient
+          dashboard until a NurseConnect admin verifies your credentials.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -138,6 +139,13 @@ export function BecomeNurseCard() {
             </Button>
           </form>
         </Form>
+        <div className="mt-4 rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">What happens next</p>
+          <p className="mt-2">
+            We review your license number, jurisdiction, and profile details before enabling nurse
+            access and visit availability controls.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
