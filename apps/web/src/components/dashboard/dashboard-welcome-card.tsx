@@ -1,9 +1,8 @@
 "use client";
 
-import type { MeResponse } from "@/types/me";
-
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { MeResponse } from "@/types/me";
 
 type DashboardUser = NonNullable<Extract<MeResponse, { ok: true }>["user"]>;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +47,7 @@ export default function AdminNurseDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState>(null);
 
-  async function loadNurse() {
+  const loadNurse = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/nurses");
@@ -62,11 +62,11 @@ export default function AdminNurseDetailPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [nurseId]);
 
   useEffect(() => {
     void loadNurse();
-  }, [nurseId]);
+  }, [loadNurse]);
 
   const onVerify = async () => {
     if (!validUntil) {
