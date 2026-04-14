@@ -141,6 +141,49 @@ test.describe("Nurse API", () => {
         expect(data2.user.nurseProfile.isAvailable).toBe(false);
     });
 
+    test("verified nurses cannot mark themselves available while an active visit is assigned", async ({ request }) => {
+        const nurseEmail = `toggle-active-${Date.now()}@test.local`;
+        const patientEmail = `toggle-active-patient-${Date.now()}@test.local`;
+
+        const { userId: nurseUserId } = await createTestUser(request, nurseEmail, "Busy Nurse", "nurse");
+        const { userId: patientUserId } = await createTestUser(request, patientEmail, "Busy Patient", "patient");
+
+        await seedNurse({
+            userId: nurseUserId,
+            licenseNumber: "RN-TOGGLE-BUSY",
+            specialization: "ICU",
+            isAvailable: false,
+            status: "verified",
+            licenseJurisdiction: "CA",
+            licenseValidUntil: "2027-12-31T00:00:00.000Z",
+        });
+
+        const client = getDbClient();
+        await client.connect();
+        try {
+            await client.query(
+                `INSERT INTO service_requests
+                  (patient_user_id, assigned_nurse_user_id, status, address, lat, lng, request_type, created_at, updated_at, assigned_at)
+                 VALUES
+                  ($1, $2, 'assigned', '123 Active Visit', '42.662900', '21.165500', 'same_day', NOW(), NOW(), NOW())`,
+                [patientUserId, nurseUserId],
+            );
+        } finally {
+            await client.end();
+        }
+
+        await loginTestUser(request, nurseEmail);
+
+        const toggleOn = await request.patch("/api/me/nurse", {
+            data: { isAvailable: true },
+        });
+
+        expect(toggleOn.status()).toBe(409);
+        await expect(toggleOn.json()).resolves.toMatchObject({
+            error: "Conflict: Nurse has an active visit",
+        });
+    });
+
     test("nurse route does not create a missing nurse profile", async ({ request }) => {
         const email = `toggle-missing-profile-${Date.now()}@test.local`;
         const { userId } = await createTestUser(request, email, "Missing Profile Nurse", "nurse");

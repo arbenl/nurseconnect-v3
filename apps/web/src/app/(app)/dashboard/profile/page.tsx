@@ -1,11 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -15,91 +16,157 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { authClient } from "@/lib/auth-client";
+import { useUserProfile } from "@/hooks/use-user-profile";
 
 const formSchema = z.object({
-  displayName: z.string().min(1, "Display name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phone: z.string().min(1, "Phone number is required"),
+  city: z.string().min(1, "City is required"),
+  address: z.string().optional(),
 });
 
+type ProfileFormValues = z.infer<typeof formSchema>;
+
 export default function ProfilePage() {
-  const { data: session, isPending: loadingSession, error: _sessionError } = authClient.useSession();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { user, isLoading, error, mutateProfile } = useUserProfile();
   const [success, setSuccess] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<ProfileFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      displayName: "",
+      firstName: "",
+      lastName: "",
+      phone: "",
+      city: "",
+      address: "",
     },
   });
 
   useEffect(() => {
-    if (session?.user?.name) {
-      form.setValue("displayName", session.user.name);
+    if (!user) {
+      return;
     }
-  }, [session, form]);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setLoading(true);
-    setError(null);
+    form.reset({
+      firstName: user.profile.firstName ?? "",
+      lastName: user.profile.lastName ?? "",
+      phone: user.profile.phone ?? "",
+      city: user.profile.city ?? "",
+      address: user.profile.address ?? "",
+    });
+  }, [form, user]);
+
+  async function onSubmit(values: ProfileFormValues) {
     setSuccess(false);
-
-    try {
-      const response = await fetch("/api/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to update profile");
-      }
-
-      setSuccess(true);
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
+    await mutateProfile.mutateAsync(values);
+    setSuccess(true);
   }
 
-  if (loadingSession) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!session) {
+  if (!user) {
     return <div>Access Denied</div>;
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Update Profile</h1>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="displayName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Display Name</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+    <Card>
+      <CardHeader>
+        <CardTitle>Profile details</CardTitle>
+        <CardDescription>
+          Keep your contact details accurate. These fields are used across onboarding and visit
+          coordination.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {error && (
+              <p className="text-sm text-destructive">
+                {error instanceof Error ? error.message : "Failed to load profile."}
+              </p>
             )}
-          />
-          {error && <p className="text-red-500">{error}</p>}
-          {success && <p className="text-green-500">Profile updated successfully!</p>}
-          <Button type="submit" disabled={loading}>
-            {loading ? "Updating..." : "Update Profile"}
-          </Button>
-        </form>
-      </Form>
-    </div>
+            {mutateProfile.isError && (
+              <p className="text-sm text-destructive">Failed to save profile.</p>
+            )}
+            {success && <p className="text-sm text-emerald-600">Profile saved.</p>}
+            <Button type="submit" disabled={mutateProfile.isPending}>
+              {mutateProfile.isPending ? "Saving..." : "Save profile"}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }

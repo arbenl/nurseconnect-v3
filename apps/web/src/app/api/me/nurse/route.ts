@@ -1,4 +1,4 @@
-import { db, eq, schema } from "@nurseconnect/database";
+import { and, db, eq, or, schema } from "@nurseconnect/database";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -11,6 +11,8 @@ import {
   logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
+
+const ACTIVE_ASSIGNMENT_STATUSES = ["assigned", "accepted", "enroute"] as const;
 
 const nurseProfileSchema = z.object({
   isAvailable: z.boolean(),
@@ -85,6 +87,31 @@ export async function PATCH(request: Request) {
         source: "me.nurse",
       });
       return withRequestId(response, context.requestId);
+    }
+
+    if (isAvailable) {
+      const activeAssignment = await db.query.serviceRequests.findFirst({
+        where: and(
+          eq(schema.serviceRequests.assignedNurseUserId, user.id),
+          or(
+            eq(schema.serviceRequests.status, ACTIVE_ASSIGNMENT_STATUSES[0]),
+            eq(schema.serviceRequests.status, ACTIVE_ASSIGNMENT_STATUSES[1]),
+            eq(schema.serviceRequests.status, ACTIVE_ASSIGNMENT_STATUSES[2]),
+          ),
+        ),
+      });
+
+      if (activeAssignment) {
+        const response = NextResponse.json(
+          { error: "Conflict: Nurse has an active visit" },
+          { status: 409 },
+        );
+        logApiFailure(actorContext, "Conflict: Nurse has an active visit", 409, startedAt, {
+          source: "me.nurse",
+          requestId: activeAssignment.id,
+        });
+        return withRequestId(response, context.requestId);
+      }
     }
 
     await db
