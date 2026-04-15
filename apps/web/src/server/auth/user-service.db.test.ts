@@ -1,6 +1,7 @@
 import { db, schema, eq } from "@nurseconnect/database";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
+import { createNurseRecord, getNurseByUserId } from "@/lib/nurse-record";
 
 import { maybeBootstrapFirstAdmin, ensureDomainUserFromSession } from "../../lib/user-service";
 
@@ -91,5 +92,23 @@ describe("maybeBootstrapFirstAdmin", () => {
         const result = await maybeBootstrapFirstAdmin(adminUser!);
 
         expect(result!.role).toBe("admin");
+    });
+
+    it("creates and retrieves nurse records through the interim nurse adapter", async () => {
+        const domainUser = await ensureDomainUserFromSession({
+            id: "auth_nurse_record_1",
+            email: "nurse-record@example.com",
+            name: "Nurse Record User",
+        });
+
+        const created = await createNurseRecord(domainUser!.id);
+        const loaded = await getNurseByUserId(domainUser!.id);
+
+        expect(created!.userId).toBe(domainUser!.id);
+        expect(created!.status).toBe("draft");
+        expect(loaded).toMatchObject({
+            userId: domainUser!.id,
+            status: "draft",
+        });
     });
 });

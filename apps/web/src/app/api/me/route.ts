@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import {
   ensureDomainUserFromSession,
   maybeBootstrapFirstAdmin,
-  getNurseByUserId,
 } from "@/lib/user-service";
+import { getNurseByUserId } from "@/lib/nurse-record";
 import { getSession } from "@/server/auth";
 import {
   createApiLogContext,

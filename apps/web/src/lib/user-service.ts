@@ -1,6 +1,6 @@
-import { db, schema, eq } from "@nurseconnect/database";
+import { db, eq, schema } from "@nurseconnect/database";
 
-const { users, nurses } = schema;
+const { users } = schema;
 
 const parseAllowlist = () =>
   (process.env.FIRST_ADMIN_EMAILS ?? "")
@@ -40,27 +40,6 @@ export async function ensureDomainUserFromSession(data: {
 }
 
 export const upsertUser = ensureDomainUserFromSession;
-
-export async function getNurseByUserId(userId: string) {
-  const [nurse] = await db
-    .select()
-    .from(nurses)
-    .where(eq(nurses.userId, userId));
-  return nurse;
-}
-
-export async function createNurseRecord(userId: string) {
-  const [nurse] = await db
-    .insert(nurses)
-    .values({
-      userId,
-      status: "draft",
-    })
-    .returning();
-  return nurse;
-}
-
-
 
 /**
  * Promotes the user to admin ONLY if their email is in the allowlist.

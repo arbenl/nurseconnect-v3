@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { getCanonicalRouteForRole } from "@/lib/canonical-routes";
-import { getNurseByUserId } from "@/lib/user-service";
+import { getNurseByUserId } from "@/lib/nurse-record";
 
 import {
   resolveCurrentSessionUser,
