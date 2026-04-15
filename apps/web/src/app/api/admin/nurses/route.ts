@@ -1,6 +1,6 @@
+import { listNurseCredentials } from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 
-import { listNurseCredentials } from "@/server/admin/nurse-credentials";
 import { requireRole } from "@/server/auth";
 import {
   createApiLogContext,

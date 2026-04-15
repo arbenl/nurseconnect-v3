@@ -1,7 +1,7 @@
 import { AdminSuspendNurseSchema } from "@nurseconnect/contracts";
+import { suspendNurseCredential } from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 
-import { suspendNurseCredential } from "@/server/admin/nurse-credentials";
 import { requireRole } from "@/server/auth";
 import {
   createApiLogContext,

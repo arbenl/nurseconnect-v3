@@ -34,7 +34,7 @@
     "pr:finalizer": "bash scripts/pr-finalizer.sh",
     "test:web": "pnpm --filter web test",
     "test:contracts": "pnpm --filter contracts test",
-    "test:architecture": "pnpm --filter @nurseconnect/platform-telemetry test && pnpm --filter @nurseconnect/domain-request test && pnpm --filter @nurseconnect/domain-identity test",
+    "test:architecture": "pnpm --filter @nurseconnect/platform-telemetry test && pnpm --filter @nurseconnect/domain-request test && pnpm --filter @nurseconnect/domain-identity test && pnpm --filter @nurseconnect/domain-nurse test",
     "web:test:emu": "pnpm --filter web run test:emu",
     "test:ci": "pnpm test:web && pnpm test:contracts && pnpm test:architecture",
     "test:api": "bash scripts/test-api.sh",

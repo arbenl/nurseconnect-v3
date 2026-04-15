@@ -1,12 +1,12 @@
-import Link from "next/link";
-
-import { AdminSectionCard } from "@/components/admin/admin-section-card";
-import { Badge } from "@/components/ui/badge";
 import {
   getNurseCredentialCounts,
   listNurseCredentials,
   type NurseCredentialStatus,
-} from "@/server/admin/nurse-credentials";
+} from "@nurseconnect/domain-nurse";
+import Link from "next/link";
+
+import { AdminSectionCard } from "@/components/admin/admin-section-card";
+import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 type PageProps = {

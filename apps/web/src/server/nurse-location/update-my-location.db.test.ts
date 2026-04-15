@@ -1,7 +1,6 @@
 import { db, eq, schema, sql } from "@nurseconnect/database";
+import { NurseLocationForbiddenError, updateMyNurseLocation } from "@nurseconnect/domain-nurse";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-
-import { NurseLocationForbiddenError, updateMyNurseLocation } from "./update-my-location";
 
 const { users, nurses, nurseLocations } = schema;
 

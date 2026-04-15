@@ -1,5 +1,6 @@
+import { getNurseCredentialCounts, listNurseCredentials } from "@nurseconnect/domain-nurse";
+
 import { getAdminReassignmentActivityFeed } from "@/server/admin/activity-feed";
-import { getNurseCredentialCounts, listNurseCredentials } from "@/server/admin/nurse-credentials";
 import { getAdminActiveRequestQueue } from "@/server/requests/admin-active-queue";
 
 const attentionStatuses = new Set(["submitted", "under_review", "renewal_pending", "suspended"]);
