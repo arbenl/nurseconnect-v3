@@ -1,29 +1,19 @@
-import { UnauthorizedError } from "./require-auth";
+import {
+  requireAnyRole as requireAnyRolePolicy,
+  requireRole as requireRolePolicy,
+  type ResolvedSessionUser,
+} from "@nurseconnect/domain-identity";
+
 import { resolveCurrentSessionUser } from "./session-user";
 
-type AppRole = "admin" | "nurse" | "patient";
+type AppRole = ResolvedSessionUser["user"]["role"];
 
-export class ForbiddenError extends Error {
-  constructor(message = "Forbidden") {
-    super(message);
-    this.name = "ForbiddenError";
-  }
-}
+export { ForbiddenError, UnauthorizedError } from "@nurseconnect/domain-identity";
 
 export async function requireAnyRole(allowedRoles: AppRole[]) {
-  const resolved = await resolveCurrentSessionUser();
-  if (!resolved) {
-    throw new UnauthorizedError();
-  }
-  const { session, user } = resolved;
-
-  if (!allowedRoles.includes(user.role)) {
-    throw new ForbiddenError();
-  }
-
-  return { session, user };
+  return requireAnyRolePolicy(allowedRoles, await resolveCurrentSessionUser());
 }
 
 export async function requireRole(role: AppRole) {
-  return requireAnyRole([role]);
+  return requireRolePolicy(role, await resolveCurrentSessionUser());
 }

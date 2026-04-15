@@ -1,1 +1,1 @@
-export * from "@nurseconnect/platform-telemetry";
+export * from "@nurseconnect/platform-telemetry/ops-logger";

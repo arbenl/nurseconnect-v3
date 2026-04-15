@@ -21,6 +21,7 @@
     "@next/bundle-analyzer": "^15.4.6",
     "@nurseconnect/contracts": "workspace:*",
     "@nurseconnect/database": "workspace:*",
+    "@nurseconnect/domain-identity": "workspace:*",
     "@nurseconnect/domain-request": "workspace:*",
     "@nurseconnect/platform-telemetry": "workspace:*",
     "@nurseconnect/ui": "workspace:*",

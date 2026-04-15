@@ -1,4 +1,4 @@
-import type { GetRequestEventsResponse, RequestEventType, RequestStatus } from "@nurseconnect/contracts";
+import type { GetRequestEventsResponse } from "@nurseconnect/contracts";
 import { and, asc, db, desc, eq, gte, schema } from "@nurseconnect/database";
 export { appendRequestEvent } from "@nurseconnect/domain-request";
 

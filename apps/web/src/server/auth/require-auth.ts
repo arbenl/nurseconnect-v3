@@ -1,11 +1,8 @@
+import { UnauthorizedError } from "@nurseconnect/domain-identity";
+
 import { getSession } from "./get-session";
 
-export class UnauthorizedError extends Error {
-  constructor(message = "Unauthorized") {
-    super(message);
-    this.name = "UnauthorizedError";
-  }
-}
+export { UnauthorizedError } from "@nurseconnect/domain-identity";
 
 export async function requireAuth() {
   const session = await getSession();

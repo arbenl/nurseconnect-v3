@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
+import { getNurseByUserId } from "@/lib/nurse-record";
 import {
   ensureDomainUserFromSession,
   maybeBootstrapFirstAdmin,
 } from "@/lib/user-service";
-import { getNurseByUserId } from "@/lib/nurse-record";
 import { getSession } from "@/server/auth";
 import {
   createApiLogContext,
