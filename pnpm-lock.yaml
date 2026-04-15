@@ -123,6 +123,9 @@ importers:
       '@nurseconnect/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@nurseconnect/platform-telemetry':
+        specifier: workspace:*
+        version: link:../../packages/platform-telemetry
       '@nurseconnect/ui':
         specifier: workspace:*
         version: link:../../packages/ui

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import type { ApiLogContext } from "@/server/telemetry/ops-logger";
-import { logApiFailure, withRequestId } from "@/server/telemetry/ops-logger";
+import type { ApiLogContext } from "@nurseconnect/platform-telemetry";
+import { logApiFailure, withRequestId } from "@nurseconnect/platform-telemetry";
 
 import { UnauthorizedError } from "./require-auth";
 import { ForbiddenError } from "./require-role";
