@@ -83,16 +83,19 @@ Instead, it should:
 Representative result shape:
 
 ```ts
+export type RequestSideEffect =
+  | { type: "set-nurse-availability"; userId: string; isAvailable: boolean };
+
 {
   request,
   event,
-  sideEffects: [
-    { type: "set-nurse-availability", userId: string, isAvailable: boolean }
-  ]
+  sideEffects: RequestSideEffect[]
 }
 ```
 
 `apps/web` continues to execute those side effects inside the existing transaction.
+
+This is intentionally an extensible discriminated union, not a one-off object shape. Step 3 only needs the `set-nurse-availability` variant, but later extractions such as `domain-dispatch` may add their own side-effect variants without changing the executor pattern.
 
 This keeps `domain-request` request-owned while preserving the current transaction behavior.
 
@@ -114,12 +117,20 @@ Then `domain-request` asserts the precondition instead of reading `nurses` itsel
 
 `packages/contracts/src/requests.ts` should remain the transport-schema layer.
 
-`request-creation.ts` in `@nurseconnect/domain-request` earns its place only if it owns request invariants beyond transport validation, such as:
+`request-creation.ts` in `@nurseconnect/domain-request` must own the domain invariants that exist today and become the home for future request-creation policy.
 
-- scheduled vs same-day creation rules
-- field coherence for referral metadata
-- normalization of request creation input before persistence
-- request-level invariants that determine whether creation is allowed
+Day-one invariants are the two rules currently embedded in `CreateRequestSchema.superRefine`:
+
+- `scheduledFor` is required when `requestType === "scheduled"`
+- `scheduledFor` must be omitted when `requestType === "same_day"`
+
+Those rules should move out of `@nurseconnect/contracts` and into `request-creation.ts`.
+
+After that move:
+
+- `CreateRequestSchema` in `packages/contracts/src/requests.ts` becomes a pure transport shape
+- `request-creation.ts` owns the request-domain creation invariants
+- future request-creation policy, such as referral-field coherence or stricter scheduling rules, lands in `request-creation.ts`
 
 It should not just wrap or re-export `CreateRequestSchema`.
 
@@ -142,7 +153,8 @@ packages/domain-request/
 Note:
 
 - `request-lifecycle.ts` already exists and should remain the lifecycle module
-- `request-events-write.ts` should be renamed or consolidated into `request-events.ts` so the public shape matches the domain boundary more clearly
+- `request-events-write.ts` should be renamed or consolidated into `request-events.ts` inside `packages/domain-request` so the public shape matches the domain boundary more clearly
+- `apps/web/src/server/requests/request-events.ts` remains the read-side module for timeline and notification queries
 
 ## Package Responsibilities
 
@@ -159,8 +171,13 @@ Owns typed request-domain errors such as:
 This centralizes errors that are currently duplicated or scattered across:
 
 - `request-actions.ts`
-- `admin-reassign.ts`
 - `request-events.ts`
+
+Migration note:
+
+- `RequestNotFoundError` moves into `@nurseconnect/domain-request/errors.ts`
+- `apps/web/src/server/requests/admin-reassign.ts` should import `RequestNotFoundError` from the package instead of defining its own copy
+- `RequestReassignForbiddenError` and `RequestReassignValidationError` stay in `admin-reassign.ts` because reassignment remains outside the request package in this step
 
 ### `request-lifecycle.ts`
 
@@ -179,6 +196,7 @@ Owns request creation invariants beyond transport validation.
 
 Initial responsibilities:
 
+- take ownership of the two existing creation invariants currently implemented in `CreateRequestSchema.superRefine`
 - validate the domain-level meaning of request creation input
 - normalize request creation fields
 - decide whether the input is coherent for persistence
@@ -223,7 +241,14 @@ This includes:
 - validate allowed event metadata shape
 - standardize event write behavior
 
-Read-side timeline and notification queries do not move in this step.
+This module is the write-side package module.
+
+The app-layer file `apps/web/src/server/requests/request-events.ts` remains the read-side module and continues to own:
+
+- `getRequestEventsForUser`
+- `getNotificationsForActor`
+
+That app-layer module may continue to re-export `appendRequestEvent` from `@nurseconnect/domain-request`, as it already does today, while read-side queries stay outside the package in this step.
 
 ## What Stays In `apps/web`
 
