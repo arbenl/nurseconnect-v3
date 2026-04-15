@@ -152,7 +152,8 @@ Then update:
   - remove the `superRefine`
   - keep the schema transport-only
 - `apps/web/src/server/requests/allocate-request.ts`
-  - import `type CreateRequestInput` from `@nurseconnect/contracts` instead of maintaining a duplicate local shape
+  - replace the duplicate local request fields with `type CreateRequestInput = ContractCreateRequestInput & { patientUserId: string }`
+  - import the request-field contract type from `@nurseconnect/contracts` under an alias such as `ContractCreateRequestInput`
   - call `assertCreateRequestInvariants(input)` before the transaction begins
 - `apps/web/src/app/api/requests/route.ts`
   - catch `RequestCreationValidationError`

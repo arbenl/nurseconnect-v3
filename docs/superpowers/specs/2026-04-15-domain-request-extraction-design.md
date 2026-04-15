@@ -2,7 +2,7 @@
 
 Date: 2026-04-15
 Status: Proposed
-Scope: Enterprise architecture Step 3 after merged `domain-nurse`
+Scope: Enterprise architecture Step 3 after merged Step 2 (`@nurseconnect/domain-nurse`)
 
 ## Purpose
 
