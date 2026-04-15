@@ -1,6 +1,6 @@
 import { NurseAvailabilityError } from "./errors";
 
-export { NurseAvailabilityError } from "./errors";
+export { NurseAvailabilityError };
 
 export function assertCanSetSelfAvailability(input: {
   status: string;

@@ -14,7 +14,9 @@ async function countAuditActions(action: string, targetEntityId: string) {
   const [row] = await db
     .select({ value: count() })
     .from(adminAuditLogs)
-    .where(eq(adminAuditLogs.action, action));
+    .where(
+      sql`${adminAuditLogs.action} = ${action} AND ${adminAuditLogs.targetEntityId} = ${targetEntityId}`,
+    );
 
   return Number(row?.value ?? 0);
 }
