@@ -118,7 +118,10 @@ Owns:
 - client-side form state and interactions
 - portal-specific view models
 - request/response transport wiring
+- HTTP response formatting and transport-specific error adapters
 - auth/session cookie integration
+- Better-Auth and `next/headers` session provider integration
+- canonical route mapping and route normalization
 - dependency composition
 
 Does not own:
@@ -141,9 +144,16 @@ Owns:
 
 Current likely sources:
 
-- `apps/web/src/server/auth/*`
+- identity policy modules currently under `apps/web/src/server/auth/*`
 - `apps/web/src/lib/user-service.ts` identity and user projection responsibilities
 - `packages/contracts/src/user.ts`
+
+Important notes:
+
+- `apps/web/src/server/auth/http.ts` is a transport adapter and should stay in `apps/web`. Domain identity should expose typed errors and policies, not `NextResponse` formatting.
+- session provider integration such as Better-Auth and `next/headers` stays in `apps/web` as an adapter. `domain-identity` receives resolved session data through a defined boundary, not by importing framework libraries.
+- `apps/web/src/server/auth/get-session.ts` should remain an app adapter around Better-Auth and `next/headers`, even if the downstream identity resolution logic moves into a domain package.
+- canonical route mapping such as `apps/web/src/lib/canonical-routes.ts` stays in `apps/web`. Portal access policy can consume route resolution through injected config or resolved inputs, but it should not own URL mapping.
 
 ### `packages/domain-nurse`
 
@@ -273,6 +283,8 @@ Owns:
 
 This package is a persistence adapter layer, not a domain layer.
 
+In code, this refers to the existing `@nurseconnect/database` package in `packages/database`, evolved to include repository adapters and transaction helpers. No package rename is required.
+
 ### `packages/platform-contracts`
 
 Owns:
@@ -283,6 +295,8 @@ Owns:
 
 It does not own business policy or state machines.
 
+In code, this refers to the existing `@nurseconnect/contracts` package in `packages/contracts`.
+
 ### `packages/platform-ui`
 
 Owns:
@@ -291,6 +305,8 @@ Owns:
 - design tokens
 - responsive and mobile-safe spacing primitives
 - accessible interaction patterns
+
+In code, this refers to the existing `@nurseconnect/ui` package in `packages/ui`.
 
 ### `packages/platform-telemetry`
 
@@ -318,12 +334,13 @@ apps/web
   -> platform-db
 
 domain-*
+  -> platform-db
   -> platform-contracts
+  -> platform-telemetry when shared audit/logging is needed
   -> other domain packages only when explicitly allowed
-  -> never Next.js, React, Drizzle, or route code
+  -> never Next.js, React, or route code
 
 platform-db
-  -> domain ports/interfaces
   -> Drizzle/Postgres/sql implementations
 
 platform-ui
@@ -341,6 +358,12 @@ Practical rule:
 - if code decides what is allowed, it belongs in a domain package
 - if code decides how something is rendered, routed, or persisted, it belongs in `apps/web` or a platform package
 
+Important migration note:
+
+- port-based DB access is a target pattern, not a day-one precondition for extraction
+- during initial extraction, domain packages may import `@nurseconnect/database` directly
+- the hard ban is on framework and route coupling, not on all persistence coupling from the first move
+
 ## Database Access Pattern
 
 Current reality:
@@ -350,12 +373,17 @@ Current reality:
 
 Target rule:
 
-- extracted domain packages should not directly depend on Drizzle schema or shared DB globals
-- domain packages define repository or transaction needs as ports
-- `platform-db` implements those ports
-- complex lock-heavy SQL should be hidden behind repository methods or unit-of-work adapters
+- extracted domain packages should trend toward repository or transaction boundaries instead of route-local DB usage
+- `platform-db` should absorb repository helpers and unit-of-work support over time
+- complex lock-heavy SQL should be hidden behind repository methods or transaction-scoped helpers once the relevant domain seam is stable
 
 This matters most for dispatch because allocation and reassignment rely on explicit locking behavior.
+
+During migration:
+
+- domain packages may accept a `db` or `tx` handle as an injected dependency
+- domain packages may import `@nurseconnect/database` directly while seams are still being extracted
+- repository ports should support raw SQL execution for queries that require explicit locking such as `FOR UPDATE SKIP LOCKED` or cross-table joins that are awkward to express through Drizzle's query builder
 
 ## Request Core vs Dispatch Seam
 
@@ -424,7 +452,7 @@ Why first:
 
 Extract:
 
-- `apps/web/src/server/auth/*`
+- identity policy logic currently under `apps/web/src/server/auth/*`, excluding transport adapters
 - identity and projection responsibilities from `apps/web/src/lib/user-service.ts`
 - user-related boundary contracts
 
