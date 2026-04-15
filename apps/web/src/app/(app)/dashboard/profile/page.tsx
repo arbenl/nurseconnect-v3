@@ -59,8 +59,16 @@ export default function ProfilePage() {
 
   async function onSubmit(values: ProfileFormValues) {
     setSuccess(false);
-    await mutateProfile.mutateAsync(values);
-    setSuccess(true);
+    form.clearErrors("root");
+
+    try {
+      await mutateProfile.mutateAsync(values);
+      setSuccess(true);
+    } catch (error) {
+      form.setError("root", {
+        message: error instanceof Error ? error.message : "Failed to update profile.",
+      });
+    }
   }
 
   if (isLoading) {
@@ -157,8 +165,8 @@ export default function ProfilePage() {
                 {error instanceof Error ? error.message : "Failed to load profile."}
               </p>
             )}
-            {mutateProfile.isError && (
-              <p className="text-sm text-destructive">Failed to save profile.</p>
+            {form.formState.errors.root?.message && (
+              <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
             )}
             {success && <p className="text-sm text-emerald-600">Profile saved.</p>}
             <Button type="submit" disabled={mutateProfile.isPending}>

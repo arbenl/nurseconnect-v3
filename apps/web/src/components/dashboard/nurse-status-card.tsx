@@ -34,10 +34,11 @@ export function NurseStatusCard({
   const hasActiveAssignment = activeAssignmentStatus === "assigned" || activeAssignmentStatus === "accepted" || activeAssignmentStatus === "enroute";
   const licenseExpired = isLicenseExpired(licenseValidUntil);
   const isSwitchDisabled = isLoading || hasActiveAssignment || status !== "verified" || licenseExpired;
+  const displayAvailable = hasActiveAssignment ? false : isAvailable;
 
   const statusDescription = hasActiveAssignment
     ? "Availability is paused while you finish your active visit."
-    : isAvailable
+    : displayAvailable
       ? "You can receive new visit requests right now."
       : "Turn this on when you are ready to receive new visit requests.";
 
@@ -103,12 +104,12 @@ export function NurseStatusCard({
           <CardTitle>Dispatch availability</CardTitle>
           <CardDescription>{statusDescription}</CardDescription>
         </div>
-        <div className={`h-3 w-3 rounded-full ${isAvailable ? "bg-green-500" : "bg-gray-300"}`} />
+        <div className={`h-3 w-3 rounded-full ${displayAvailable ? "bg-green-500" : "bg-gray-300"}`} />
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center space-x-4">
           <Switch
-            checked={hasActiveAssignment ? false : isAvailable}
+            checked={displayAvailable}
             onCheckedChange={handleToggle}
             disabled={isSwitchDisabled}
             aria-label="Toggle availability"
@@ -116,7 +117,7 @@ export function NurseStatusCard({
           <span className="text-sm font-medium">
             {hasActiveAssignment
               ? "Paused during active visit"
-              : isAvailable
+              : displayAvailable
                 ? "Available for new requests"
                 : "Not receiving requests"}
           </span>

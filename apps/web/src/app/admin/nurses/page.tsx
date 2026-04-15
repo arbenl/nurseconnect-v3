@@ -2,7 +2,11 @@ import Link from "next/link";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
-import { listNurseCredentials, type NurseCredentialStatus } from "@/server/admin/nurse-credentials";
+import {
+  getNurseCredentialCounts,
+  listNurseCredentials,
+  type NurseCredentialStatus,
+} from "@/server/admin/nurse-credentials";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 type PageProps = {
@@ -47,27 +51,10 @@ export default async function AdminNursesQueuePage({ searchParams }: PageProps) 
       ? [statusFilter]
       : REVIEW_STATUSES;
 
-  const [items, allItems] = await Promise.all([
-    listNurseCredentials(statuses),
-    listNurseCredentials(),
+  const [items, counts] = await Promise.all([
+    listNurseCredentials({ statuses }),
+    getNurseCredentialCounts(),
   ]);
-
-  const counts = allItems.reduce(
-    (acc, item) => {
-      acc[item.status] = (acc[item.status] ?? 0) + 1;
-      return acc;
-    },
-    {
-      draft: 0,
-      submitted: 0,
-      under_review: 0,
-      verified: 0,
-      rejected: 0,
-      suspended: 0,
-      expired: 0,
-      renewal_pending: 0,
-    },
-  );
 
   return (
     <div className="space-y-6">
