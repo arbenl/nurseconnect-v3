@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       scheduledFor: body.scheduledFor ?? null,
       referralSource: body.referralSource,
       referralPartnerId: body.referralPartnerId ?? null,
-      careType: body.careType ?? null,
+      careType: body.careType,
     });
 
     const response = NextResponse.json(newRequest);

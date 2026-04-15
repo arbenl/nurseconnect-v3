@@ -1,9 +1,8 @@
 import type { RequestEventType, RequestStatus } from "@nurseconnect/contracts";
-import { db, schema } from "@nurseconnect/database";
+import type { DbClient } from "@nurseconnect/database";
+import { requestEvents } from "@nurseconnect/database/schema";
 
-const { requestEvents } = schema;
-
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Transaction = Parameters<Parameters<DbClient["transaction"]>[0]>[0];
 
 type AppendRequestEventInput = {
   requestId: string;
@@ -14,7 +13,10 @@ type AppendRequestEventInput = {
   meta?: Record<string, unknown> | null;
 };
 
-export async function appendRequestEvent(tx: Transaction, input: AppendRequestEventInput) {
+export async function appendRequestEvent(
+  tx: Transaction,
+  input: AppendRequestEventInput,
+) {
   await tx.insert(requestEvents).values({
     requestId: input.requestId,
     type: input.type,

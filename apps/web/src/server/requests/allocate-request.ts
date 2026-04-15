@@ -7,8 +7,14 @@ import { appendRequestEvent } from "./request-events";
 
 const { nurses, serviceRequests } = schema;
 
-export type CreateRequestInput = ContractCreateRequestInput & {
+export type CreateRequestInput = Omit<
+    ContractCreateRequestInput,
+    "requestType" | "referralSource" | "careType"
+> & {
     patientUserId: string;
+    requestType?: ContractCreateRequestInput["requestType"];
+    referralSource?: ContractCreateRequestInput["referralSource"];
+    careType?: ContractCreateRequestInput["careType"] | null;
 };
 
 // Small helper to keep deterministic tie-breaks.
@@ -26,8 +32,13 @@ function compareCandidates(
  */
 export async function createAndAssignRequest(input: CreateRequestInput) {
     const { patientUserId, address, lat, lng } = input;
+    const requestType = input.requestType ?? "same_day";
+    const referralSource = input.referralSource ?? "consumer";
 
-    assertCreateRequestInvariants(input);
+    assertCreateRequestInvariants({
+        requestType,
+        scheduledFor: input.scheduledFor,
+    });
 
     return await db.transaction(async (tx) => {
         // 1) create request (open)
@@ -39,9 +50,9 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
                 lat: String(lat), // NUMERIC in db; store as string for drizzle numeric
                 lng: String(lng),
                 status: "open",
-                requestType: input.requestType ?? "same_day",
+                requestType,
                 scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
-                referralSource: input.referralSource ?? "consumer",
+                referralSource,
                 referralPartnerId: input.referralPartnerId ?? null,
                 careType: input.careType ?? null,
             })

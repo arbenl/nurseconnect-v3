@@ -1,5 +1,6 @@
 import type { RequestStatus } from "@nurseconnect/contracts";
 import { db, eq, schema, sql } from "@nurseconnect/database";
+import { RequestNotFoundError } from "@nurseconnect/domain-request";
 
 import { recordAdminAction } from "@/server/admin/audit";
 
@@ -25,13 +26,6 @@ export class RequestReassignValidationError extends Error {
   constructor(message = "Invalid request reassignment") {
     super(message);
     this.name = "RequestReassignValidationError";
-  }
-}
-
-export class RequestNotFoundError extends Error {
-  constructor(message = "Request not found") {
-    super(message);
-    this.name = "RequestNotFoundError";
   }
 }
 
