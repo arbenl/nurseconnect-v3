@@ -1,33 +1,15 @@
 import { z } from "zod";
 
-export const CreateRequestSchema = z
-    .object({
-        address: z.string().min(5, "Address must be at least 5 characters"),
-        lat: z.number().min(-90).max(90),
-        lng: z.number().min(-180).max(180),
-        requestType: z.enum(["scheduled", "same_day"]).default("same_day"),
-        scheduledFor: z.string().datetime({ offset: true }).nullable().optional(),
-        referralSource: z.enum(["consumer", "partner"]).default("consumer"),
-        referralPartnerId: z.string().uuid().nullable().optional(),
-        careType: z.string().min(1).optional(),
-    })
-    .superRefine((value, context) => {
-        if (value.requestType === "scheduled" && !value.scheduledFor) {
-            context.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "scheduledFor is required for scheduled requests",
-                path: ["scheduledFor"],
-            });
-        }
-
-        if (value.requestType === "same_day" && value.scheduledFor != null) {
-            context.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "scheduledFor must be omitted for same-day requests",
-                path: ["scheduledFor"],
-            });
-        }
-    });
+export const CreateRequestSchema = z.object({
+    address: z.string().min(5, "Address must be at least 5 characters"),
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    requestType: z.enum(["scheduled", "same_day"]).default("same_day"),
+    scheduledFor: z.string().datetime({ offset: true }).nullable().optional(),
+    referralSource: z.enum(["consumer", "partner"]).default("consumer"),
+    referralPartnerId: z.string().uuid().nullable().optional(),
+    careType: z.string().min(1).optional(),
+});
 
 export type CreateRequestInput = z.infer<typeof CreateRequestSchema>;
 

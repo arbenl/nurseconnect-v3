@@ -1,21 +1,14 @@
 // apps/web/src/server/requests/allocate-request.ts
-import { haversineMeters } from "@nurseconnect/contracts";
+import { haversineMeters, type CreateRequestInput as ContractCreateRequestInput } from "@nurseconnect/contracts";
 import { db, eq, schema, sql } from "@nurseconnect/database";
+import { assertCreateRequestInvariants } from "@nurseconnect/domain-request";
 
 import { appendRequestEvent } from "./request-events";
 
 const { nurses, serviceRequests } = schema;
 
-export type CreateRequestInput = {
+export type CreateRequestInput = ContractCreateRequestInput & {
     patientUserId: string;
-    address: string;
-    lat: number;
-    lng: number;
-    requestType?: "scheduled" | "same_day";
-    scheduledFor?: string | null;
-    referralSource?: "consumer" | "partner";
-    referralPartnerId?: string | null;
-    careType?: string | null;
 };
 
 // Small helper to keep deterministic tie-breaks.
@@ -33,6 +26,8 @@ function compareCandidates(
  */
 export async function createAndAssignRequest(input: CreateRequestInput) {
     const { patientUserId, address, lat, lng } = input;
+
+    assertCreateRequestInvariants(input);
 
     return await db.transaction(async (tx) => {
         // 1) create request (open)

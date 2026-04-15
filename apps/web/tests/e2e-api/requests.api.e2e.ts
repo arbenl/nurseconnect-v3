@@ -179,6 +179,44 @@ test.describe("Requests API", () => {
         expect(data.careType).toBe("wound_care");
     });
 
+    test("create request rejects invalid request-type and scheduledFor combinations", async ({
+        request,
+    }) => {
+        const patientEmail = `patient-invalid-intake-${Date.now()}@test.local`;
+        await createTestUser(request, patientEmail, "Patient Invalid Intake", "patient");
+        await markProfileComplete(patientEmail);
+        await loginTestUser(request, patientEmail);
+
+        const scheduledMissingTime = await request.post("/api/requests", {
+            data: {
+                address: "12 Invalid St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+                requestType: "scheduled",
+            },
+        });
+
+        expect(scheduledMissingTime.status()).toBe(400);
+        await expect(scheduledMissingTime.json()).resolves.toEqual({
+            message: "scheduledFor is required for scheduled requests",
+        });
+
+        const sameDayWithTime = await request.post("/api/requests", {
+            data: {
+                address: "13 Invalid St, Pristina",
+                lat: 42.6629,
+                lng: 21.1655,
+                requestType: "same_day",
+                scheduledFor: "2027-01-01T10:00:00.000Z",
+            },
+        });
+
+        expect(sameDayWithTime.status()).toBe(400);
+        await expect(sameDayWithTime.json()).resolves.toEqual({
+            message: "scheduledFor must be omitted for same-day requests",
+        });
+    });
+
     test("full flow: assigned nurse accepts and patient sees accepted", async ({ request }) => {
         const nurseEmail = `nurse-accept-${Date.now()}@test.local`;
         const { userId: nurseId } = await createTestUser(request, nurseEmail, "Nurse Accept", "nurse");

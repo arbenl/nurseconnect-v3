@@ -1,4 +1,5 @@
 import { CreateRequestSchema } from "@nurseconnect/contracts";
+import { RequestCreationValidationError } from "@nurseconnect/domain-request";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -49,6 +50,13 @@ export async function POST(request: Request) {
     }
     if (error instanceof z.ZodError) {
       const response = NextResponse.json(error.issues, { status: 400 });
+      logApiFailure(actorContext, error, 400, startedAt, {
+        source: "requests.create",
+      });
+      return withRequestId(response, context.requestId);
+    }
+    if (error instanceof RequestCreationValidationError) {
+      const response = NextResponse.json({ message: error.message }, { status: 400 });
       logApiFailure(actorContext, error, 400, startedAt, {
         source: "requests.create",
       });
