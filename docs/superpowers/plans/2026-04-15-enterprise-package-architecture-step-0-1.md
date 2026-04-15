@@ -14,55 +14,55 @@
 
 ### New packages
 
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/package.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/tsconfig.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/src/index.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/src/admin-audit.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/src/ops-logger.ts`
+- Create: `packages/platform-telemetry/package.json`
+- Create: `packages/platform-telemetry/tsconfig.json`
+- Create: `packages/platform-telemetry/src/index.ts`
+- Create: `packages/platform-telemetry/src/admin-audit.ts`
+- Create: `packages/platform-telemetry/src/ops-logger.ts`
 
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/package.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/tsconfig.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/src/index.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/src/request-lifecycle.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/src/request-events-write.ts`
+- Create: `packages/domain-request/package.json`
+- Create: `packages/domain-request/tsconfig.json`
+- Create: `packages/domain-request/src/index.ts`
+- Create: `packages/domain-request/src/request-lifecycle.ts`
+- Create: `packages/domain-request/src/request-events-write.ts`
 
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/package.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/tsconfig.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/index.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/errors.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/user-projection.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/session-user.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/require-role.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/portal-access-policy.ts`
+- Create: `packages/domain-identity/package.json`
+- Create: `packages/domain-identity/tsconfig.json`
+- Create: `packages/domain-identity/src/index.ts`
+- Create: `packages/domain-identity/src/errors.ts`
+- Create: `packages/domain-identity/src/user-projection.ts`
+- Create: `packages/domain-identity/src/session-user.ts`
+- Create: `packages/domain-identity/src/require-role.ts`
+- Create: `packages/domain-identity/src/portal-access-policy.ts`
 
 ### Interim app shims and adapters
 
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/admin/audit.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/telemetry/ops-logger.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-lifecycle.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-events.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/index.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/session-user.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/require-role.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/portal-access.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/lib/user-service.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/lib/nurse-record.ts`
+- Modify: `apps/web/src/server/admin/audit.ts`
+- Modify: `apps/web/src/server/telemetry/ops-logger.ts`
+- Modify: `apps/web/src/server/requests/request-lifecycle.ts`
+- Modify: `apps/web/src/server/requests/request-events.ts`
+- Modify: `apps/web/src/server/auth/index.ts`
+- Modify: `apps/web/src/server/auth/session-user.ts`
+- Modify: `apps/web/src/server/auth/require-role.ts`
+- Modify: `apps/web/src/server/auth/portal-access.ts`
+- Modify: `apps/web/src/lib/user-service.ts`
+- Create: `apps/web/src/lib/nurse-record.ts`
 
 ### Package and root wiring
 
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/package.json`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/turbo.json`
+- Modify: `package.json`
+- Modify: `turbo.json`
 
 ### Tests
 
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/src/request-lifecycle.test.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/require-role.test.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/portal-access-policy.test.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/user-service.db.test.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/require-role.db.test.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/user-role.db.test.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-events.db.test.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-lifecycle.test.ts`
+- Create: `packages/domain-request/src/request-lifecycle.test.ts`
+- Create: `packages/domain-identity/src/require-role.test.ts`
+- Create: `packages/domain-identity/src/portal-access-policy.test.ts`
+- Modify: `apps/web/src/server/auth/user-service.db.test.ts`
+- Modify: `apps/web/src/server/auth/require-role.db.test.ts`
+- Modify: `apps/web/src/server/auth/user-role.db.test.ts`
+- Modify: `apps/web/src/server/requests/request-events.db.test.ts`
+- Modify: `apps/web/src/server/requests/request-lifecycle.test.ts`
 
 ### Non-goals for this plan
 
@@ -83,17 +83,17 @@
 ### Task 1: Create workspace package scaffolds
 
 **Files:**
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/package.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/tsconfig.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/src/index.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/package.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/tsconfig.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/src/index.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/package.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/tsconfig.json`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/index.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/package.json`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/turbo.json`
+- Create: `packages/platform-telemetry/package.json`
+- Create: `packages/platform-telemetry/tsconfig.json`
+- Create: `packages/platform-telemetry/src/index.ts`
+- Create: `packages/domain-request/package.json`
+- Create: `packages/domain-request/tsconfig.json`
+- Create: `packages/domain-request/src/index.ts`
+- Create: `packages/domain-identity/package.json`
+- Create: `packages/domain-identity/tsconfig.json`
+- Create: `packages/domain-identity/src/index.ts`
+- Modify: `package.json`
+- Modify: `turbo.json`
 
 - [ ] **Step 1: Write the failing package-resolution test**
 
@@ -166,12 +166,12 @@ git commit -m "chore: scaffold enterprise architecture packages"
 ### Task 2: Extract shared telemetry into `@nurseconnect/platform-telemetry`
 
 **Files:**
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/src/admin-audit.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/src/ops-logger.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/src/index.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/admin/audit.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/telemetry/ops-logger.ts`
-- Test: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-events.db.test.ts`
+- Create: `packages/platform-telemetry/src/admin-audit.ts`
+- Create: `packages/platform-telemetry/src/ops-logger.ts`
+- Modify: `packages/platform-telemetry/src/index.ts`
+- Modify: `apps/web/src/server/admin/audit.ts`
+- Modify: `apps/web/src/server/telemetry/ops-logger.ts`
+- Test: `apps/web/src/server/requests/request-events.db.test.ts`
 
 - [ ] **Step 1: Write the failing import-shim test**
 
@@ -191,13 +191,13 @@ Expected: FAIL with module/export resolution errors for `@nurseconnect/platform-
 
 Move code from:
 
-- `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/admin/audit.ts`
-- `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/telemetry/ops-logger.ts`
+- `apps/web/src/server/admin/audit.ts`
+- `apps/web/src/server/telemetry/ops-logger.ts`
 
 into:
 
-- `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/src/admin-audit.ts`
-- `/Users/arbenlila/development/nurseconnect-v3/packages/platform-telemetry/src/ops-logger.ts`
+- `packages/platform-telemetry/src/admin-audit.ts`
+- `packages/platform-telemetry/src/ops-logger.ts`
 
 Then replace the old app files with thin re-exports, for example:
 
@@ -230,14 +230,14 @@ git commit -m "refactor: extract shared telemetry package"
 ### Task 3: Extract request lifecycle and write-side event primitive into `@nurseconnect/domain-request`
 
 **Files:**
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/src/request-lifecycle.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/src/request-events-write.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/src/index.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-request/src/request-lifecycle.test.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-lifecycle.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-events.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-lifecycle.test.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-events.db.test.ts`
+- Create: `packages/domain-request/src/request-lifecycle.ts`
+- Create: `packages/domain-request/src/request-events-write.ts`
+- Modify: `packages/domain-request/src/index.ts`
+- Create: `packages/domain-request/src/request-lifecycle.test.ts`
+- Modify: `apps/web/src/server/requests/request-lifecycle.ts`
+- Modify: `apps/web/src/server/requests/request-events.ts`
+- Modify: `apps/web/src/server/requests/request-lifecycle.test.ts`
+- Modify: `apps/web/src/server/requests/request-events.db.test.ts`
 
 - [ ] **Step 1: Write the failing package unit test**
 
@@ -269,8 +269,8 @@ Expected: FAIL until the lifecycle code is moved.
 
 Move:
 
-- the full `canTransition` logic from `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-lifecycle.ts`
-- only the write-side `appendRequestEvent` primitive from `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-events.ts`
+- the full `canTransition` logic from `apps/web/src/server/requests/request-lifecycle.ts`
+- only the write-side `appendRequestEvent` primitive from `apps/web/src/server/requests/request-events.ts`
 
 Keep in app file:
 
@@ -303,10 +303,10 @@ git commit -m "refactor: extract request core package"
 ### Task 4: Split `user-service.ts` into identity and interim nurse adapters
 
 **Files:**
-- Create: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/lib/nurse-record.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/lib/user-service.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/portal-access.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/user-service.db.test.ts`
+- Create: `apps/web/src/lib/nurse-record.ts`
+- Modify: `apps/web/src/lib/user-service.ts`
+- Modify: `apps/web/src/server/auth/portal-access.ts`
+- Modify: `apps/web/src/server/auth/user-service.db.test.ts`
 
 - [ ] **Step 1: Write the failing DB-backed split test**
 
@@ -364,14 +364,14 @@ git commit -m "refactor: split identity and nurse app services"
 ### Task 5: Create `@nurseconnect/domain-identity` pure policy and user-projection core
 
 **Files:**
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/errors.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/user-projection.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/session-user.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/require-role.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/portal-access-policy.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/index.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/require-role.test.ts`
-- Create: `/Users/arbenlila/development/nurseconnect-v3/packages/domain-identity/src/portal-access-policy.test.ts`
+- Create: `packages/domain-identity/src/errors.ts`
+- Create: `packages/domain-identity/src/user-projection.ts`
+- Create: `packages/domain-identity/src/session-user.ts`
+- Create: `packages/domain-identity/src/require-role.ts`
+- Create: `packages/domain-identity/src/portal-access-policy.ts`
+- Modify: `packages/domain-identity/src/index.ts`
+- Create: `packages/domain-identity/src/require-role.test.ts`
+- Create: `packages/domain-identity/src/portal-access-policy.test.ts`
 
 - [ ] **Step 1: Write failing unit tests for the pure policy**
 
@@ -445,16 +445,16 @@ git commit -m "feat: add domain identity package"
 ### Task 6: Convert `apps/web` auth files into adapters over `@nurseconnect/domain-identity`
 
 **Files:**
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/index.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/session-user.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/require-role.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/portal-access.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/require-auth.ts`
-- Keep in place: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/get-session.ts`
-- Keep in place: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/http.ts`
-- Keep in place: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/lib/canonical-routes.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/require-role.db.test.ts`
-- Modify: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/user-role.db.test.ts`
+- Modify: `apps/web/src/server/auth/index.ts`
+- Modify: `apps/web/src/server/auth/session-user.ts`
+- Modify: `apps/web/src/server/auth/require-role.ts`
+- Modify: `apps/web/src/server/auth/portal-access.ts`
+- Modify: `apps/web/src/server/auth/require-auth.ts`
+- Keep in place: `apps/web/src/server/auth/get-session.ts`
+- Keep in place: `apps/web/src/server/auth/http.ts`
+- Keep in place: `apps/web/src/lib/canonical-routes.ts`
+- Modify: `apps/web/src/server/auth/require-role.db.test.ts`
+- Modify: `apps/web/src/server/auth/user-role.db.test.ts`
 
 - [ ] **Step 1: Write the failing adapter-focused test**
 
@@ -516,11 +516,11 @@ git commit -m "refactor: adapt web auth to domain identity"
 ### Task 7: Run regression verification and clean up transitional edges
 
 **Files:**
-- Review: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/admin/audit.ts`
-- Review: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/telemetry/ops-logger.ts`
-- Review: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/request-lifecycle.ts`
-- Review: `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/index.ts`
-- Review: `/Users/arbenlila/development/nurseconnect-v3/docs/superpowers/specs/2026-04-15-enterprise-package-architecture-design.md`
+- Review: `apps/web/src/server/admin/audit.ts`
+- Review: `apps/web/src/server/telemetry/ops-logger.ts`
+- Review: `apps/web/src/server/requests/request-lifecycle.ts`
+- Review: `apps/web/src/server/auth/index.ts`
+- Review: `docs/superpowers/specs/2026-04-15-enterprise-package-architecture-design.md`
 
 - [ ] **Step 1: Remove any temporary duplicate exports that are no longer needed**
 
@@ -580,9 +580,9 @@ git commit -m "test: verify architecture step 0 and 1 extraction"
 
 Subagent review is not authorized in this session. Before execution, do a manual review of this plan against:
 
-- `/Users/arbenlila/development/nurseconnect-v3/docs/superpowers/specs/2026-04-15-enterprise-package-architecture-design.md`
-- `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/auth/*`
-- `/Users/arbenlila/development/nurseconnect-v3/apps/web/src/server/requests/*`
+- `docs/superpowers/specs/2026-04-15-enterprise-package-architecture-design.md`
+- `apps/web/src/server/auth/*`
+- `apps/web/src/server/requests/*`
 
 ## Execution Handoff
 
