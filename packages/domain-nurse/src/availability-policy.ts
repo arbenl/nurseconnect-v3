@@ -1,5 +1,7 @@
 import { NurseAvailabilityError } from "./errors";
 
+export { NurseAvailabilityError } from "./errors";
+
 export function assertCanSetSelfAvailability(input: {
   status: string;
   licenseValidUntil: Date | null;

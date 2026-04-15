@@ -1,7 +1,6 @@
 import { db, schema, eq } from "@nurseconnect/database";
+import { createNurseRecord, getNurseByUserId } from "@nurseconnect/domain-nurse";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-
-import { createNurseRecord, getNurseByUserId } from "@/lib/nurse-record";
 
 import { maybeBootstrapFirstAdmin, ensureDomainUserFromSession } from "../../lib/user-service";
 
