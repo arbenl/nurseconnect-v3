@@ -1,11 +1,11 @@
 import { db, eq, schema, sql } from "@nurseconnect/database";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-
 import {
   RequestConflictError,
   RequestForbiddenError,
-  applyRequestAction,
-} from "./request-actions";
+} from "@nurseconnect/domain-request";
+
+import { applyRequestAction } from "./request-actions";
 
 const { users, nurses, serviceRequests } = schema;
 
@@ -143,5 +143,53 @@ describe.sequential("applyRequestAction", () => {
 
     expect(stored?.status).toBe("accepted");
     expect(stored?.acceptedAt).toBeTruthy();
+  });
+
+  it("makes the assigned nurse available again when the patient cancels", async () => {
+    const [patient] = await db
+      .insert(users)
+      .values({ email: "patient-cancel@test.local", role: "patient" })
+      .returning();
+
+    const [nurse] = await db
+      .insert(users)
+      .values({ email: "nurse-cancel@test.local", role: "nurse" })
+      .returning();
+
+    await db.insert(nurses).values({
+      userId: nurse!.id,
+      status: "verified",
+      isAvailable: false,
+      licenseNumber: "RN-CANCEL",
+      specialization: "General",
+    });
+
+    const [request] = await db
+      .insert(serviceRequests)
+      .values({
+        patientUserId: patient!.id,
+        assignedNurseUserId: nurse!.id,
+        status: "assigned",
+        address: "Cancel Address",
+        lat: "42.662900",
+        lng: "21.165500",
+      })
+      .returning();
+
+    const canceled = await applyRequestAction({
+      requestId: request!.id,
+      actorUserId: patient!.id,
+      action: "cancel",
+    });
+
+    expect(canceled.status).toBe("canceled");
+    expect(canceled.canceledAt).toBeTruthy();
+
+    const [nurseRecord] = await db
+      .select()
+      .from(nurses)
+      .where(eq(nurses.userId, nurse!.id));
+
+    expect(nurseRecord?.isAvailable).toBe(true);
   });
 });

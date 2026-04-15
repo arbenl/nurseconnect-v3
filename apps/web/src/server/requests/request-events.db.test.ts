@@ -1,8 +1,9 @@
 import { asc, db, eq, schema, sql } from "@nurseconnect/database";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { RequestConflictError } from "@nurseconnect/domain-request";
 
 import { createAndAssignRequest } from "./allocate-request";
-import { RequestConflictError, applyRequestAction } from "./request-actions";
+import { applyRequestAction } from "./request-actions";
 import { getNotificationsForActor, getRequestEventsForUser, RequestEventForbiddenError } from "./request-events";
 
 const { users, nurses, nurseLocations, requestEvents, serviceRequests } = schema;
