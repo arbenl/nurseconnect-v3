@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-describe("domain-request scaffold", () => {
-  it("can import request status contracts", async () => {
-    const contracts = await import("@nurseconnect/contracts");
+import { canTransition } from "./request-lifecycle";
 
-    expect(contracts).toHaveProperty("RequestStatusInfo");
+describe("canTransition", () => {
+  it("moves assigned to accepted on accept", () => {
+    expect(canTransition("assigned", "accept")).toBe("accepted");
+  });
+
+  it("throws on invalid open to accept", () => {
+    expect(() => canTransition("open", "accept")).toThrow("Invalid transition");
   });
 });
