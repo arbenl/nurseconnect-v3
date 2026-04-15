@@ -14,6 +14,9 @@ function makeRow(overrides: Partial<RawActiveRequestRow>): RawActiveRequestRow {
   return {
     requestId: "11111111-1111-1111-1111-111111111111",
     status: "open",
+    requestType: "same_day",
+    referralSource: "consumer",
+    careType: null,
     assignedNurseUserId: null,
     createdAt: "2026-02-27T11:00:00.000Z",
     lastEventAt: "2026-02-27T11:10:00.000Z",
