@@ -4,7 +4,7 @@ import { db, eq, schema, sql } from "@nurseconnect/database";
 
 import { appendRequestEvent } from "./request-events";
 
-const { serviceRequests } = schema;
+const { nurses, serviceRequests } = schema;
 
 export type CreateRequestInput = {
     patientUserId: string;
@@ -99,13 +99,15 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
         candidates.sort(compareCandidates);
         const chosen = candidates[0]!;
 
+        const assignedAt = new Date();
+
         const [updated] = await tx
             .update(serviceRequests)
             .set({
                 assignedNurseUserId: chosen.nurseUserId,
                 status: "assigned",
-                assignedAt: new Date(),
-                updatedAt: new Date(),
+                assignedAt,
+                updatedAt: assignedAt,
             })
             .where(eq(serviceRequests.id, req.id))
             .returning();
@@ -113,6 +115,14 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
         if (!updated) {
             throw new Error("Failed to update request");
         }
+
+        await tx
+            .update(nurses)
+            .set({
+                isAvailable: false,
+                updatedAt: assignedAt,
+            })
+            .where(eq(nurses.userId, chosen.nurseUserId));
 
         await appendRequestEvent(tx, {
             requestId: updated.id,

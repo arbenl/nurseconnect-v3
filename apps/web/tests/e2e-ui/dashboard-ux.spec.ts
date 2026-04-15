@@ -97,6 +97,31 @@ test.describe("Dashboard UX", () => {
     await expect(page.locator('a[href="#"]')).toHaveCount(0);
   });
 
+  test("profile page edits patient details through the live profile API", async ({ page }) => {
+    const patientEmail = `patient-profile-${Date.now()}@test.local`;
+    await seedPatient(page, patientEmail);
+
+    await loginTestUser(page.request, patientEmail);
+    await page.goto("/dashboard/profile");
+
+    await page.getByLabel("First name").fill("Ada");
+    await page.getByLabel("Last name").fill("Lovelace");
+    await page.getByLabel("Phone").fill("+49 555 222");
+    await page.getByLabel("City").fill("Berlin");
+    await page.getByLabel("Address").fill("42 Example Street");
+    await page.getByRole("button", { name: "Save profile" }).click();
+
+    await expect(page.getByText("Profile saved.")).toBeVisible();
+
+    const meResponse = await page.request.get("/api/me");
+    const me = await meResponse.json();
+    expect(me.user.profile.firstName).toBe("Ada");
+    expect(me.user.profile.lastName).toBe("Lovelace");
+    expect(me.user.profile.phone).toBe("+49 555 222");
+    expect(me.user.profile.city).toBe("Berlin");
+    expect(me.user.profile.address).toBe("42 Example Street");
+  });
+
   test("admin dashboard uses readable section cards instead of inline dark blocks", async ({
     page,
   }) => {
@@ -107,9 +132,10 @@ test.describe("Dashboard UX", () => {
     await page.goto("/admin");
 
     await expect(page.getByTestId("admin-shell")).toBeVisible();
-    await expect(page.getByTestId("admin-section-card")).toHaveCount(2);
+    expect(await page.getByTestId("admin-section-card").count()).toBeGreaterThanOrEqual(6);
     await expect(page.getByRole("heading", { name: "Operations Console" })).toBeVisible();
-    await expect(page.getByText("Nurse Credential Review Queue")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Immediate attention" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Credential review queue" })).toBeVisible();
     await expect(page.locator('[style*="#0a0a0a"]')).toHaveCount(0);
   });
 
@@ -121,8 +147,10 @@ test.describe("Dashboard UX", () => {
     await page.goto("/admin/requests");
 
     await expect(page.getByTestId("admin-shell")).toBeVisible();
-    await expect(page.getByTestId("admin-section-card")).toHaveCount(1);
+    expect(await page.getByTestId("admin-section-card").count()).toBeGreaterThanOrEqual(5);
     await expect(page.getByRole("heading", { name: "Active Requests Queue" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Filters" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Queue snapshot" })).toBeVisible();
     await expect(page.locator('[style*="#111"]')).toHaveCount(0);
   });
 });

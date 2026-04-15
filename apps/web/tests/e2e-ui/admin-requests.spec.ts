@@ -24,6 +24,35 @@ test.describe("Admin Requests UI", () => {
     await resetDb();
   });
 
+  test("admin dashboard shows live ops summary cards and top lanes", async ({ page }) => {
+    const adminEmail = `admin-dashboard-ui-${Date.now()}@test.local`;
+    await createTestUser(page.request, adminEmail, "Admin Dashboard UI", "admin");
+
+    const patientEmail = `admin-dashboard-patient-${Date.now()}@test.local`;
+    await createTestUser(page.request, patientEmail, "Admin Dashboard Patient", "patient");
+
+    await loginTestUser(page.request, patientEmail);
+    const createResponse = await page.request.post("/api/requests", {
+      data: {
+        address: "88 Queue Street, Pristina",
+        lat: 42.6629,
+        lng: 21.1655,
+      },
+    });
+    expect(createResponse.ok(), `Request creation failed: ${await createResponse.text()}`).toBeTruthy();
+    await page.request.post("/api/auth/sign-out", { data: {} });
+
+    await loginTestUser(page.request, adminEmail);
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+
+    await expect(page.getByRole("heading", { name: "Operations Console" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Active requests" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Credential queue" })).toBeVisible();
+    const nav = page.getByRole("navigation");
+    await expect(nav.getByRole("link", { name: "Active Queue" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Credential Queue" })).toBeVisible();
+  });
+
   test("admin credential review shows inline validation errors without browser alerts", async ({
     page,
   }) => {
@@ -53,9 +82,10 @@ test.describe("Admin Requests UI", () => {
 
     await page.goto(`/admin/nurses/${applicant.id}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Review Application" })).toBeVisible();
+    await expect(page.getByTestId("credential-review-panel")).toHaveAttribute("data-hydrated", "true");
 
     await page.getByLabel("License Valid Until").fill("2020-01-01");
-    await page.getByRole("button", { name: "Verify & Approve" }).click();
+    await page.getByRole("button", { name: /verify & approve/i }).click();
 
     await expect(page.getByTestId("credential-review-feedback")).toContainText(
       "licenseValidUntil must be in the future",
@@ -106,6 +136,8 @@ test.describe("Admin Requests UI", () => {
 
     await page.goto("/admin/requests", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Active Requests Queue" })).toBeVisible();
+    await expect(page.getByText("same-day")).toBeVisible();
+    await expect(page.getByText("consumer")).toBeVisible();
 
     await page.getByRole("link", { name: created.id }).click();
 

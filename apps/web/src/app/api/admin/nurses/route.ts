@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     actorContext = { ...context, actorId: actor.id, actorRole: actor.role };
     const statusParam = new URL(request.url).searchParams.get("status");
     const statuses = statusParam?.split(",").map((value) => value.trim()).filter(Boolean);
-    const queue = await listNurseCredentials(statuses);
+    const queue = await listNurseCredentials({ statuses });
 
     const response = NextResponse.json({
       items: queue.map((item) => ({
@@ -39,6 +39,7 @@ export async function GET(request: Request) {
         verifiedAt: item.verifiedAt?.toISOString() ?? null,
         suspendedAt: item.suspendedAt?.toISOString() ?? null,
         suspensionReason: item.suspensionReason,
+        isAvailable: item.isAvailable,
         createdAt: item.createdAt.toISOString(),
         updatedAt: item.updatedAt.toISOString(),
         user: {

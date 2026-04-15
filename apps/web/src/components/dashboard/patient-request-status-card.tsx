@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type ServiceRequest = {
+export type PatientServiceRequestSummary = {
   id: string;
   status: string;
   address: string;
@@ -15,7 +15,7 @@ type ServiceRequest = {
 };
 
 type PatientRequestStatusCardProps = {
-  request: ServiceRequest;
+  request: PatientServiceRequestSummary;
 };
 
 function getStatusCopy(status: string) {
@@ -28,16 +28,20 @@ function getStatusCopy(status: string) {
       return "Nurse is on the way";
     case "completed":
       return "Visit completed";
+    case "canceled":
+      return "Request canceled";
+    case "rejected":
+      return "Nurse could not take the visit";
     default:
       return "Waiting for assignment";
   }
 }
 
-function formatRequestType(requestType: string) {
+export function formatRequestType(requestType: string) {
   return requestType === "scheduled" ? "Scheduled" : "Same day";
 }
 
-function formatScheduledFor(value: string | null) {
+export function formatScheduledFor(value: string | null) {
   if (!value) return "Not scheduled";
   return new Date(value).toLocaleString();
 }

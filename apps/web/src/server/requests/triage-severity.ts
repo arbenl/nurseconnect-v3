@@ -49,6 +49,9 @@ export const DEFAULT_TRIAGE_SEVERITY_POLICY: TriageSeverityPolicy = {
 export type RawActiveRequestRow = {
   requestId: string;
   status: ActiveRequestStatus;
+  requestType: "scheduled" | "same_day";
+  referralSource: "consumer" | "partner";
+  careType: string | null;
   assignedNurseUserId: string | null;
   createdAt: string;
   lastEventAt: string;
@@ -117,6 +120,9 @@ export function buildActiveQueueItem(
   return {
     requestId: row.requestId,
     status: row.status,
+    requestType: row.requestType,
+    referralSource: row.referralSource,
+    careType: row.careType,
     severityScore: normalizedScore,
     severityBand: mapSeverityBand(normalizedScore, policy),
     waitMinutes,

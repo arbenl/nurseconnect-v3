@@ -89,12 +89,15 @@ export async function applyRequestAction(input: ApplyRequestActionInput) {
         throw new RequestForbiddenError("Nurse profile is required");
       }
 
-      if (action === "accept" && !nurseProfile.isAvailable) {
-        throw new RequestConflictError("Nurse is not available to accept");
-      }
     }
 
-    const nextStatus = canTransition(locked.status, action);
+    let nextStatus: RequestStatus;
+    try {
+      nextStatus = canTransition(locked.status, action);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid request transition";
+      throw new RequestConflictError(message);
+    }
 
     if (locked.status === nextStatus) {
       throw new RequestConflictError(`Request is already in status '${nextStatus}'`);

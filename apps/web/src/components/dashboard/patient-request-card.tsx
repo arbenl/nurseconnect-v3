@@ -8,53 +8,84 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 
-import { PatientRequestStatusCard } from "./patient-request-status-card";
+import { PatientRequestHistoryCard } from "./patient-request-history-card";
+import {
+  PatientRequestStatusCard,
+  type PatientServiceRequestSummary,
+} from "./patient-request-status-card";
+import { PatientRequestTimeline } from "./patient-request-timeline";
 
-interface ServiceRequest {
-  id: string;
-  status: string;
-  address: string;
-  assignedNurseUserId: string | null;
-  createdAt: string;
-  requestType: string;
-  scheduledFor: string | null;
-  careType: string | null;
+const ACTIVE_REQUEST_STATUSES = ["open", "assigned", "accepted", "enroute"] as const;
+const ACTIVE_POLL_INTERVAL_MS = 3_000;
+
+function isActiveRequest(request: PatientServiceRequestSummary) {
+  return ACTIVE_REQUEST_STATUSES.includes(
+    request.status as (typeof ACTIVE_REQUEST_STATUSES)[number],
+  );
 }
 
 export function PatientRequestCard() {
   const [address, setAddress] = useState("");
+  const [dispatchLat, setDispatchLat] = useState("");
+  const [dispatchLng, setDispatchLng] = useState("");
   const [requestType, setRequestType] = useState<"same_day" | "scheduled">("same_day");
   const [scheduledFor, setScheduledFor] = useState("");
   const [careType, setCareType] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activeRequest, setActiveRequest] = useState<ServiceRequest | null>(null);
+  const [requests, setRequests] = useState<PatientServiceRequestSummary[]>([]);
   const { toast } = useToast();
 
-  const fetchActiveRequest = useCallback(async () => {
+  const fetchRequests = useCallback(async () => {
     try {
-      const response = await fetch("/api/requests/mine");
+      const response = await fetch("/api/requests/mine", { cache: "no-store" });
       if (!response.ok) return;
-      const requests = (await response.json()) as ServiceRequest[];
-      const active = requests.find((r) =>
-        ["open", "assigned", "accepted", "enroute"].includes(r.status)
-      );
-      setActiveRequest(active || requests[0] || null);
+      const nextRequests = (await response.json()) as PatientServiceRequestSummary[];
+      setRequests(nextRequests);
     } catch (error) {
       console.error("Failed to fetch patient requests:", error);
     }
   }, []);
 
   useEffect(() => {
-    fetchActiveRequest();
-  }, [fetchActiveRequest]);
+    void fetchRequests();
+  }, [fetchRequests]);
+
+  const activeRequest = requests.find(isActiveRequest) ?? null;
+  const activeRequestId = activeRequest?.id ?? null;
+  const requestHistory = activeRequest
+    ? requests.filter((request) => request.id !== activeRequest.id)
+    : requests;
+
+  useEffect(() => {
+    if (!activeRequestId) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      void fetchRequests();
+    }, ACTIVE_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [activeRequestId, fetchRequests]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!address.trim()) {
       toast({
         title: "Address required",
         description: "Please enter your address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const lat = Number.parseFloat(dispatchLat);
+    const lng = Number.parseFloat(dispatchLng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      toast({
+        title: "Dispatch coordinates required",
+        description: "Enter the latitude and longitude the nurse should route to.",
         variant: "destructive",
       });
       return;
@@ -72,10 +103,6 @@ export function PatientRequestCard() {
     setLoading(true);
 
     try {
-      // For MVP, use mock coordinates (center of Pristina, Kosovo)
-      const lat = 42.6629;
-      const lng = 21.1655;
-
       const response = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -107,10 +134,9 @@ export function PatientRequestCard() {
       });
 
       setAddress("");
-      setRequestType("same_day");
       setScheduledFor("");
       setCareType("");
-      await fetchActiveRequest();
+      await fetchRequests();
     } catch (error) {
       console.error("Request creation failed:", error);
       toast({
@@ -128,7 +154,7 @@ export function PatientRequestCard() {
       <CardHeader>
         <CardTitle>Request a Nurse Visit</CardTitle>
         <CardDescription>
-          Enter your address to request an at-home nurse visit
+          Enter the visit address and the exact coordinates nurses should route to.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -157,6 +183,34 @@ export function PatientRequestCard() {
               disabled={loading}
             />
           </div>
+          <div className="rounded-lg border border-border/70 bg-muted/20 p-3 text-sm text-muted-foreground">
+            Matching currently uses the coordinate fields below. Until map search or geocoding is
+            added, the dispatch engine does not infer location from the address line alone.
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="dispatchLat">Dispatch latitude</Label>
+              <Input
+                id="dispatchLat"
+                inputMode="decimal"
+                placeholder="e.g. 42.6629"
+                value={dispatchLat}
+                onChange={(event) => setDispatchLat(event.target.value)}
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dispatchLng">Dispatch longitude</Label>
+              <Input
+                id="dispatchLng"
+                inputMode="decimal"
+                placeholder="e.g. 21.1655"
+                value={dispatchLng}
+                onChange={(event) => setDispatchLng(event.target.value)}
+                disabled={loading}
+              />
+            </div>
+          </div>
           {requestType === "scheduled" && (
             <div className="space-y-2">
               <Label htmlFor="scheduledFor">Scheduled for</Label>
@@ -184,8 +238,14 @@ export function PatientRequestCard() {
           </Button>
         </form>
         {activeRequest && (
-          <div className="mt-4 border-t pt-4">
+          <div className="mt-4 space-y-4 border-t pt-4">
             <PatientRequestStatusCard request={activeRequest} />
+            <PatientRequestTimeline requestId={activeRequest.id} live />
+          </div>
+        )}
+        {!activeRequest && requestHistory.length > 0 && (
+          <div className="mt-4 border-t pt-4">
+            <PatientRequestHistoryCard requests={requestHistory} />
           </div>
         )}
       </CardContent>

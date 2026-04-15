@@ -98,6 +98,9 @@ export type RequestSeverityBand = z.infer<typeof RequestSeverityBandInfo>;
 export const AdminActiveRequestQueueItemSchema = z.object({
     requestId: z.string().uuid(),
     status: ActiveRequestStatusInfo,
+    requestType: z.enum(["scheduled", "same_day"]),
+    referralSource: z.enum(["consumer", "partner"]),
+    careType: z.string().nullable(),
     severityScore: z.number().int().nonnegative(),
     severityBand: RequestSeverityBandInfo,
     waitMinutes: z.number().int().nonnegative(),

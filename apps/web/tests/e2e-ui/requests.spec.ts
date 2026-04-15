@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
+import { getDbClient, resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
 import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 async function seedAvailableNurse(
@@ -50,6 +50,8 @@ test.describe("Service Requests", () => {
     await expect(page.getByRole("heading", { name: "Request a Nurse Visit" })).toBeVisible();
     await expect(page.getByLabel("Visit type")).toHaveValue("same_day");
     await page.getByLabel("Address").fill("123 Test St, Pristina");
+    await page.getByLabel("Dispatch latitude").fill("42.6629");
+    await page.getByLabel("Dispatch longitude").fill("21.1655");
     await page.getByLabel("Care type").fill("Wellness check");
 
     await page.getByRole("button", { name: "Request Visit" }).click();
@@ -84,6 +86,8 @@ test.describe("Service Requests", () => {
     await expect(page.getByLabel("Scheduled for")).toBeVisible();
     await page.getByLabel("Scheduled for").fill("2026-04-20T09:30");
     await page.getByLabel("Address").fill("456 Remote St");
+    await page.getByLabel("Dispatch latitude").fill("42.6629");
+    await page.getByLabel("Dispatch longitude").fill("21.1655");
     await page.getByLabel("Care type").fill("Follow-up visit");
 
     await page.getByRole("button", { name: "Request Visit" }).click();
@@ -101,5 +105,98 @@ test.describe("Service Requests", () => {
     expect(requests[0].assignedNurseUserId).toBeNull();
     expect(requests[0].requestType).toBe("scheduled");
     expect(requests[0].scheduledFor).toBeTruthy();
+  });
+
+  test("completed requests appear in history instead of being shown as current status", async ({
+    page,
+  }) => {
+    const patientEmail = `history-patient-${Date.now()}@test.local`;
+    const { userId: patientUserId } = await createTestUser(
+      page.request,
+      patientEmail,
+      "History Patient",
+      "patient",
+    );
+    await markProfileComplete(patientEmail, { phone: "555-4444" });
+    await loginTestUser(page.request, patientEmail);
+
+    const client = getDbClient();
+    await client.connect();
+    try {
+      const result = await client.query<{ id: string }>(
+        `INSERT INTO service_requests
+          (patient_user_id, status, address, lat, lng, request_type, care_type, completed_at, created_at, updated_at)
+         VALUES
+          ($1, 'completed', 'Completed Visit Street', '42.662900', '21.165500', 'same_day', 'Wellness check', NOW(), NOW() - interval '1 hour', NOW())
+         RETURNING id`,
+        [patientUserId],
+      );
+      const requestId = result.rows[0]!.id;
+      await client.query(
+        `INSERT INTO service_request_events
+          (request_id, type, actor_user_id, from_status, to_status, meta, created_at)
+         VALUES
+          ($1, 'request_created', $2, NULL, 'open', '{}'::jsonb, NOW() - interval '1 hour'),
+          ($1, 'request_completed', $2, 'enroute', 'completed', '{}'::jsonb, NOW())`,
+        [requestId, patientUserId],
+      );
+    } finally {
+      await client.end();
+    }
+
+    await page.goto("/dashboard");
+
+    await expect(page.getByRole("heading", { name: "Current request status" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Recent request history" })).toBeVisible();
+    await expect(page.getByText("Completed Visit Street")).toBeVisible();
+    await expect(page.getByText("completed", { exact: true })).toBeVisible();
+  });
+
+  test("active request timeline refreshes when the nurse accepts the visit", async ({ page }) => {
+    const nurseEmail = `timeline-nurse-${Date.now()}@test.local`;
+    const patientEmail = `timeline-patient-${Date.now()}@test.local`;
+
+    const nurseUserId = await seedAvailableNurse(page, nurseEmail, "42.6629", "21.1655");
+    await createTestUser(page.request, patientEmail, "Timeline Patient", "patient");
+    await markProfileComplete(patientEmail, { phone: "555-1212" });
+    await loginTestUser(page.request, patientEmail);
+
+    await page.goto("/dashboard");
+    await page.getByLabel("Address").fill("Timeline Street 1");
+    await page.getByLabel("Dispatch latitude").fill("42.6629");
+    await page.getByLabel("Dispatch longitude").fill("21.1655");
+    await page.getByLabel("Care type").fill("Follow-up visit");
+    await page.getByRole("button", { name: "Request Visit" }).click();
+    await expect(page.getByTestId("patient-request-status-card")).toBeVisible();
+
+    const requestsResponse = await page.request.get("/api/requests/mine");
+    const requests = (await requestsResponse.json()) as Array<{ id: string }>;
+    const requestId = requests[0]!.id;
+
+    const client = getDbClient();
+    await client.connect();
+    try {
+      await client.query(
+        `UPDATE service_requests
+            SET status = 'accepted',
+                accepted_at = NOW(),
+                updated_at = NOW()
+          WHERE id = $1`,
+        [requestId],
+      );
+      await client.query(
+        `INSERT INTO service_request_events
+          (request_id, type, actor_user_id, from_status, to_status, meta, created_at)
+         VALUES
+          ($1, 'request_accepted', $2, 'assigned', 'accepted', '{}'::jsonb, NOW())`,
+        [requestId, nurseUserId],
+      );
+    } finally {
+      await client.end();
+    }
+
+    await expect(page.getByRole("heading", { name: "Request timeline" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Nurse accepted the visit")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Accepted by nurse")).toBeVisible({ timeout: 10000 });
   });
 });

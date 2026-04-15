@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,9 @@ interface ServiceRequest {
 }
 
 interface NurseAssignmentCardProps {
-  isAvailable: boolean;
+  activeAssignment: ServiceRequest | null;
+  recentAssignments: ServiceRequest[];
+  isLoading: boolean;
   specialization?: string | null;
 }
 
@@ -34,41 +37,21 @@ function formatRequestedFor(request: ServiceRequest) {
   return "As soon as possible";
 }
 
-export function NurseAssignmentCard({ isAvailable, specialization }: NurseAssignmentCardProps) {
-  const [assignment, setAssignment] = useState<ServiceRequest | null>(null);
-  const [loading, setLoading] = useState(true);
+export function NurseAssignmentCard({
+  activeAssignment,
+  recentAssignments,
+  isLoading,
+  specialization,
+}: NurseAssignmentCardProps) {
   const [actionLoading, setActionLoading] = useState<null | "accept" | "reject" | "enroute" | "complete">(null);
   const { toast } = useToast();
-
-  const fetchAssignment = useCallback(async () => {
-    try {
-      const response = await fetch("/api/requests/mine");
-      if (!response.ok) throw new Error("Failed to fetch assignments");
-
-      const requests = await response.json();
-
-      const active = requests.find(
-        (r: ServiceRequest) => r.status === "assigned" || r.status === "accepted" || r.status === "enroute"
-      );
-
-      setAssignment(active || null);
-    } catch (error) {
-      console.error("Failed to fetch assignment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load assignments. Please refresh and try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+  const queryClient = useQueryClient();
 
   const handleAction = async (action: "accept" | "reject" | "enroute" | "complete") => {
-    if (!assignment) return;
+    if (!activeAssignment) return;
     setActionLoading(action);
     try {
-      const response = await fetch(`/api/requests/${assignment.id}/${action}`, {
+      const response = await fetch(`/api/requests/${activeAssignment.id}/${action}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: action === "reject" ? JSON.stringify({ reason: "Nurse rejected assignment" }) : "{}",
@@ -78,8 +61,6 @@ export function NurseAssignmentCard({ isAvailable, specialization }: NurseAssign
         const errorText = await response.text();
         throw new Error(errorText || `Failed to ${action}`);
       }
-
-      await fetchAssignment();
     } catch (error) {
       console.error(`Failed to ${action} request:`, error);
       toast({
@@ -88,15 +69,13 @@ export function NurseAssignmentCard({ isAvailable, specialization }: NurseAssign
         variant: "destructive",
       });
     } finally {
+      await queryClient.invalidateQueries({ queryKey: ["nurse-assignment-feed"] });
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
       setActionLoading(null);
     }
   };
 
-  useEffect(() => {
-    fetchAssignment();
-  }, [fetchAssignment]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Card data-testid="nurse-assignment-card">
         <CardHeader>
@@ -109,7 +88,7 @@ export function NurseAssignmentCard({ isAvailable, specialization }: NurseAssign
     );
   }
 
-  if (!assignment) {
+  if (!activeAssignment) {
     return (
       <Card data-testid="nurse-assignment-card">
         <CardHeader>
@@ -118,14 +97,30 @@ export function NurseAssignmentCard({ isAvailable, specialization }: NurseAssign
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            {isAvailable
-              ? "Stay available and keep your phone nearby. New visit requests will appear here."
-              : "You are currently paused for new visit requests. Turn on dispatch availability when you are ready."}
+            Stay available and keep your phone nearby. New visit requests will appear here.
           </p>
           {specialization ? (
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <span className="font-medium text-foreground">Specialization</span>
               <Badge variant="outline">{specialization}</Badge>
+            </div>
+          ) : null}
+          {recentAssignments.length > 0 ? (
+            <div className="space-y-3 border-t pt-3">
+              <p className="text-sm font-medium text-foreground">Recent assignment history</p>
+              {recentAssignments.slice(0, 3).map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="rounded-lg border border-border/70 bg-muted/20 p-3 text-sm"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">{assignment.status}</Badge>
+                    <Badge variant="outline">{formatRequestType(assignment.requestType)}</Badge>
+                  </div>
+                  <p className="mt-2 font-medium text-foreground">{assignment.address}</p>
+                  <p className="text-muted-foreground">{assignment.careType ?? "General visit"}</p>
+                </div>
+              ))}
             </div>
           ) : null}
         </CardContent>
@@ -142,33 +137,33 @@ export function NurseAssignmentCard({ isAvailable, specialization }: NurseAssign
       <CardContent className="space-y-4">
         <div>
           <p className="text-sm font-medium">Address</p>
-          <p className="text-sm text-muted-foreground">{assignment.address}</p>
+          <p className="text-sm text-muted-foreground">{activeAssignment.address}</p>
         </div>
         <div>
           <p className="text-sm font-medium">Status</p>
-          <Badge variant={assignment.status === "assigned" ? "default" : "secondary"}>
-            {assignment.status}
+          <Badge variant={activeAssignment.status === "assigned" ? "default" : "secondary"}>
+            {activeAssignment.status}
           </Badge>
         </div>
         <div>
           <p className="text-sm font-medium">Visit type</p>
-          <p className="text-sm text-muted-foreground">{formatRequestType(assignment.requestType)}</p>
+          <p className="text-sm text-muted-foreground">{formatRequestType(activeAssignment.requestType)}</p>
         </div>
         <div>
           <p className="text-sm font-medium">Care type</p>
-          <p className="text-sm text-muted-foreground">{assignment.careType ?? "General visit"}</p>
+          <p className="text-sm text-muted-foreground">{activeAssignment.careType ?? "General visit"}</p>
         </div>
         <div>
           <p className="text-sm font-medium">Requested</p>
           <p className="text-sm text-muted-foreground">
-            {new Date(assignment.createdAt).toLocaleString()}
+            {new Date(activeAssignment.createdAt).toLocaleString()}
           </p>
         </div>
         <div>
           <p className="text-sm font-medium">Requested for</p>
-          <p className="text-sm text-muted-foreground">{formatRequestedFor(assignment)}</p>
+          <p className="text-sm text-muted-foreground">{formatRequestedFor(activeAssignment)}</p>
         </div>
-        {assignment.status === "assigned" && (
+        {activeAssignment.status === "assigned" && (
           <div className="flex gap-2">
             <Button
               size="sm"
@@ -187,7 +182,7 @@ export function NurseAssignmentCard({ isAvailable, specialization }: NurseAssign
             </Button>
           </div>
         )}
-        {assignment.status === "accepted" && (
+        {activeAssignment.status === "accepted" && (
           <Button
             size="sm"
             variant="secondary"
@@ -197,7 +192,7 @@ export function NurseAssignmentCard({ isAvailable, specialization }: NurseAssign
             {actionLoading === "enroute" ? "Updating..." : "Mark En Route"}
           </Button>
         )}
-        {assignment.status === "enroute" && (
+        {activeAssignment.status === "enroute" && (
           <Button
             size="sm"
             variant="outline"

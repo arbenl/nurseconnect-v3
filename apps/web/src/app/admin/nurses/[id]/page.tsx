@@ -1,272 +1,149 @@
-"use client";
-
-import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { notFound } from "next/navigation";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { getNurseCredentialById } from "@/server/admin/nurse-credentials";
+import { requirePortalAccessOrRedirect } from "@/server/auth";
 
-type QueueItem = {
-  id: string;
-  userId: string;
-  status: string;
-  licenseNumber: string | null;
-  licenseJurisdiction: string | null;
-  specialization: string | null;
-  updatedAt: string;
-  user: {
+import { NurseActions } from "./nurse-actions";
+
+type PageProps = {
+  params: {
     id: string;
-    name: string | null;
-    email: string | null;
   };
 };
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Request failed";
+function formatDateTime(value: Date | null) {
+  return value ? value.toLocaleString() : "-";
 }
 
-type FeedbackState = {
-  tone: "success" | "error";
-  message: string;
-} | null;
+function badgeClassName(status: string) {
+  switch (status) {
+    case "verified":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "submitted":
+    case "under_review":
+    case "renewal_pending":
+      return "border-sky-200 bg-sky-50 text-sky-700";
+    case "rejected":
+      return "border-red-200 bg-red-50 text-red-700";
+    case "suspended":
+    case "expired":
+      return "border-amber-200 bg-amber-50 text-amber-700";
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-700";
+  }
+}
 
-export default function AdminNurseDetailPage() {
-  const params = useParams<{ id: string }>();
-  const nurseId = params.id;
-  const router = useRouter();
-  const [nurse, setNurse] = useState<QueueItem | null>(null);
-  const [loading, setLoading] = useState(true);
+export default async function AdminNurseDetailPage({ params }: PageProps) {
+  await requirePortalAccessOrRedirect({ portal: "admin", currentPath: `/admin/nurses/${params.id}` });
+  const nurse = await getNurseCredentialById(params.id);
 
-  // Form states
-  const [validUntil, setValidUntil] = useState("");
-  const [jurisdiction, setJurisdiction] = useState("");
-  const [reason, setReason] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
-  const [feedback, setFeedback] = useState<FeedbackState>(null);
-
-  const loadNurse = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/admin/nurses");
-      if (!res.ok) {
-        throw new Error("Failed to load nurse review queue");
-      }
-      const data = await res.json();
-      if (data.items) {
-        const item = data.items.find((i: QueueItem) => i.id === nurseId);
-        if (item) {
-          setNurse(item);
-          setJurisdiction(item.licenseJurisdiction || "");
-          setFeedback(null);
-        } else {
-          setNurse(null);
-        }
-      }
-    } catch (error: unknown) {
-      setNurse(null);
-      setFeedback({ tone: "error", message: getErrorMessage(error) });
-    } finally {
-      setLoading(false);
-    }
-  }, [nurseId]);
-
-  useEffect(() => {
-    void loadNurse();
-  }, [loadNurse]);
-
-  const onVerify = async () => {
-    if (!validUntil) {
-      setFeedback({ tone: "error", message: "Valid until date is required." });
-      return;
-    }
-    setActionLoading(true);
-    setFeedback(null);
-    try {
-      const res = await fetch(`/api/admin/nurses/${nurseId}/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          licenseValidUntil: new Date(validUntil).toISOString(),
-          licenseJurisdiction: jurisdiction || undefined,
-        }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(typeof body?.error === "string" ? body.error : "Failed to verify");
-      }
-      setFeedback({
-        tone: "success",
-        message: "Nurse verified and promoted into the dispatchable supply pool.",
-      });
-      await loadNurse();
-      router.refresh();
-    } catch (error: unknown) {
-      setFeedback({ tone: "error", message: getErrorMessage(error) });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const onReject = async () => {
-    setActionLoading(true);
-    setFeedback(null);
-    try {
-      const res = await fetch(`/api/admin/nurses/${nurseId}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(typeof body?.error === "string" ? body.error : "Failed to reject");
-      }
-      setFeedback({ tone: "success", message: "Application rejected. The user remains in patient mode." });
-      await loadNurse();
-      router.refresh();
-    } catch (error: unknown) {
-      setFeedback({ tone: "error", message: getErrorMessage(error) });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const onSuspend = async () => {
-    if (!reason) {
-      setFeedback({ tone: "error", message: "Suspend reason is required." });
-      return;
-    }
-    setActionLoading(true);
-    setFeedback(null);
-    try {
-      const res = await fetch(`/api/admin/nurses/${nurseId}/suspend`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(typeof body?.error === "string" ? body.error : "Failed to suspend");
-      }
-      setFeedback({
-        tone: "success",
-        message: "Nurse suspended and removed from new dispatches.",
-      });
-      await loadNurse();
-      router.refresh();
-    } catch (error: unknown) {
-      setFeedback({ tone: "error", message: getErrorMessage(error) });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  if (loading) return <div className="container py-8">Loading...</div>;
-  if (!nurse) return <div className="container py-8">Nurse not found.</div>;
+  if (!nurse) {
+    notFound();
+  }
 
   return (
-    <div className="container py-8 max-w-3xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Review Application</h1>
-        <p className="text-muted-foreground mt-2">
-          Verify credentials for {nurse.user.name || nurse.user.email}
+        <h1 className="text-3xl font-semibold tracking-tight">Review Application</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Trust decision surface for {nurse.userName || nurse.userEmail || "unknown nurse"}.
         </p>
       </div>
 
-      <AdminSectionCard
-        title="Profile details"
-        description="Submitted nurse credential information and identity context."
-      >
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">Current status</div>
-          <Badge variant="outline" className="uppercase">
-            {nurse.status}
-          </Badge>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-muted-foreground">User ID</Label>
-            <div className="font-mono text-sm">{nurse.userId}</div>
-          </div>
-          <div>
-            <Label className="text-muted-foreground">Nurse ID</Label>
-            <div className="font-mono text-sm">{nurse.id}</div>
-          </div>
-          <div>
-            <Label className="text-muted-foreground">Name</Label>
-            <div>{nurse.user.name || "N/A"}</div>
-          </div>
-          <div>
-            <Label className="text-muted-foreground">Email</Label>
-            <div>{nurse.user.email}</div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4 border-t pt-4">
-          <div>
-            <Label className="text-muted-foreground">License Number</Label>
-            <div className="font-mono">{nurse.licenseNumber || "N/A"}</div>
-          </div>
-          <div>
-            <Label className="text-muted-foreground">Specialization</Label>
-            <div>{nurse.specialization || "N/A"}</div>
-          </div>
-        </div>
-      </AdminSectionCard>
-
-      <AdminSectionCard
-        title="Verification Action"
-        description="Approve, reject, or suspend this applicant with in-page feedback."
-      >
-        <div
-          data-testid="credential-review-feedback"
-          aria-live="polite"
-          className={[
-            "min-h-10 rounded-lg border px-4 py-3 text-sm",
-            feedback?.tone === "error"
-              ? "border-red-200 bg-red-50 text-red-700"
-              : feedback?.tone === "success"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-dashed border-slate-200 bg-slate-50 text-slate-500",
-          ].join(" ")}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <AdminSectionCard
+          title="Credential summary"
+          description="Submitted identity and nurse application details."
         >
-          {feedback?.message ?? "Actions render feedback here instead of using browser alerts."}
-        </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className={badgeClassName(nurse.status)}>
+              {nurse.status}
+            </Badge>
+            <Badge variant="outline" className="capitalize">
+              {nurse.userRole}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={
+                nurse.isAvailable
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-slate-200 bg-slate-50 text-slate-700"
+              }
+            >
+              {nurse.isAvailable ? "available" : "offline"}
+            </Badge>
+          </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="jurisdiction">License Jurisdiction (State/Region)</Label>
-          <Input id="jurisdiction" value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)} />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="validUntil">License Valid Until</Label>
-          <Input id="validUntil" type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
-        </div>
-        <div className="grid gap-2 border-t pt-4">
-          <Label htmlFor="reason">Reject / Suspend Reason</Label>
-          <Input
-            id="reason"
-            placeholder="Required for suspension, optional for rejection"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-        </div>
+          <div className="grid gap-4 text-sm text-slate-700 sm:grid-cols-2">
+            <div>
+              <div className="font-medium text-slate-500">User</div>
+              <div className="mt-1 text-slate-950">{nurse.userName || "N/A"}</div>
+              <div>{nurse.userEmail || "N/A"}</div>
+            </div>
+            <div>
+              <div className="font-medium text-slate-500">IDs</div>
+              <div className="mt-1 font-mono text-xs text-slate-950">{nurse.userId}</div>
+              <div className="font-mono text-xs">{nurse.id}</div>
+            </div>
+            <div>
+              <div className="font-medium text-slate-500">License</div>
+              <div className="mt-1 font-mono text-slate-950">{nurse.licenseNumber || "N/A"}</div>
+              <div>{nurse.licenseJurisdiction || "No jurisdiction set"}</div>
+            </div>
+            <div>
+              <div className="font-medium text-slate-500">Specialization</div>
+              <div className="mt-1 text-slate-950">{nurse.specialization || "N/A"}</div>
+            </div>
+          </div>
+        </AdminSectionCard>
 
-        <div className="flex flex-wrap gap-2 border-t pt-6">
-          <Button onClick={onVerify} disabled={actionLoading} className="bg-green-600 hover:bg-green-700">
-            {actionLoading ? "Submitting..." : "Verify & Approve"}
-          </Button>
-          <Button onClick={onReject} disabled={actionLoading} variant="outline" className="text-red-600 border-red-200">
-            {actionLoading ? "Submitting..." : "Reject"}
-          </Button>
-          <Button onClick={onSuspend} disabled={actionLoading} variant="destructive">
-            {actionLoading ? "Submitting..." : "Suspend"}
-          </Button>
-          <Button variant="ghost" onClick={() => router.push("/admin/nurses")} disabled={actionLoading}>
-            Back to queue
-          </Button>
-        </div>
-      </AdminSectionCard>
+        <AdminSectionCard
+          title="Verification history"
+          description="Current approval and suspension metadata for this nurse record."
+        >
+          <div className="grid gap-4 text-sm text-slate-700">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <span className="font-medium text-slate-500">Applied</span>
+              <span>{formatDateTime(nurse.createdAt)}</span>
+            </div>
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <span className="font-medium text-slate-500">Last updated</span>
+              <span>{formatDateTime(nurse.updatedAt)}</span>
+            </div>
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <span className="font-medium text-slate-500">Verified at</span>
+              <span>{formatDateTime(nurse.verifiedAt)}</span>
+            </div>
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <span className="font-medium text-slate-500">Verified by</span>
+              <span className="font-mono text-xs">{nurse.verifiedBy ?? "-"}</span>
+            </div>
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <span className="font-medium text-slate-500">License valid until</span>
+              <span>{formatDateTime(nurse.licenseValidUntil)}</span>
+            </div>
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3">
+              <span className="font-medium text-slate-500">Suspended at</span>
+              <span>{formatDateTime(nurse.suspendedAt)}</span>
+            </div>
+            <div className="space-y-1">
+              <div className="font-medium text-slate-500">Suspension reason</div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                {nurse.suspensionReason || "No suspension reason recorded."}
+              </div>
+            </div>
+          </div>
+        </AdminSectionCard>
+      </div>
+
+      <NurseActions
+        nurseId={nurse.id}
+        initialJurisdiction={nurse.licenseJurisdiction ?? ""}
+        initialValidUntil={nurse.licenseValidUntil ? nurse.licenseValidUntil.toISOString().slice(0, 10) : ""}
+        initialStatus={nurse.status}
+      />
     </div>
   );
 }

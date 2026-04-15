@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
+import { getDbClient, resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
 import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 test.describe("Nurse Features", () => {
@@ -113,5 +113,133 @@ test.describe("Nurse Features", () => {
         ).toBeVisible();
         await expect(assignmentCard.getByText("Pediatrics")).toBeVisible();
         await expect(page.getByText("visible to patients in your area.")).toHaveCount(0);
+    });
+
+    test("nurse dashboard shows only assigned work, not patient requests owned by the nurse account", async ({
+        page,
+    }) => {
+        const nurseEmail = `nurse-feed-${Date.now()}@test.local`;
+        const patientEmail = `nurse-feed-patient-${Date.now()}@test.local`;
+        const otherNurseEmail = `nurse-feed-other-${Date.now()}@test.local`;
+
+        const { userId: nurseUserId } = await createTestUser(page.request, nurseEmail, "Mixed Nurse", "nurse");
+        const { userId: patientUserId } = await createTestUser(page.request, patientEmail, "Assigned Patient", "patient");
+        const { userId: otherNurseUserId } = await createTestUser(
+            page.request,
+            otherNurseEmail,
+            "Other Nurse",
+            "nurse",
+        );
+
+        await seedNurse({
+            userId: nurseUserId,
+            licenseNumber: "RN-FEED-001",
+            specialization: "General",
+            isAvailable: true,
+            status: "verified",
+            licenseJurisdiction: "XK",
+            licenseValidUntil: new Date(Date.now() + 86_400_000).toISOString(),
+        });
+
+        await seedNurse({
+            userId: otherNurseUserId,
+            licenseNumber: "RN-FEED-002",
+            specialization: "General",
+            isAvailable: true,
+            status: "verified",
+            licenseJurisdiction: "XK",
+            licenseValidUntil: new Date(Date.now() + 86_400_000).toISOString(),
+        });
+
+        await markProfileComplete(nurseEmail, { phone: "555-2111" });
+        await loginTestUser(page.request, nurseEmail);
+
+        const client = getDbClient();
+        await client.connect();
+        try {
+            await client.query(
+                `INSERT INTO service_requests
+                  (patient_user_id, assigned_nurse_user_id, status, address, lat, lng, request_type, care_type, created_at, updated_at, assigned_at)
+                 VALUES
+                  ($1, $2, 'assigned', 'My own patient visit', '42.662900', '21.165500', 'same_day', 'Own request', NOW(), NOW(), NOW()),
+                  ($3, $1, 'assigned', 'Assigned patient visit', '42.650000', '21.170000', 'same_day', 'Assigned request', NOW() - interval '5 minutes', NOW() - interval '5 minutes', NOW() - interval '5 minutes')`,
+                [nurseUserId, otherNurseUserId, patientUserId],
+            );
+        } finally {
+            await client.end();
+        }
+
+        await page.goto("/dashboard");
+
+        const assignmentCard = page.getByTestId("nurse-assignment-card");
+        await expect(assignmentCard.getByText("Assigned patient visit")).toBeVisible();
+        await expect(assignmentCard.getByText("Assigned request")).toBeVisible();
+        await expect(assignmentCard.getByText("My own patient visit")).toHaveCount(0);
+    });
+
+    test("nurse dashboard pauses availability while an active visit is in progress", async ({ page }) => {
+        const nurseEmail = `nurse-active-visit-${Date.now()}@test.local`;
+        const patientEmail = `nurse-active-visit-patient-${Date.now()}@test.local`;
+
+        const { userId: nurseUserId } = await createTestUser(page.request, nurseEmail, "Active Visit Nurse", "nurse");
+        const { userId: patientUserId } = await createTestUser(page.request, patientEmail, "Active Visit Patient", "patient");
+
+        await seedNurse({
+            userId: nurseUserId,
+            licenseNumber: "RN-ACTIVE-001",
+            specialization: "General",
+            isAvailable: false,
+            status: "verified",
+            licenseJurisdiction: "XK",
+            licenseValidUntil: new Date(Date.now() + 86_400_000).toISOString(),
+        });
+
+        await markProfileComplete(nurseEmail, { phone: "555-2222" });
+        await loginTestUser(page.request, nurseEmail);
+
+        const client = getDbClient();
+        await client.connect();
+        try {
+            await client.query(
+                `INSERT INTO service_requests
+                  (patient_user_id, assigned_nurse_user_id, status, address, lat, lng, request_type, care_type, created_at, updated_at, assigned_at, accepted_at)
+                 VALUES
+                  ($1, $2, 'accepted', 'In-progress visit', '42.662900', '21.165500', 'same_day', 'Wellness check', NOW(), NOW(), NOW(), NOW())`,
+                [patientUserId, nurseUserId],
+            );
+        } finally {
+            await client.end();
+        }
+
+        await page.goto("/dashboard");
+
+        const statusCard = page.getByTestId("nurse-status-card");
+        await expect(statusCard.getByText("Availability is paused while you finish your active visit.")).toBeVisible();
+        await expect(statusCard.getByText("Availability resumes after you complete or reject the visit.")).toBeVisible();
+        await expect(statusCard.getByRole("switch")).toBeDisabled();
+    });
+
+    test("expired nurse sees blocked supply status instead of dispatch controls", async ({ page }) => {
+        const email = `expired-nurse-${Date.now()}@test.local`;
+        const { userId } = await createTestUser(page.request, email, "Expired Nurse", "nurse");
+
+        await seedNurse({
+            userId,
+            licenseNumber: "RN-EXPIRED-001",
+            specialization: "General",
+            isAvailable: false,
+            status: "expired",
+            licenseJurisdiction: "XK",
+            licenseValidUntil: new Date(Date.now() - 86_400_000).toISOString(),
+        });
+
+        await markProfileComplete(email, { phone: "555-2323" });
+        await loginTestUser(page.request, email);
+        await page.goto("/dashboard");
+
+        await expect(page.getByTestId("nurse-application-status-card")).toBeVisible();
+        await expect(page.getByText("License Expired")).toBeVisible();
+        await expect(page.getByTestId("nurse-status-card")).toHaveCount(0);
+        await expect(page.getByTestId("nurse-assignment-card")).toHaveCount(0);
     });
 });

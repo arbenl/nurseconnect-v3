@@ -1,4 +1,4 @@
-import { db, schema, desc, eq, or } from "@nurseconnect/database";
+import { count, db, desc, eq, or, schema } from "@nurseconnect/database";
 
 import { recordAdminAction } from "@/server/admin/audit";
 
@@ -15,6 +15,33 @@ const NURSE_CREDENTIAL_STATUSES = [
   "renewal_pending",
 ] as const;
 
+const EMPTY_NURSE_CREDENTIAL_COUNTS = {
+  total: 0,
+  available: 0,
+  needsAttention: 0,
+  draft: 0,
+  submitted: 0,
+  under_review: 0,
+  verified: 0,
+  rejected: 0,
+  suspended: 0,
+  expired: 0,
+  renewal_pending: 0,
+} as const;
+
+const ATTENTION_STATUSES: NurseCredentialStatus[] = [
+  "submitted",
+  "under_review",
+  "renewal_pending",
+  "suspended",
+];
+
+type NurseCredentialCounts = {
+  total: number;
+  available: number;
+  needsAttention: number;
+} & Record<NurseCredentialStatus, number>;
+
 export type NurseCredentialStatus = (typeof NURSE_CREDENTIAL_STATUSES)[number];
 
 export class NurseCredentialValidationError extends Error {
@@ -30,9 +57,12 @@ function assertValidStatuses(statuses: string[]): NurseCredentialStatus[] {
   );
 }
 
-export async function listNurseCredentials(statuses?: string[]) {
-  const validStatuses = statuses ? assertValidStatuses(statuses) : [];
-  if (statuses && validStatuses.length === 0) {
+export async function listNurseCredentials(options?: {
+  statuses?: string[];
+  limit?: number;
+}) {
+  const validStatuses = options?.statuses ? assertValidStatuses(options.statuses) : [];
+  if (options?.statuses && validStatuses.length === 0) {
     return [];
   }
   const whereClause =
@@ -40,7 +70,7 @@ export async function listNurseCredentials(statuses?: string[]) {
       ? or(...validStatuses.map((status) => eq(nurses.status, status)))
       : undefined;
 
-  return db
+  const baseQuery = db
     .select({
       id: nurses.id,
       userId: nurses.userId,
@@ -53,6 +83,7 @@ export async function listNurseCredentials(statuses?: string[]) {
       verifiedAt: nurses.verifiedAt,
       suspendedAt: nurses.suspendedAt,
       suspensionReason: nurses.suspensionReason,
+      isAvailable: nurses.isAvailable,
       createdAt: nurses.createdAt,
       updatedAt: nurses.updatedAt,
       userName: users.name,
@@ -63,6 +94,46 @@ export async function listNurseCredentials(statuses?: string[]) {
     .innerJoin(users, eq(nurses.userId, users.id))
     .where(whereClause)
     .orderBy(desc(nurses.updatedAt));
+
+  if (options?.limit) {
+    return baseQuery.limit(options.limit);
+  }
+
+  return baseQuery;
+}
+
+export async function getNurseCredentialCounts() {
+  const [statusRows, availableRows] = await Promise.all([
+    db
+      .select({
+        status: nurses.status,
+        value: count(),
+      })
+      .from(nurses)
+      .groupBy(nurses.status),
+    db
+      .select({
+        value: count(),
+      })
+      .from(nurses)
+      .where(eq(nurses.isAvailable, true)),
+  ]);
+
+  const counts: NurseCredentialCounts = {
+    ...EMPTY_NURSE_CREDENTIAL_COUNTS,
+    available: Number(availableRows[0]?.value ?? 0),
+  };
+
+  for (const row of statusRows) {
+    const value = Number(row.value ?? 0);
+    counts.total += value;
+    counts[row.status] = value;
+    if (ATTENTION_STATUSES.includes(row.status)) {
+      counts.needsAttention += value;
+    }
+  }
+
+  return counts;
 }
 
 export async function getNurseCredentialById(nurseId: string) {

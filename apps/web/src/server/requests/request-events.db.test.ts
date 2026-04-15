@@ -239,8 +239,10 @@ describe.sequential("request events", () => {
       limit: 2,
     });
     expect(cappedLimitNotifications).toHaveLength(2);
-    expect(cappedLimitNotifications[0]).toBeDefined();
-    expect(cappedLimitNotifications[0]!.type).toBe(requestActionTypes.request_assigned);
+    expect(cappedLimitNotifications.map((event) => event.type)).toEqual([
+      requestActionTypes.request_created,
+      requestActionTypes.request_created,
+    ]);
 
     const futureSince = new Date(Date.now() + 60_000).toISOString();
     const futureNotifications = await getNotificationsForActor({
