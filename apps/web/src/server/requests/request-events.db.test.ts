@@ -1,6 +1,6 @@
 import { asc, db, eq, schema, sql } from "@nurseconnect/database";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { RequestConflictError } from "@nurseconnect/domain-request";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createAndAssignRequest } from "./allocate-request";
 import { applyRequestAction } from "./request-actions";
