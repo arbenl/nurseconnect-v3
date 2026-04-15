@@ -1,4 +1,5 @@
 import { db, eq, schema } from "@nurseconnect/database";
+import { UnauthorizedError } from "@nurseconnect/domain-identity";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGetSession = vi.fn();
@@ -47,5 +48,13 @@ describe("requireRole", () => {
       where: eq(users.authId, "auth_admin_1"),
     });
     expect(dbUser?.role).toBe("admin");
+  });
+
+  it("throws the shared UnauthorizedError when no session is present", async () => {
+    mockGetSession.mockResolvedValue(null);
+
+    const { requireRole } = await import("./require-role");
+
+    await expect(requireRole("admin")).rejects.toBeInstanceOf(UnauthorizedError);
   });
 });

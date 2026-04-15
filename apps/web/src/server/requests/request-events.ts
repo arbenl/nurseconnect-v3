@@ -1,18 +1,8 @@
-import type { GetRequestEventsResponse, RequestEventType, RequestStatus } from "@nurseconnect/contracts";
+import type { GetRequestEventsResponse } from "@nurseconnect/contracts";
 import { and, asc, db, desc, eq, gte, schema } from "@nurseconnect/database";
+export { appendRequestEvent } from "@nurseconnect/domain-request";
 
 const { requestEvents, serviceRequests } = schema;
-
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-type AppendRequestEventInput = {
-  requestId: string;
-  type: RequestEventType;
-  actorUserId: string | null;
-  fromStatus: RequestStatus | null;
-  toStatus: RequestStatus | null;
-  meta?: Record<string, unknown> | null;
-};
 
 type ReadRequestEventsInput = {
   requestId: string;
@@ -59,17 +49,6 @@ function serializeEvent(event: typeof requestEvents.$inferSelect) {
     meta,
     createdAt: event.createdAt.toISOString(),
   };
-}
-
-export async function appendRequestEvent(tx: Transaction, input: AppendRequestEventInput) {
-  await tx.insert(requestEvents).values({
-    requestId: input.requestId,
-    type: input.type,
-    actorUserId: input.actorUserId,
-    fromStatus: input.fromStatus,
-    toStatus: input.toStatus,
-    meta: input.meta ?? null,
-  });
 }
 
 export async function getRequestEventsForUser(

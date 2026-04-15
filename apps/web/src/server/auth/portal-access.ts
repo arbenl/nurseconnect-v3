@@ -1,11 +1,14 @@
+import {
+  resolvePortalAccessPolicy,
+  type ResolvedSessionUser,
+} from "@nurseconnect/domain-identity";
 import { redirect } from "next/navigation";
 
 import { getCanonicalRouteForRole } from "@/lib/canonical-routes";
-import { getNurseByUserId } from "@/lib/user-service";
+import { getNurseByUserId } from "@/lib/nurse-record";
 
 import {
   resolveCurrentSessionUser,
-  type ResolvedSessionUser,
 } from "./session-user";
 
 type Portal = "app" | "admin";
@@ -30,16 +33,6 @@ type PortalAccessResolution =
 
 type GrantedPortalAccess = Extract<PortalAccessResolution, { redirectTo: null }>;
 
-function redirectResolution(redirectTo: string): PortalAccessResolution {
-  return {
-    redirectTo,
-    canonicalRoute: null,
-    profileComplete: false,
-    session: null,
-    user: null,
-  };
-}
-
 async function isProfileComplete(user: DomainUser): Promise<boolean> {
   const hasPatientFields = Boolean(
     user.firstName &&
@@ -60,34 +53,18 @@ export async function resolvePortalAccess(options: {
   portal: Portal;
   requireProfileComplete?: boolean;
 }): Promise<PortalAccessResolution> {
-  const loginPath = `/login?callbackUrl=${encodeURIComponent(options.currentPath)}`;
   const resolved = await resolveCurrentSessionUser();
-  if (!resolved) {
-    return redirectResolution(loginPath);
-  }
-  const { session, user } = resolved;
+  const profileComplete = resolved ? await isProfileComplete(resolved.user) : false;
+  const canonicalRoute = resolved ? getCanonicalRouteForRole(resolved.user.role) ?? "/dashboard" : null;
 
-  const canonicalRoute = getCanonicalRouteForRole(user.role) ?? "/dashboard";
-  if (options.portal === "admin" && canonicalRoute !== "/admin") {
-    return redirectResolution(canonicalRoute);
-  }
-
-  if (options.portal === "app" && canonicalRoute === "/admin") {
-    return redirectResolution(canonicalRoute);
-  }
-
-  const profileComplete = await isProfileComplete(user);
-  if (options.requireProfileComplete && !profileComplete) {
-    return redirectResolution("/onboarding");
-  }
-
-  return {
-    redirectTo: null,
+  return resolvePortalAccessPolicy({
+    currentPath: options.currentPath,
+    portal: options.portal,
+    resolved,
     canonicalRoute,
     profileComplete,
-    session,
-    user,
-  };
+    requireProfileComplete: options.requireProfileComplete,
+  });
 }
 
 export async function requirePortalAccessOrRedirect(options: {

@@ -1,0 +1,25 @@
+{
+  "name": "@nurseconnect/platform-telemetry",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin-audit": "./src/admin-audit.ts",
+    "./ops-logger": "./src/ops-logger.ts"
+  },
+  "scripts": {
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@nurseconnect/database": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.11",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
