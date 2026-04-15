@@ -2,11 +2,8 @@ import { NurseLocationUpdateRequestSchema } from "@nurseconnect/contracts";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { NurseLocationForbiddenError, updateMyNurseLocation } from "@nurseconnect/domain-nurse";
 import { authErrorResponse, requireRole } from "@/server/auth";
-import {
-  NurseLocationForbiddenError,
-  updateMyNurseLocation,
-} from "@/server/nurse-location/update-my-location";
 import {
   createApiLogContext,
   logApiFailure,
