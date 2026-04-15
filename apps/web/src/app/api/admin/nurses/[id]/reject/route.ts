@@ -1,7 +1,7 @@
 import { AdminRejectNurseSchema } from "@nurseconnect/contracts";
+import { rejectNurseCredential } from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 
-import { rejectNurseCredential } from "@/server/admin/nurse-credentials";
 import { requireRole } from "@/server/auth";
 import {
   createApiLogContext,

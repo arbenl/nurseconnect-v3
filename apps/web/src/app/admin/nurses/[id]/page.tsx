@@ -1,8 +1,8 @@
+import { getNurseCredentialById } from "@nurseconnect/domain-nurse";
 import { notFound } from "next/navigation";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
-import { getNurseCredentialById } from "@/server/admin/nurse-credentials";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 import { NurseActions } from "./nurse-actions";

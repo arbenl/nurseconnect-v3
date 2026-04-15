@@ -1,4 +1,4 @@
-import { db, schema } from "@nurseconnect/database";
+import { submitNurseApplication } from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -73,29 +73,11 @@ export async function POST(request: Request) {
       actorRole: user.role,
     };
 
-    const now = new Date();
-    await db.transaction(async (tx) => {
-      await tx
-        .insert(schema.nurses)
-        .values({
-          userId: user.id,
-          status: "submitted", // Application submitted to admin queue
-          licenseNumber,
-          licenseJurisdiction,
-          specialization,
-          isAvailable: false,
-          updatedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: schema.nurses.userId,
-          set: {
-            status: "submitted",
-            licenseNumber,
-            licenseJurisdiction,
-            specialization,
-            updatedAt: now,
-          },
-        });
+    await submitNurseApplication({
+      userId: user.id,
+      licenseNumber,
+      licenseJurisdiction,
+      specialization,
     });
 
     const response = NextResponse.json({ ok: true, status: "submitted" });

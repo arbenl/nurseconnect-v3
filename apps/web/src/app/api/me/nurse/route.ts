@@ -1,5 +1,5 @@
-import { NurseAvailabilityError, assertCanSetSelfAvailability } from "@nurseconnect/domain-nurse";
 import { and, db, eq, or, schema } from "@nurseconnect/database";
+import { NurseAvailabilityError, assertCanSetSelfAvailability } from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
