@@ -14,7 +14,6 @@ This is a read-model extraction spec. It is not a generic "all admin features" s
 - triage severity policy and queue ordering
 - reassignment activity feed
 - ops dashboard aggregation
-- admin request-detail read composition
 
 `apps/web` should remain the delivery and composition layer:
 - HTTP transport and auth
@@ -22,6 +21,7 @@ This is a read-model extraction spec. It is not a generic "all admin features" s
 - UI filtering state
 - admin audit writes
 - dispatch mutations such as reassignment
+- the inline admin request-detail summary and timeline reads
 - the assignable nurse-candidates query on the admin request-detail page
 
 `domain-admin-ops` is a read-model and operator workflow package only.
@@ -48,6 +48,7 @@ Related but explicitly out of scope:
 - `apps/web/src/app/api/admin/users/[id]/role/route.ts`
 - `apps/web/src/server/requests/admin-reassign.ts`
 - `apps/web/src/app/admin/requests/[id]/reassign-panel.tsx`
+- `apps/web/src/server/admin/nurse-credentials.ts` re-export facade over `@nurseconnect/domain-nurse`
 - `apps/web/src/server/admin/audit.ts`
 - `apps/web/src/server/requests/request-events.ts` notification and actor-scoped read APIs
 
@@ -77,10 +78,10 @@ Why:
 
 This route should remain an app adapter for a future identity-domain admin use case.
 
-### 3. The package may compose across domains, but it does not own them
+### 3. The package composes across domains, but it does not own them
 Admin operations need a cross-domain view of the system.
 
-So `@nurseconnect/domain-admin-ops` may read or compose:
+So `@nurseconnect/domain-admin-ops` reads or composes:
 - request queue data
 - request event history for operator viewing
 - admin audit activity
@@ -107,19 +108,22 @@ For now it should stay in `apps/web`.
 
 Later it may move behind a dedicated read helper in `@nurseconnect/domain-dispatch`, but it should not live in admin ops.
 
-### 5. Admin request-detail read composition belongs in admin ops
-The read-only request detail surface shown to operators is an ops concern:
-- request summary
-- timeline for operator review
-- operational context before reassignment
+### 5. Admin request-detail stays in `apps/web` for Step 5
+There is no existing server-side request-detail read module to extract yet.
 
-That read projection should move into `@nurseconnect/domain-admin-ops`.
+The current admin request-detail page still composes:
+- an inline request-summary query
+- an inline assignable nurse-candidates query
+- a timeline read through the existing request-events read API
 
-This is intentionally different from:
-- actor-scoped request event APIs for patients and nurses
-- reassignment mutation logic
+So Step 5 should not invent `request-detail.ts` just to create package surface area.
 
-The admin request-detail read model is an operator-facing projection, not a general-purpose request read API.
+For now:
+- the admin request-detail page stays in `apps/web`
+- the inline request summary and timeline composition stay in `apps/web`
+- `toLocationHint(...)` should import from `@nurseconnect/domain-admin-ops` after `triage-severity.ts` moves
+
+If the admin detail surface grows enough operator-specific read logic later, it can become its own dedicated module in a later slice.
 
 ### 6. `apps/web` keeps auth, routes, and UI state
 After extraction, `apps/web` should still own:
@@ -145,7 +149,6 @@ packages/domain-admin-ops/
     active-request-queue.ts
     reassignment-activity-feed.ts
     ops-dashboard.ts
-    request-detail.ts
 ```
 
 Notes:
@@ -158,6 +161,8 @@ Notes:
 ### `triage-severity.ts`
 Owns queue scoring and ordering policy.
 
+This module moves from `apps/web/src/server/requests/triage-severity.ts` into `@nurseconnect/domain-admin-ops`.
+
 Responsibilities:
 - define active request statuses considered "operator-visible"
 - define triage severity weights and thresholds
@@ -166,6 +171,10 @@ Responsibilities:
 - sort queue items deterministically
 
 This module is pure policy/projection logic. It should remain independently unit-testable.
+
+After extraction:
+- `active-request-queue.ts` in the package imports it locally
+- `apps/web` imports helpers like `toLocationHint(...)` from `@nurseconnect/domain-admin-ops`
 
 ### `active-request-queue.ts`
 Owns the admin active queue projection.
@@ -180,16 +189,20 @@ This module does not:
 - reassign supply
 - make dispatch decisions
 
+This module continues to validate its shaped output with `AdminActiveRequestQueueResponseSchema.parse(...)` from `@nurseconnect/contracts`, preserving current behavior while keeping response-schema ownership in contracts.
+
 ### `reassignment-activity-feed.ts`
 Owns the merged reassignment activity read model.
 
 Responsibilities:
 - read reassignment request events
-- read admin audit rows for reassignment actions
+- read `adminAuditLogs` rows for reassignment actions through `@nurseconnect/database`
 - normalize metadata
 - merge, sort, and shape the unified activity feed
 
 This module is an operator-facing timeline read model. It does not own the reassignment write path.
+
+It continues to validate its shaped output with `AdminReassignmentActivityResponseSchema.parse(...)` from `@nurseconnect/contracts`, preserving current behavior while keeping response-schema ownership in contracts.
 
 ### `ops-dashboard.ts`
 Owns top-level operator dashboard composition.
@@ -202,30 +215,16 @@ Responsibilities:
 
 This module is a composition surface across domains, but only for operator observability.
 
-### `request-detail.ts`
-Owns the admin request-detail read projection.
-
-Responsibilities:
-- load request summary fields needed by the admin detail page
-- load the request timeline for operator review
-- shape a read-only admin projection for the page
-
-This module does not:
-- load assignable nurse candidates
-- perform reassignment
-- enforce actor-scoped request-event semantics for non-admin users
-
-The goal is to give admin pages a dedicated operator read model rather than leaving this composition inside `apps/web`.
-
 ## Dependencies
 The intended dependency direction is:
 
 `apps/web -> domain-admin-ops -> domain-nurse / domain-request / database / contracts`
 
 Notes:
-- `domain-admin-ops` may depend on `@nurseconnect/domain-nurse` for credential queue counts and pending items
+- `domain-admin-ops` depends on `@nurseconnect/domain-nurse` for credential queue counts and pending items
 - `domain-admin-ops` may depend on `@nurseconnect/contracts` for response types
 - `domain-admin-ops` may depend directly on `@nurseconnect/database` during initial extraction
+- `domain-admin-ops` reads `adminAuditLogs` through `@nurseconnect/database` for the reassignment activity feed; that is a read dependency on the audit table, not a dependency on `@nurseconnect/platform-telemetry`
 - `domain-admin-ops` should not become a new owner of request, dispatch, nurse, or identity mutations
 
 ## What Stays In `apps/web`
@@ -264,7 +263,6 @@ The extraction should preserve three layers of verification:
 2. Existing DB integration tests
 - active request queue behavior
 - admin activity feed behavior
-- request-detail read composition if extracted behind a server-side read module
 
 3. Existing admin-facing API and page verification
 - `/api/admin/requests/active`
@@ -287,7 +285,7 @@ Mitigation:
 The admin request-detail page includes a dispatch-oriented nurse-candidates query.
 
 Mitigation:
-- extract only the read-only request summary and timeline into `request-detail.ts`
+- keep the request-detail composition in `apps/web` for Step 5
 - leave candidate lookup in `apps/web` for now
 
 ### Risk 3: dashboard composition becomes too coupled to page concerns
@@ -303,6 +301,7 @@ Mitigation:
 - no nurse credential write-policy move into admin ops
 - no generic admin catch-all package
 - no redesign of the active-queue scoring model
+- no new `request-detail.ts` abstraction in Step 5
 - no move of notifications or patient/nurse request feeds into admin ops
 
 ## Outcome
