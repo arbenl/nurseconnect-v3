@@ -1,5 +1,5 @@
-import { RequestCreationValidationError } from "@nurseconnect/domain-request";
 import { db, schema, sql } from "@nurseconnect/database";
+import { RequestCreationValidationError } from "@nurseconnect/domain-request";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createAndAssignRequest } from "./allocate-request";
