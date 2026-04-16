@@ -182,7 +182,10 @@ export async function applyRequestAction(
     actorUserId,
     fromStatus: locked.status,
     toStatus: nextStatus,
-    meta: action === "reject" ? { reason: input.reason } : null,
+    meta:
+      action === "reject" && input.reason !== undefined
+        ? { reason: input.reason }
+        : null,
   };
 
   await appendRequestEvent(tx, event);

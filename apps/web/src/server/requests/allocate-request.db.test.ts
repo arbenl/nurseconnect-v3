@@ -1,3 +1,4 @@
+import { RequestCreationValidationError } from "@nurseconnect/domain-request";
 import { db, schema, sql } from "@nurseconnect/database";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -228,7 +229,16 @@ describe.sequential("createAndAssignRequest", () => {
                 lng: 0,
                 requestType: "scheduled",
             })
-        ).rejects.toThrow();
+        ).rejects.toThrow(RequestCreationValidationError);
+        await expect(
+            createAndAssignRequest({
+                patientUserId: patient!.id,
+                address: "Scheduled without time",
+                lat: 0,
+                lng: 0,
+                requestType: "scheduled",
+            })
+        ).rejects.toThrow("scheduledFor is required for scheduled requests");
 
         await expect(
             createAndAssignRequest({
@@ -239,7 +249,17 @@ describe.sequential("createAndAssignRequest", () => {
                 requestType: "same_day",
                 scheduledFor: "2027-01-01T10:00:00.000Z",
             })
-        ).rejects.toThrow();
+        ).rejects.toThrow(RequestCreationValidationError);
+        await expect(
+            createAndAssignRequest({
+                patientUserId: patient!.id,
+                address: "Same day with time",
+                lat: 0,
+                lng: 0,
+                requestType: "same_day",
+                scheduledFor: "2027-01-01T10:00:00.000Z",
+            })
+        ).rejects.toThrow("scheduledFor must be omitted for same-day requests");
 
         const persistedRequests = await db.select().from(serviceRequests);
 
