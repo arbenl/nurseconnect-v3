@@ -1,21 +1,20 @@
 // apps/web/src/server/requests/allocate-request.ts
-import { haversineMeters } from "@nurseconnect/contracts";
+import { haversineMeters, type CreateRequestInput as ContractCreateRequestInput } from "@nurseconnect/contracts";
 import { db, eq, schema, sql } from "@nurseconnect/database";
+import { assertCreateRequestInvariants } from "@nurseconnect/domain-request";
 
 import { appendRequestEvent } from "./request-events";
 
 const { nurses, serviceRequests } = schema;
 
-export type CreateRequestInput = {
+export type CreateRequestInput = Omit<
+    ContractCreateRequestInput,
+    "requestType" | "referralSource" | "careType"
+> & {
     patientUserId: string;
-    address: string;
-    lat: number;
-    lng: number;
-    requestType?: "scheduled" | "same_day";
-    scheduledFor?: string | null;
-    referralSource?: "consumer" | "partner";
-    referralPartnerId?: string | null;
-    careType?: string | null;
+    requestType?: ContractCreateRequestInput["requestType"];
+    referralSource?: ContractCreateRequestInput["referralSource"];
+    careType?: ContractCreateRequestInput["careType"] | null;
 };
 
 // Small helper to keep deterministic tie-breaks.
@@ -33,6 +32,13 @@ function compareCandidates(
  */
 export async function createAndAssignRequest(input: CreateRequestInput) {
     const { patientUserId, address, lat, lng } = input;
+    const requestType = input.requestType ?? "same_day";
+    const referralSource = input.referralSource ?? "consumer";
+
+    assertCreateRequestInvariants({
+        requestType,
+        scheduledFor: input.scheduledFor,
+    });
 
     return await db.transaction(async (tx) => {
         // 1) create request (open)
@@ -44,9 +50,9 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
                 lat: String(lat), // NUMERIC in db; store as string for drizzle numeric
                 lng: String(lng),
                 status: "open",
-                requestType: input.requestType ?? "same_day",
+                requestType,
                 scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
-                referralSource: input.referralSource ?? "consumer",
+                referralSource,
                 referralPartnerId: input.referralPartnerId ?? null,
                 careType: input.careType ?? null,
             })

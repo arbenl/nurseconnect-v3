@@ -1,9 +1,9 @@
+import { RequestNotFoundError } from "@nurseconnect/domain-request";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireRole } from "@/server/auth";
 import {
-  RequestNotFoundError,
   RequestReassignForbiddenError,
   RequestReassignValidationError,
   reassignRequest,

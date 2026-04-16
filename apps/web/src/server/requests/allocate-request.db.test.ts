@@ -1,9 +1,10 @@
 import { db, schema, sql } from "@nurseconnect/database";
+import { RequestCreationValidationError } from "@nurseconnect/domain-request";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createAndAssignRequest } from "./allocate-request";
 
-const { users, nurses, nurseLocations } = schema;
+const { users, nurses, nurseLocations, serviceRequests } = schema;
 
 function uuidLike(id: string) {
     // basic sanity (don't overfit)
@@ -212,6 +213,57 @@ describe.sequential("createAndAssignRequest", () => {
 
         expect(req.status).toBe("open");
         expect(req.assignedNurseUserId ?? null).toBeNull();
+    });
+
+    it("rejects invalid request-type and scheduledFor combinations before persistence", async () => {
+        const [patient] = await db
+            .insert(users)
+            .values({ email: "p-invalid-shape@test.local", role: "patient" })
+            .returning();
+
+        await expect(
+            createAndAssignRequest({
+                patientUserId: patient!.id,
+                address: "Scheduled without time",
+                lat: 0,
+                lng: 0,
+                requestType: "scheduled",
+            })
+        ).rejects.toThrow(RequestCreationValidationError);
+        await expect(
+            createAndAssignRequest({
+                patientUserId: patient!.id,
+                address: "Scheduled without time",
+                lat: 0,
+                lng: 0,
+                requestType: "scheduled",
+            })
+        ).rejects.toThrow("scheduledFor is required for scheduled requests");
+
+        await expect(
+            createAndAssignRequest({
+                patientUserId: patient!.id,
+                address: "Same day with time",
+                lat: 0,
+                lng: 0,
+                requestType: "same_day",
+                scheduledFor: "2027-01-01T10:00:00.000Z",
+            })
+        ).rejects.toThrow(RequestCreationValidationError);
+        await expect(
+            createAndAssignRequest({
+                patientUserId: patient!.id,
+                address: "Same day with time",
+                lat: 0,
+                lng: 0,
+                requestType: "same_day",
+                scheduledFor: "2027-01-01T10:00:00.000Z",
+            })
+        ).rejects.toThrow("scheduledFor must be omitted for same-day requests");
+
+        const persistedRequests = await db.select().from(serviceRequests);
+
+        expect(persistedRequests).toHaveLength(0);
     });
 
     it("does not assign a verified nurse record when the linked user is not in the nurse role", async () => {

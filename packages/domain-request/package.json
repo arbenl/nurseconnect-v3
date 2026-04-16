@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@nurseconnect/contracts": "workspace:*",
-    "@nurseconnect/database": "workspace:*"
+    "@nurseconnect/database": "workspace:*",
+    "drizzle-orm": "^0.40.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.11",
