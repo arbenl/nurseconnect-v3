@@ -98,7 +98,8 @@ Create the package scaffold by copying the shape used by `packages/domain-reques
   "dependencies": {
     "@nurseconnect/contracts": "workspace:*",
     "@nurseconnect/database": "workspace:*",
-    "@nurseconnect/domain-request": "workspace:*"
+    "@nurseconnect/domain-request": "workspace:*",
+    "drizzle-orm": "^0.40.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.11",
@@ -148,7 +149,17 @@ describe("pickDispatchCandidate", () => {
 
 Extend `apps/web/src/server/requests/allocate-request.db.test.ts` with an explicit no-supply regression that still expects the request to remain `open`, and a nearest-candidate regression that still expects the nearest verified nurse to win after the extraction.
 
-- [ ] **Step 2: Run the red phase**
+- [ ] **Step 2: Install workspace dependencies for the new package**
+
+Run:
+
+```bash
+pnpm install
+```
+
+Expected: the workspace lockfile and dependency graph now include `@nurseconnect/domain-dispatch`, so subsequent `pnpm --filter` commands can resolve the new package.
+
+- [ ] **Step 3: Run the red phase**
 
 Run:
 
@@ -162,7 +173,7 @@ Expected:
 - package test fails because `pickDispatchCandidate` is not implemented yet
 - web DB test still reflects the old inline selection code and the new package is unused
 
-- [ ] **Step 3: Implement candidate selection and wire it into `allocate-request.ts`**
+- [ ] **Step 4: Implement candidate selection and wire it into `allocate-request.ts`**
 
 Implement `packages/domain-dispatch/src/candidate-selection.ts` with two layers:
 
@@ -203,7 +214,7 @@ Update `apps/web/src/server/requests/allocate-request.ts`:
 
 Export `candidate-selection.ts` and `errors.ts` from `packages/domain-dispatch/src/index.ts`.
 
-- [ ] **Step 4: Verify candidate selection remains behavior-preserving**
+- [ ] **Step 5: Verify candidate selection remains behavior-preserving**
 
 Run:
 
@@ -216,7 +227,7 @@ APP_URL=http://localhost:3010 BETTER_AUTH_URL=http://localhost:3010 DATABASE_URL
 
 Expected: package tests pass, nearest-nurse selection is unchanged, and no-supply requests still remain `open`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add packages/domain-dispatch apps/web/src/server/requests/allocate-request.ts apps/web/src/server/requests/allocate-request.db.test.ts apps/web/tests/e2e-api/requests.api.e2e.ts
@@ -242,7 +253,8 @@ Add `packages/domain-dispatch/src/assignment-policy.test.ts` to lock the manual-
 ```ts
 import { describe, expect, it } from "vitest";
 
-import { DispatchValidationError, assertDispatchEligibleNurse } from "./assignment-policy";
+import { DispatchValidationError } from "./errors";
+import { assertDispatchEligibleNurse } from "./assignment-policy";
 
 describe("assertDispatchEligibleNurse", () => {
   it("rejects a non-nurse role", () => {
@@ -482,6 +494,8 @@ export async function reassignRequestInDispatch(
   // Return { request, previousNurseUserId, previousStatus, nextStatus }.
 }
 ```
+
+This reuse is intentional: `reassignment-policy.ts` depends on `assignment-policy.ts` for nurse dispatch-eligibility validation so the package keeps one authoritative rule for nurse existence, verified status, and license validity.
 
 Update `packages/domain-dispatch/src/errors.ts` to add:
 - `RequestReassignForbiddenError`
