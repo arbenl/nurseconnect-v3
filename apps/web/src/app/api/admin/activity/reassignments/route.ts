@@ -1,7 +1,7 @@
+import { getAdminReassignmentActivityFeed } from "@nurseconnect/domain-admin-ops";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getAdminReassignmentActivityFeed } from "@/server/admin/activity-feed";
 import { authErrorResponse, requireRole } from "@/server/auth";
 import {
   createApiLogContext,

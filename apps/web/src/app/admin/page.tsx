@@ -1,8 +1,8 @@
+import { getAdminOpsDashboard } from "@nurseconnect/domain-admin-ops";
 import Link from "next/link";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
-import { getAdminOpsDashboard } from "@/server/admin/ops-dashboard";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 function metricTone(
