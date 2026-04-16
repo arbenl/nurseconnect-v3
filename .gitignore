@@ -71,6 +71,8 @@ nurseconnect_ecosystem_git/
 *.plan.md
 .superpowers/
 .worktrees/
+.codex/playwright-profile/
+.codex/playwright-output/
 .env.test
 .turbo/
 
