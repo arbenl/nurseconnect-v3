@@ -81,7 +81,7 @@ describe("applyRequestAction", () => {
     const tx = makeTx(updatedRequest, makeRequestRow());
 
     const result = await applyRequestAction(
-      tx as Parameters<typeof applyRequestAction>[0],
+      tx as unknown as Parameters<typeof applyRequestAction>[0],
       {
         requestId: "request-1",
         actorUserId: "nurse-1",
@@ -113,7 +113,7 @@ describe("applyRequestAction", () => {
     const tx = makeTx();
 
     await expect(
-      applyRequestAction(tx as Parameters<typeof applyRequestAction>[0], {
+      applyRequestAction(tx as unknown as Parameters<typeof applyRequestAction>[0], {
         requestId: "request-1",
         actorUserId: "nurse-1",
         action: "accept",
