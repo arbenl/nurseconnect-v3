@@ -1,11 +1,15 @@
 // apps/web/src/server/requests/allocate-request.ts
-import { haversineMeters, type CreateRequestInput as ContractCreateRequestInput } from "@nurseconnect/contracts";
-import { db, eq, schema, sql } from "@nurseconnect/database";
+import type { CreateRequestInput as ContractCreateRequestInput } from "@nurseconnect/contracts";
+import { db, schema } from "@nurseconnect/database";
+import {
+    assignRequestToNurse,
+    selectDispatchCandidate,
+} from "@nurseconnect/domain-dispatch";
 import { assertCreateRequestInvariants } from "@nurseconnect/domain-request";
 
 import { appendRequestEvent } from "./request-events";
 
-const { nurses, serviceRequests } = schema;
+const { serviceRequests } = schema;
 
 export type CreateRequestInput = Omit<
     ContractCreateRequestInput,
@@ -16,15 +20,6 @@ export type CreateRequestInput = Omit<
     referralSource?: ContractCreateRequestInput["referralSource"];
     careType?: ContractCreateRequestInput["careType"] | null;
 };
-
-// Small helper to keep deterministic tie-breaks.
-function compareCandidates(
-    a: { meters: number; nurseUserId: string },
-    b: { meters: number; nurseUserId: string }
-) {
-    if (a.meters !== b.meters) return a.meters - b.meters;
-    return a.nurseUserId.localeCompare(b.nurseUserId);
-}
 
 /**
  * Creates a service request and atomically assigns nearest available nurse
@@ -71,76 +66,16 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
             meta: null,
         });
 
-        // 2) lock available nurse location rows (skip locked)
-        // We lock nurse_locations rows so concurrent allocators won't pick same nurse.
-        const rows = await tx.execute<{
-            nurse_user_id: string;
-            lat: string;
-            lng: string;
-        }>(sql`
-          SELECT nl.nurse_user_id, nl.lat::text as lat, nl.lng::text as lng
-          FROM nurse_locations nl
-          JOIN nurses n ON n.user_id = nl.nurse_user_id
-          JOIN users u ON u.id = nl.nurse_user_id
-          WHERE n.is_available = true
-            AND u.role = 'nurse'
-            AND n.status = 'verified'
-            AND (n.license_valid_until IS NULL OR n.license_valid_until > NOW())
-          FOR UPDATE OF nl SKIP LOCKED
-        `);
-
-        const candidates = rows.rows.map((r) => ({
-            nurseUserId: r.nurse_user_id,
-            meters: haversineMeters(
-                { lat, lng },
-                { lat: Number(r.lat), lng: Number(r.lng) }
-            ),
-        }));
-
-        if (candidates.length === 0) {
+        const chosen = await selectDispatchCandidate(tx, { lat, lng });
+        if (!chosen) {
             // leave as open (unassigned)
             return req;
         }
 
-        candidates.sort(compareCandidates);
-        const chosen = candidates[0]!;
-
-        const assignedAt = new Date();
-
-        const [updated] = await tx
-            .update(serviceRequests)
-            .set({
-                assignedNurseUserId: chosen.nurseUserId,
-                status: "assigned",
-                assignedAt,
-                updatedAt: assignedAt,
-            })
-            .where(eq(serviceRequests.id, req.id))
-            .returning();
-
-        if (!updated) {
-            throw new Error("Failed to update request");
-        }
-
-        await tx
-            .update(nurses)
-            .set({
-                isAvailable: false,
-                updatedAt: assignedAt,
-            })
-            .where(eq(nurses.userId, chosen.nurseUserId));
-
-        await appendRequestEvent(tx, {
-            requestId: updated.id,
-            type: "request_assigned",
-            actorUserId: null,
-            fromStatus: "open",
-            toStatus: "assigned",
-            meta: {
-                nurseUserId: chosen.nurseUserId,
-            },
+        return assignRequestToNurse(tx, {
+            request: req,
+            nurseUserId: chosen.nurseUserId,
+            skipEligibilityValidation: true,
         });
-
-        return updated;
     });
 }
