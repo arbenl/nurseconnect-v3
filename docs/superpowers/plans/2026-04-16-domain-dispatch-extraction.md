@@ -178,6 +178,10 @@ Expected:
 Implement `packages/domain-dispatch/src/candidate-selection.ts` with two layers:
 
 ```ts
+import type { DbClient } from "@nurseconnect/database";
+
+type Transaction = Parameters<Parameters<DbClient["transaction"]>[0]>[0];
+
 type CandidateRow = {
   nurseUserId: string;
   lat: string;
@@ -192,7 +196,7 @@ export function pickDispatchCandidate(
 }
 
 export async function selectDispatchCandidate(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  tx: Transaction,
   origin: { lat: number; lng: number },
 ) {
   // Keep the current SQL filter and `FOR UPDATE OF nl SKIP LOCKED`.
@@ -204,7 +208,7 @@ Keep the current eligibility filter inside the SQL query:
 - `n.is_available = true`
 - `u.role = 'nurse'`
 - `n.status = 'verified'`
-- `license_valid_until IS NULL OR > NOW()`
+- `n.license_valid_until IS NULL OR n.license_valid_until > NOW()`
 
 Update `apps/web/src/server/requests/allocate-request.ts`:
 - remove the inline `compareCandidates(...)` helper
@@ -316,6 +320,11 @@ Expected:
 Implement `packages/domain-dispatch/src/assignment-policy.ts` with:
 
 ```ts
+import type { DbClient } from "@nurseconnect/database";
+import { serviceRequests } from "@nurseconnect/database/schema";
+
+type Transaction = Parameters<Parameters<DbClient["transaction"]>[0]>[0];
+
 export function assertDispatchEligibleNurse(input: {
   userExists: boolean;
   role: "patient" | "nurse" | "admin" | null;
@@ -327,9 +336,9 @@ export function assertDispatchEligibleNurse(input: {
 }
 
 export async function assignRequestToNurse(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  tx: Transaction,
   input: {
-    request: typeof schema.serviceRequests.$inferSelect;
+    request: typeof serviceRequests.$inferSelect;
     nurseUserId: string;
     skipEligibilityValidation: boolean;
   },
@@ -467,6 +476,10 @@ Expected:
 Implement `packages/domain-dispatch/src/reassignment-policy.ts` with:
 
 ```ts
+import type { DbClient } from "@nurseconnect/database";
+
+type Transaction = Parameters<Parameters<DbClient["transaction"]>[0]>[0];
+
 export function deriveReassignmentPlan(input: {
   currentStatus: "open" | "assigned";
   previousNurseUserId: string | null;
@@ -477,7 +490,7 @@ export function deriveReassignmentPlan(input: {
 }
 
 export async function reassignRequestInDispatch(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  tx: Transaction,
   input: {
     requestId: string;
     actorUserId: string;

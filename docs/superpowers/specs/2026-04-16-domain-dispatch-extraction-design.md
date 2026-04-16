@@ -1,3 +1,8 @@
+# NurseConnect Domain Dispatch Extraction
+Date: 2026-04-16
+Status: Proposed
+Scope: Enterprise architecture Step 4 after merged Step 3 (`@nurseconnect/domain-request`)
+
 ## Purpose
 Define the `@nurseconnect/domain-dispatch` extraction boundary so dispatch policy moves out of `apps/web` without prematurely redesigning the data model around the existing `assignments` table.
 
