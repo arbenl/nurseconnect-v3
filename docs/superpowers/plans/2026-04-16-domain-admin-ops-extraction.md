@@ -113,7 +113,8 @@ Create `packages/domain-admin-ops/package.json`:
   "dependencies": {
     "@nurseconnect/contracts": "workspace:*",
     "@nurseconnect/database": "workspace:*",
-    "@nurseconnect/domain-nurse": "workspace:*"
+    "@nurseconnect/domain-nurse": "workspace:*",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.19.11",
