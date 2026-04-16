@@ -175,7 +175,9 @@ Owns assignment writes and dispatch-side supply consumption.
 
 Responsibilities:
 - accept a request context from the caller
-- validate the target nurse for assignment when the caller bypasses candidate selection
+- when called outside the automatic dispatch flow, validate that the target nurse is dispatch-eligible
+- direct manual assignment must verify nurse existence, verified status, and non-expired license before assignment
+- when called after `candidate-selection.ts`, skip nurse-eligibility validation because candidate selection already filtered supply
 - write assignment fields on `service_requests`
 - write `nurses.is_available = false`
 - append `request_assigned`
