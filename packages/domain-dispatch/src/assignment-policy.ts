@@ -40,6 +40,25 @@ export function assertDispatchEligibleNurse(input: EligibilityInput) {
   }
 }
 
+export async function validateDispatchEligibleNurse(
+  tx: Transaction,
+  nurseUserId: string,
+) {
+  const [targetUser] = await tx.select().from(users).where(eq(users.id, nurseUserId));
+  const [nurseRecord] = await tx
+    .select()
+    .from(nurses)
+    .where(eq(nurses.userId, nurseUserId));
+
+  assertDispatchEligibleNurse({
+    userExists: Boolean(targetUser),
+    role: targetUser?.role ?? null,
+    nurseExists: Boolean(nurseRecord),
+    nurseStatus: nurseRecord?.status ?? null,
+    licenseValidUntil: nurseRecord?.licenseValidUntil ?? null,
+  });
+}
+
 export async function assignRequestToNurse(
   tx: Transaction,
   input: {
@@ -51,19 +70,7 @@ export async function assignRequestToNurse(
   const { request, nurseUserId, skipEligibilityValidation } = input;
 
   if (!skipEligibilityValidation) {
-    const [targetUser] = await tx.select().from(users).where(eq(users.id, nurseUserId));
-    const [nurseRecord] = await tx
-      .select()
-      .from(nurses)
-      .where(eq(nurses.userId, nurseUserId));
-
-    assertDispatchEligibleNurse({
-      userExists: Boolean(targetUser),
-      role: targetUser?.role ?? null,
-      nurseExists: Boolean(nurseRecord),
-      nurseStatus: nurseRecord?.status ?? null,
-      licenseValidUntil: nurseRecord?.licenseValidUntil ?? null,
-    });
+    await validateDispatchEligibleNurse(tx, nurseUserId);
   }
 
   const assignedAt = new Date();

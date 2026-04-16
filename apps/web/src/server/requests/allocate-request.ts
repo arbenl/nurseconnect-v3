@@ -1,6 +1,6 @@
 // apps/web/src/server/requests/allocate-request.ts
 import type { CreateRequestInput as ContractCreateRequestInput } from "@nurseconnect/contracts";
-import { db, eq, schema } from "@nurseconnect/database";
+import { db, schema } from "@nurseconnect/database";
 import {
     assignRequestToNurse,
     selectDispatchCandidate,
@@ -9,7 +9,7 @@ import { assertCreateRequestInvariants } from "@nurseconnect/domain-request";
 
 import { appendRequestEvent } from "./request-events";
 
-const { nurses, serviceRequests } = schema;
+const { serviceRequests } = schema;
 
 export type CreateRequestInput = Omit<
     ContractCreateRequestInput,
