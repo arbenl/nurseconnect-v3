@@ -21,6 +21,7 @@ Do not assume MCP tooling or repo policies from other repositories apply here un
 - The repo-local MCP wiring for this codebase lives in `.codex/config.toml`.
 - Do not modify `~/.codex/config.toml` to make NurseConnect tooling work.
 - Do not reuse repo-specific MCP servers from other repositories unless NurseConnect is explicitly wired to them.
+- Configure any Codex repo trust decision in your own local Codex setup; do not commit per-user `[project."..."]` trust blocks into this repository.
 
 ## MCP Guidance For NurseConnect
 

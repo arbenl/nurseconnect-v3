@@ -1,17 +1,14 @@
 [mcp_servers.context7]
 command = "npx"
-args = ["-y", "@upstash/context7-mcp"]
+args = ["-y", "@upstash/context7-mcp@2.1.8"]
 
 [mcp_servers.playwright]
 command = "npx"
 args = [
   "-y",
-  "@playwright/mcp",
+  "@playwright/mcp@0.0.70",
   "--user-data-dir",
-  "/tmp/nurseconnect-codex-evidence/playwright-profile",
+  ".codex/playwright-profile",
   "--output-dir",
-  "/tmp/nurseconnect-codex-evidence/playwright-output",
+  ".codex/playwright-output",
 ]
-
-[project."/Users/arbenlila/development/nurseconnect-v3"]
-trust_level = "trusted"
