@@ -1,7 +1,10 @@
 // apps/web/src/server/requests/allocate-request.ts
 import type { CreateRequestInput as ContractCreateRequestInput } from "@nurseconnect/contracts";
 import { db, eq, schema } from "@nurseconnect/database";
-import { selectDispatchCandidate } from "@nurseconnect/domain-dispatch";
+import {
+    assignRequestToNurse,
+    selectDispatchCandidate,
+} from "@nurseconnect/domain-dispatch";
 import { assertCreateRequestInvariants } from "@nurseconnect/domain-request";
 
 import { appendRequestEvent } from "./request-events";
@@ -69,42 +72,10 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
             return req;
         }
 
-        const assignedAt = new Date();
-
-        const [updated] = await tx
-            .update(serviceRequests)
-            .set({
-                assignedNurseUserId: chosen.nurseUserId,
-                status: "assigned",
-                assignedAt,
-                updatedAt: assignedAt,
-            })
-            .where(eq(serviceRequests.id, req.id))
-            .returning();
-
-        if (!updated) {
-            throw new Error("Failed to update request");
-        }
-
-        await tx
-            .update(nurses)
-            .set({
-                isAvailable: false,
-                updatedAt: assignedAt,
-            })
-            .where(eq(nurses.userId, chosen.nurseUserId));
-
-        await appendRequestEvent(tx, {
-            requestId: updated.id,
-            type: "request_assigned",
-            actorUserId: null,
-            fromStatus: "open",
-            toStatus: "assigned",
-            meta: {
-                nurseUserId: chosen.nurseUserId,
-            },
+        return assignRequestToNurse(tx, {
+            request: req,
+            nurseUserId: chosen.nurseUserId,
+            skipEligibilityValidation: true,
         });
-
-        return updated;
     });
 }
