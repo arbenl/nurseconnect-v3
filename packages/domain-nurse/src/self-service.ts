@@ -24,16 +24,11 @@ export async function submitOwnNurseApplication(input: {
   licenseJurisdiction: string;
   specialization: string;
 }) {
-  const { db, eq, schema } = await import("@nurseconnect/database");
+  const { and, db, eq, or, schema } = await import("@nurseconnect/database");
   const now = new Date();
-  const existing = await db.query.nurses.findFirst({
-    where: eq(schema.nurses.userId, input.userId),
-  });
-
-  assertCanSubmitOwnNurseApplication(existing?.status ?? null);
-
-  if (!existing) {
-    await db.insert(schema.nurses).values({
+  await db
+    .insert(schema.nurses)
+    .values({
       userId: input.userId,
       status: "submitted",
       licenseNumber: input.licenseNumber,
@@ -41,24 +36,49 @@ export async function submitOwnNurseApplication(input: {
       specialization: input.specialization,
       isAvailable: false,
       updatedAt: now,
+    })
+    .onConflictDoNothing({
+      target: schema.nurses.userId,
     });
-  } else {
-    await db
-      .update(schema.nurses)
-      .set({
-        status: "submitted",
-        licenseNumber: input.licenseNumber,
-        licenseJurisdiction: input.licenseJurisdiction,
-        specialization: input.specialization,
-        isAvailable: false,
-        updatedAt: now,
-      })
-      .where(eq(schema.nurses.userId, input.userId));
-  }
 
-  return db.query.nurses.findFirst({
+  const current = await db.query.nurses.findFirst({
     where: eq(schema.nurses.userId, input.userId),
   });
+
+  assertCanSubmitOwnNurseApplication(current?.status ?? null);
+
+  const [submitted] = await db
+    .update(schema.nurses)
+    .set({
+      status: "submitted",
+      licenseNumber: input.licenseNumber,
+      licenseJurisdiction: input.licenseJurisdiction,
+      specialization: input.specialization,
+      isAvailable: false,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(schema.nurses.userId, input.userId),
+        or(
+          eq(schema.nurses.status, "draft"),
+          eq(schema.nurses.status, "submitted"),
+        ),
+      ),
+    )
+    .returning();
+
+  if (submitted) {
+    return submitted;
+  }
+
+  const latest = await db.query.nurses.findFirst({
+    where: eq(schema.nurses.userId, input.userId),
+  });
+
+  assertCanSubmitOwnNurseApplication(latest?.status ?? null);
+
+  return latest;
 }
 
 export async function setMyAvailability(input: {

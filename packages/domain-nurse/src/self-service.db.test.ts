@@ -79,6 +79,52 @@ describe.sequential("nurse self-service submission", () => {
     });
   });
 
+  it("keeps first-time self-serve submission idempotent under concurrency", async () => {
+    const [user] = await db
+      .insert(users)
+      .values({ email: "self-serve-concurrent@test.local", role: "patient" })
+      .returning();
+
+    const [first, second] = await Promise.all([
+      submitOwnNurseApplication({
+        userId: user!.id,
+        licenseNumber: "RN-CONCURRENT-001",
+        licenseJurisdiction: "CA",
+        specialization: "Telemetry",
+      }),
+      submitOwnNurseApplication({
+        userId: user!.id,
+        licenseNumber: "RN-CONCURRENT-001",
+        licenseJurisdiction: "CA",
+        specialization: "Telemetry",
+      }),
+    ]);
+
+    expect(first).toMatchObject({
+      userId: user!.id,
+      status: "submitted",
+    });
+    expect(second).toMatchObject({
+      userId: user!.id,
+      status: "submitted",
+    });
+
+    const persisted = await db
+      .select()
+      .from(nurses)
+      .where(eq(nurses.userId, user!.id));
+
+    expect(persisted).toHaveLength(1);
+    expect(persisted[0]).toMatchObject({
+      userId: user!.id,
+      status: "submitted",
+      licenseNumber: "RN-CONCURRENT-001",
+      licenseJurisdiction: "CA",
+      specialization: "Telemetry",
+      isAvailable: false,
+    });
+  });
+
   it("rejects resubmission when the nurse is already verified", async () => {
     const [user] = await db
       .insert(users)
