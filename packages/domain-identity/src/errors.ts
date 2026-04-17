@@ -21,3 +21,17 @@ export class ProfileValidationError extends Error {
     this.details = details;
   }
 }
+
+export class RoleChangeValidationError extends Error {
+  constructor(message = "Invalid role") {
+    super(message);
+    this.name = "RoleChangeValidationError";
+  }
+}
+
+export class UserNotFoundError extends Error {
+  constructor(message = "User not found") {
+    super(message);
+    this.name = "UserNotFoundError";
+  }
+}

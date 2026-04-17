@@ -1,4 +1,5 @@
 export * from "./errors";
+export * from "./admin-role-policy";
 export * from "./me-projection";
 export * from "./portal-access-policy";
 export * from "./profile-policy";
