@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  buildMeUserProjection,
   ensureDomainUserFromSession,
   maybeBootstrapFirstAdmin,
 } from "@nurseconnect/domain-identity";
@@ -47,58 +48,14 @@ export async function GET(request: Request) {
     const bootstrappedUser = await maybeBootstrapFirstAdmin(domainUser);
     const finalUser = bootstrappedUser ?? domainUser;
 
-    const profile = {
-      firstName: finalUser.firstName,
-      lastName: finalUser.lastName,
-      phone: finalUser.phone,
-      city: finalUser.city,
-      address: finalUser.address,
-    };
-
-    let nurseProfile = null;
-    const nurse = await getNurseByUserId(finalUser.id);
-    if (nurse) {
-      nurseProfile = {
-        status: nurse.status,
-        licenseNumber: nurse.licenseNumber,
-        licenseJurisdiction: nurse.licenseJurisdiction,
-        specialization: nurse.specialization,
-        licenseValidUntil: nurse.licenseValidUntil?.toISOString() ?? null,
-        isAvailable: nurse.isAvailable,
-      };
-    }
-
-    const isPatientComplete = !!(
-      finalUser.firstName &&
-      finalUser.lastName &&
-      finalUser.phone &&
-      finalUser.city
-    );
-
-    let isNurseComplete = true;
-    if (finalUser.role === "nurse") {
-      isNurseComplete = !!(
-        nurseProfile?.licenseNumber &&
-        nurseProfile?.specialization
-      );
-    }
-
-    const isComplete = isPatientComplete && isNurseComplete;
+    const nurse = (await getNurseByUserId(finalUser.id)) ?? null;
+    const projectedUser = buildMeUserProjection(finalUser, nurse);
 
     const response = NextResponse.json(
       {
         ok: true,
         session,
-        user: {
-          id: finalUser.id,
-          authId: finalUser.authId,
-          email: finalUser.email,
-          role: finalUser.role,
-          name: finalUser.name,
-          profile,
-          nurseProfile,
-          profileComplete: isComplete,
-        },
+        user: projectedUser,
       },
       { status: 200 },
     );

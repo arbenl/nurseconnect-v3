@@ -395,6 +395,9 @@ importers:
       '@nurseconnect/domain-nurse':
         specifier: workspace:*
         version: link:../domain-nurse
+      zod:
+        specifier: ^4.0.17
+        version: 4.0.17
     devDependencies:
       '@types/node':
         specifier: ^20.19.11

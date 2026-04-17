@@ -11,3 +11,13 @@ export class ForbiddenError extends Error {
     this.name = "ForbiddenError";
   }
 }
+
+export class ProfileValidationError extends Error {
+  details?: unknown;
+
+  constructor(message = "Validation failed", details?: unknown) {
+    super(message);
+    this.name = "ProfileValidationError";
+    this.details = details;
+  }
+}
