@@ -21,6 +21,7 @@
 - Create: `packages/domain-nurse/src/self-service.db.test.ts`
 - Modify: `packages/domain-nurse/src/index.ts`
 - Modify: `packages/domain-nurse/src/credential-lifecycle.ts`
+- Modify: `packages/domain-nurse/src/errors.ts`
 
 ### Route adapters to cut over
 
@@ -53,6 +54,7 @@
 - Keep the old generic submission helper only if the resulting boundary is still clear; prefer making the broad upsert helper package-internal once the self-serve wrapper exists.
 - Add the new verified-nurse resubmission guard first at the package level, then cut the self-serve route over.
 - Move nurse availability persistence into the package second, but keep the active-visit `409` check in `apps/web`.
+- Use typed domain failures for route mapping; do not make HTTP status selection depend on `error.message` string comparisons.
 - Treat `/api/profile` as a tiny legacy-freeze change at the end of the slice so it cannot sprawl into profile-domain work.
 - Extend the existing API E2E suite before claiming the route cutover is complete.
 
@@ -68,6 +70,7 @@
 - Create: `packages/domain-nurse/src/self-service.db.test.ts`
 - Modify: `packages/domain-nurse/src/index.ts`
 - Modify: `packages/domain-nurse/src/credential-lifecycle.ts`
+- Modify: `packages/domain-nurse/src/errors.ts`
 
 - [ ] **Step 1: Add unit and DB test scaffolding for the new self-service surface**
 
@@ -104,10 +107,8 @@ Create `packages/domain-nurse/src/self-service.test.ts` with a pure state-gate h
 ```ts
 import { describe, expect, it } from "vitest";
 
-import {
-  NurseCredentialValidationError,
-  assertCanSubmitOwnNurseApplication,
-} from "./self-service";
+import { NurseCredentialValidationError } from "./errors";
+import { assertCanSubmitOwnNurseApplication } from "./self-service";
 
 describe("assertCanSubmitOwnNurseApplication", () => {
   it("allows no existing status and in-progress applicant statuses", () => {
@@ -246,6 +247,7 @@ git add packages/domain-nurse/package.json \
   packages/domain-nurse/src/self-service.db.test.ts \
   packages/domain-nurse/src/index.ts \
   packages/domain-nurse/src/credential-lifecycle.ts \
+  packages/domain-nurse/src/errors.ts \
   pnpm-lock.yaml
 git commit -m "feat: add nurse self-serve submission policy"
 ```
@@ -258,12 +260,13 @@ git commit -m "feat: add nurse self-serve submission policy"
 - Modify: `packages/domain-nurse/src/self-service.ts`
 - Modify: `packages/domain-nurse/src/self-service.db.test.ts`
 - Modify: `packages/domain-nurse/src/index.ts`
+- Modify: `packages/domain-nurse/src/errors.ts`
 - Modify: `apps/web/src/app/api/me/nurse/route.ts`
 
 - [ ] **Step 1: Add the failing DB tests for availability mutation**
 
 Extend `packages/domain-nurse/src/self-service.db.test.ts` with cases like:
-- `setMyAvailability(...)` throws a missing-profile package failure when no nurse row exists
+- `setMyAvailability(...)` throws `NurseProfileNotFoundError` when no nurse row exists
 - unverified nurse cannot set availability `true`
 - expired verified nurse cannot set availability `true`
 - verified nurse can set availability `true` and then `false`
@@ -287,7 +290,10 @@ Extend `packages/domain-nurse/src/self-service.ts`:
 
 ```ts
 import { assertCanSetSelfAvailability } from "./availability-policy";
-import { NurseAvailabilityError } from "./errors";
+import {
+  NurseAvailabilityError,
+  NurseProfileNotFoundError,
+} from "./errors";
 
 export async function setMyAvailability(input: {
   actorUserId: string;
@@ -298,7 +304,7 @@ export async function setMyAvailability(input: {
   });
 
   if (!nurse) {
-    throw new NurseAvailabilityError("Nurse profile not found");
+    throw new NurseProfileNotFoundError();
   }
 
   if (input.isAvailable) {
@@ -319,6 +325,17 @@ export async function setMyAvailability(input: {
   return db.query.nurses.findFirst({
     where: eq(schema.nurses.userId, input.actorUserId),
   });
+}
+```
+
+Add a dedicated typed failure to `packages/domain-nurse/src/errors.ts`:
+
+```ts
+export class NurseProfileNotFoundError extends Error {
+  constructor(message = "Nurse profile not found") {
+    super(message);
+    this.name = "NurseProfileNotFoundError";
+  }
 }
 ```
 
@@ -349,7 +366,8 @@ Expected:
 ```bash
 git add packages/domain-nurse/src/self-service.ts \
   packages/domain-nurse/src/self-service.db.test.ts \
-  packages/domain-nurse/src/index.ts
+  packages/domain-nurse/src/index.ts \
+  packages/domain-nurse/src/errors.ts
 git commit -m "feat: extract nurse self availability mutation"
 ```
 
@@ -462,12 +480,16 @@ await setMyAvailability({
 
 Keep the current `409 Conflict: Nurse has an active visit` response in the route adapter.
 
-Map package-level failures cleanly:
+Map package-level failures cleanly with typed domain errors:
 
 ```ts
+if (error instanceof NurseProfileNotFoundError) {
+  const response = NextResponse.json({ error: error.message }, { status: 404 });
+  ...
+}
+
 if (error instanceof NurseAvailabilityError) {
-  const status = error.message === "Nurse profile not found" ? 404 : 403;
-  const response = NextResponse.json({ error: error.message }, { status });
+  const response = NextResponse.json({ error: error.message }, { status: 403 });
   ...
 }
 ```
