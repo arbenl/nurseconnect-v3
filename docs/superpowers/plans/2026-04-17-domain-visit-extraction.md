@@ -189,6 +189,12 @@ export const NurseVisitFeedResponseSchema = z.object({
 });
 ```
 
+Update `packages/contracts/src/index.ts` to export the new visit schemas explicitly:
+
+```ts
+export * from "./visits";
+```
+
 Create `packages/domain-visit/src/visit-state.test.ts` with cases like:
 
 ```ts
@@ -373,6 +379,8 @@ Update the dashboard consumer types to import the new contract types instead of 
 - `apps/web/src/components/dashboard/patient-request-history-card.tsx`
 - `apps/web/src/components/dashboard/patient-request-card.tsx`
 - `apps/web/src/components/dashboard/nurse-assignment-card.tsx`
+
+While cutting the nurse dashboard consumers over, verify that the new `NurseVisitSummarySchema` still includes every field the existing UI actually reads. If Playwright or TypeScript surfaces a missing field during this step, extend the contract with that specific field instead of broadening it back to the raw row shape.
 
 Update the root `package.json` `test:architecture` script to include:
 
