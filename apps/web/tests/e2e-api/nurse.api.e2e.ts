@@ -3,6 +3,28 @@ import { expect, test } from "@playwright/test";
 import { getDbClient, resetDb, seedNurse } from "../e2e-utils/db";
 import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
+async function getNurseRow(userId: string) {
+    const client = getDbClient();
+    await client.connect();
+    try {
+        const result = await client.query<{
+            status: string;
+            license_number: string;
+            license_jurisdiction: string | null;
+            specialization: string | null;
+            is_available: boolean;
+        }>(
+            `SELECT status, license_number, license_jurisdiction, specialization, is_available
+               FROM nurses
+              WHERE user_id = $1`,
+            [userId],
+        );
+        return result.rows[0] ?? null;
+    } finally {
+        await client.end();
+    }
+}
+
 test.describe("Nurse API", () => {
     test.beforeEach(async () => {
         await resetDb();
@@ -181,6 +203,43 @@ test.describe("Nurse API", () => {
         expect(toggleOn.status()).toBe(409);
         await expect(toggleOn.json()).resolves.toMatchObject({
             error: "Conflict: Nurse has an active visit",
+        });
+    });
+
+    test("verified nurse cannot self-submit back to applicant state", async ({ request }) => {
+        const email = `verified-resubmit-${Date.now()}@test.local`;
+        const { userId } = await createTestUser(request, email, "Verified Nurse", "nurse");
+        await seedNurse({
+            userId,
+            status: "verified",
+            licenseNumber: "RN-VERIFIED-LOCKED",
+            specialization: "ICU",
+            isAvailable: true,
+            licenseJurisdiction: "CA",
+            licenseValidUntil: "2027-12-31T00:00:00.000Z",
+        });
+        await loginTestUser(request, email);
+
+        const response = await request.post("/api/me/become-nurse", {
+            data: {
+                licenseNumber: "RN-NEW-001",
+                licenseJurisdiction: "NY",
+                specialization: "Emergency",
+            },
+        });
+
+        expect(response.status()).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            error: expect.stringMatching(/not allowed/i),
+        });
+
+        const nurseRow = await getNurseRow(userId);
+        expect(nurseRow).toMatchObject({
+            status: "verified",
+            license_number: "RN-VERIFIED-LOCKED",
+            license_jurisdiction: "CA",
+            specialization: "ICU",
+            is_available: true,
         });
     });
 

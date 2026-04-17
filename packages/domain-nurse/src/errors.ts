@@ -12,6 +12,13 @@ export class NurseCredentialValidationError extends Error {
   }
 }
 
+export class NurseProfileNotFoundError extends Error {
+  constructor(message = "Nurse profile not found") {
+    super(message);
+    this.name = "NurseProfileNotFoundError";
+  }
+}
+
 export class NurseLocationForbiddenError extends Error {
   constructor(message = "Forbidden") {
     super(message);

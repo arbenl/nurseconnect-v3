@@ -3,6 +3,9 @@ import { NextResponse, NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth"; // direct import for API routes
 
+// Legacy compatibility adapter for the diagnostic /profile page only.
+// Business profile ownership lives in /api/me and /api/me/profile via @nurseconnect/domain-identity.
+// Do not add new profile mutation logic here.
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({
     headers: await headers()

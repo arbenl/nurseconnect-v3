@@ -52,6 +52,8 @@ function assertValidStatuses(statuses: string[]): NurseCredentialStatus[] {
   );
 }
 
+// Keep this generic upsert for admin/support-oriented callers and test setup.
+// Self-serve routes should use submitOwnNurseApplication from self-service.ts.
 export async function submitNurseApplication(input: {
   userId: string;
   licenseNumber: string;
