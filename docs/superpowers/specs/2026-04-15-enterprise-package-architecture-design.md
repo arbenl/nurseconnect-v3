@@ -44,7 +44,7 @@ Still intentionally future:
 - `domain-referral`
 - `domain-payments`
 
-So this document is no longer a speculative sequence. It is a living roadmap that must match the executed slices already merged to `main`.
+So this document is no longer a speculative sequence. It is a living roadmap that must match the executed slices already merged into `main`.
 
 ## Decisions
 
@@ -575,7 +575,7 @@ Why next:
 Extract:
 
 - patient live visit projections
-- nurse live assignment projections
+- nurse live visit projections
 - actor-scoped timeline reads
 - actor-scoped notification reads
 - shared visit-state helpers
