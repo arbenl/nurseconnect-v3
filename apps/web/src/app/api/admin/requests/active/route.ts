@@ -1,7 +1,7 @@
+import { getAdminActiveRequestQueue } from "@nurseconnect/domain-admin-ops";
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
-import { getAdminActiveRequestQueue } from "@/server/requests/admin-active-queue";
 import {
   createApiLogContext,
   logApiFailure,

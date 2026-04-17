@@ -1,10 +1,10 @@
 import { type AdminActiveRequestQueueItem } from "@nurseconnect/contracts";
+import { getAdminActiveRequestQueue } from "@nurseconnect/domain-admin-ops";
 import Link from "next/link";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
-import { getAdminActiveRequestQueue } from "@/server/requests/admin-active-queue";
 
 type PageProps = {
   searchParams?: {

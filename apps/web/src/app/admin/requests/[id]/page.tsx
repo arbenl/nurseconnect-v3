@@ -1,4 +1,5 @@
 import { asc, db, desc, eq, schema, and, or, isNull, gt } from "@nurseconnect/database";
+import { toLocationHint } from "@nurseconnect/domain-admin-ops";
 import { notFound } from "next/navigation";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
@@ -8,7 +9,6 @@ import {
   RequestEventNotFoundError,
   getRequestEventsForUser,
 } from "@/server/requests/request-events";
-import { toLocationHint } from "@/server/requests/triage-severity";
 
 import ReassignPanel from "./reassign-panel";
 

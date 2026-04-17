@@ -1,8 +1,8 @@
+import { getAdminReassignmentActivityFeed } from "@nurseconnect/domain-admin-ops";
 import Link from "next/link";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
-import { getAdminReassignmentActivityFeed } from "@/server/admin/activity-feed";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 function shortId(value: string | null) {
