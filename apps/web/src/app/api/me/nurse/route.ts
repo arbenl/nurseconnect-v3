@@ -1,9 +1,9 @@
 import { and, db, eq, or, schema } from "@nurseconnect/database";
+import { ensureDomainUserFromSession } from "@nurseconnect/domain-identity";
 import { NurseAvailabilityError, assertCanSetSelfAvailability } from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { ensureDomainUserFromSession } from "@/lib/user-service";
 import { getSession } from "@/server/auth";
 import {
   createApiLogContext,

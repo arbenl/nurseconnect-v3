@@ -392,6 +392,9 @@ importers:
       '@nurseconnect/database':
         specifier: workspace:*
         version: link:../database
+      '@nurseconnect/domain-nurse':
+        specifier: workspace:*
+        version: link:../domain-nurse
     devDependencies:
       '@types/node':
         specifier: ^20.19.11

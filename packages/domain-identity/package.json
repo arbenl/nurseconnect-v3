@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@nurseconnect/contracts": "workspace:*",
-    "@nurseconnect/database": "workspace:*"
+    "@nurseconnect/database": "workspace:*",
+    "@nurseconnect/domain-nurse": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.19.11",
