@@ -359,8 +359,14 @@ Update `apps/web/src/app/api/requests/mine/route.ts` so it stays behavior-preser
 
 ```ts
 const requests = user.role === "nurse"
-  ? [projection.activeAssignment, ...projection.recentAssignments].filter(Boolean)
-  : [projection.activeVisit, ...projection.recentVisits].filter(Boolean);
+  ? [projection.activeAssignment, ...projection.recentAssignments].filter(
+      (
+        assignment,
+      ): assignment is NonNullable<typeof assignment> => assignment !== null,
+    )
+  : [projection.activeVisit, ...projection.recentVisits].filter(
+      (visit): visit is NonNullable<typeof visit> => visit !== null,
+    );
 return NextResponse.json(requests);
 ```
 
@@ -422,7 +428,7 @@ git commit -m "feat: extract visit projections"
 - Create: `packages/domain-visit/src/visit-timeline.db.test.ts`
 - Create: `packages/domain-visit/src/visit-notifications.ts`
 - Create: `packages/domain-visit/src/visit-notifications.db.test.ts`
-- Create: `packages/domain-visit/src/errors.ts`
+- Modify: `packages/domain-visit/src/errors.ts`
 - Modify: `packages/domain-visit/src/index.ts`
 - Modify: `apps/web/src/app/api/requests/[id]/events/route.ts`
 - Modify: `apps/web/src/app/api/me/notifications/route.ts`
