@@ -1,7 +1,8 @@
 # NurseConnect Enterprise Package Architecture
 
 Date: 2026-04-15
-Status: Proposed
+Status: Living roadmap, updated through merged Step 7 (`@nurseconnect/domain-visit`)
+Updated: 2026-04-17
 Scope: Monorepo package architecture before `Referral Partner MVP`
 
 ## Purpose
@@ -24,6 +25,26 @@ The architecture must support the actual business model:
 - city-by-city service-area discipline
 
 The repo should not be reorganized around user portals first. Patient, nurse, admin, and referral-partner surfaces are delivery views over shared business rules. The durable center is the domain model.
+
+## Current Roadmap Status
+
+Completed on `main`:
+
+- `platform-telemetry` shared foundation
+- `domain-request` core extraction
+- `domain-identity` foundation and later `User` aggregate expansion
+- `domain-nurse`
+- `domain-dispatch`
+- `domain-admin-ops`
+- `domain-visit`
+
+Still intentionally future:
+
+- `domain-patient`
+- `domain-referral`
+- `domain-payments`
+
+So this document is no longer a speculative sequence. It is a living roadmap that must match the executed slices already merged to `main`.
 
 ## Decisions
 
@@ -91,13 +112,13 @@ apps/
   web/
 
 packages/
-  domain-identity/
-  domain-nurse/
-  domain-request/
-  domain-dispatch/
-  domain-admin-ops/
+  domain-identity/         # implemented
+  domain-nurse/            # implemented
+  domain-request/          # implemented
+  domain-dispatch/         # implemented
+  domain-admin-ops/        # implemented
+  domain-visit/            # implemented
   domain-patient/          # later, when patient profile/household logic is real
-  domain-visit/            # later
   domain-referral/         # later
   domain-payments/         # later
 
@@ -140,6 +161,10 @@ Owns:
 - portal access rules
 - role and authorization policies
 - user projection rules from auth session into domain user model
+- domain user bootstrap/upsert
+- profile update policy for the base `users` aggregate
+- `/api/me` projection shaping
+- admin role-change policy
 - first-admin bootstrap policy
 
 Current likely sources:
@@ -236,17 +261,27 @@ Current likely sources:
 
 Future domain.
 
-This should not be treated as a major extraction step yet because the repo has limited patient-specific business logic beyond profile completion and request ownership. When it becomes real, it should own:
+This should not be treated as a major extraction step yet because the repo still has limited patient-specific business logic beyond generic user profile, request ownership, and visit consumption. Base profile rules already moved into `domain-identity`, and live patient visit reads now live in `domain-visit`.
 
-- patient profile rules
+When `domain-patient` becomes real, it should own:
+
+- patient-specific profile rules that go beyond the shared `users` aggregate
 - household context
-- later: family and caregiver context if introduced
+- family and caregiver context if introduced
+- saved addresses, patient preferences, consent, or similar patient-owned state if those become real product concepts
 
 ### `packages/domain-visit`
 
-Future domain.
+Implemented as a read-model package in Step 7.
 
-This should own visit progression, visit completion semantics, and any visit-specific read/write model once that logic becomes more than a thin extension of request flow.
+It currently owns:
+
+- patient and nurse live visit projections
+- actor-scoped visit timeline reads
+- actor-scoped visit notification reads
+- shared visit-state helpers
+
+Future expansion may add broader visit progression or completion semantics only if those become a real domain separate from request lifecycle and dispatch policy.
 
 ### `packages/domain-referral`
 
@@ -430,6 +465,8 @@ Do not force request events into a generic event-log package unless the system l
 
 ## Migration Sequence
 
+The roadmap below reflects the sequence actually executed through Step 7.
+
 ### Step 0: Shared Foundations
 
 Extract shared cross-cutting and request-core foundations first.
@@ -448,7 +485,7 @@ Why first:
 - these concerns are used by multiple domains
 - leaving them in `apps/web` would create backward dependencies during extraction
 
-### Step 1: `domain-identity`
+### Step 1: `domain-identity` foundations
 
 Extract:
 
@@ -519,12 +556,40 @@ Why now:
 
 - by this point, admin read models can compose stabilized domain capabilities instead of owning hidden business logic
 
+### Step 6: `domain-identity` user expansion
+
+Extract:
+
+- domain user bootstrap/upsert
+- profile update policy for the base `users` aggregate
+- `/api/me` projection shaping
+- admin role-change policy
+
+Why next:
+
+- after request, dispatch, and admin ops were stabilized, the remaining `User` aggregate logic was still split between route handlers and app-local service helpers
+- this closes the identity/user seam without inventing a premature `domain-patient` package
+
+### Step 7: `domain-visit`
+
+Extract:
+
+- patient live visit projections
+- nurse live assignment projections
+- actor-scoped timeline reads
+- actor-scoped notification reads
+- shared visit-state helpers
+
+Why next:
+
+- after request write policy and dispatch write policy were stable, the remaining live care experience read side was ready to move into its own package
+- this gave patient and nurse portal reads a dedicated home without reopening request or dispatch mutation seams
+
 ## Future Domain Scaffolding
 
 These are real future domains, but not the next migration steps:
 
 - `domain-patient`
-- `domain-visit`
 - `domain-referral`
 - `domain-payments`
 
