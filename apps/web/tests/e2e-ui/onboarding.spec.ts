@@ -20,15 +20,16 @@ test.describe("Onboarding", () => {
         await page.goto("/dashboard");
         await page.waitForURL(/\/onboarding/);
 
-        // Fill onboarding form (adjust selectors based on your actual form)
-        // Check if form is visible first
-        await expect(page.locator('input[name="phone"]')).toBeVisible();
+        await expect(page.getByLabel("First Name")).toBeVisible();
 
-        await page.fill('input[name="phone"]', "+38344123456");
-        await page.fill('textarea[name="address"]', "123 Test St, Pristina");
+        await page.getByLabel("First Name").fill("Test");
+        await page.getByLabel("Last Name").fill("Patient");
+        await page.getByLabel("Phone Number").fill("+38344123456");
+        await page.getByLabel("City").fill("Pristina");
+        await page.getByLabel("Address (Optional)").fill("123 Test St, Pristina");
 
         // Submit onboarding
-        await page.click('button[type="submit"]');
+        await page.getByRole("button", { name: "Save and Continue" }).click();
 
         // Should redirect to dashboard
         await page.waitForURL(/\/dashboard/);

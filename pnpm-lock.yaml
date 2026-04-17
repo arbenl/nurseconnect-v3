@@ -393,7 +393,13 @@ importers:
       '@nurseconnect/database':
         specifier: workspace:*
         version: link:../database
+      zod:
+        specifier: ^4.0.17
+        version: 4.0.17
     devDependencies:
+      '@nurseconnect/domain-nurse':
+        specifier: workspace:*
+        version: link:../domain-nurse
       '@types/node':
         specifier: ^20.19.11
         version: 20.19.11

@@ -1,6 +1,6 @@
 import { db, schema, eq } from "@nurseconnect/database";
+import { buildProfileUpdatePatch, ProfileValidationError } from "@nurseconnect/domain-identity";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import { getSession } from "@/server/auth";
 import {
@@ -12,14 +12,6 @@ import {
 } from "@/server/telemetry/ops-logger";
 
 const { users } = schema;
-
-const profileSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  phone: z.string().min(1, "Phone number is required"),
-  city: z.string().min(1, "City is required"),
-  address: z.string().optional(),
-});
 
 export async function PATCH(req: Request) {
   const startedAt = Date.now();
@@ -47,33 +39,11 @@ export async function PATCH(req: Request) {
     };
 
     const body = await req.json();
-    const result = profileSchema.safeParse(body);
-
-    if (!result.success) {
-      const response = NextResponse.json(
-        { error: "Validation failed", details: result.error.flatten() },
-        { status: 400 },
-      );
-      logApiFailure(actorContext, result.error, 400, startedAt, {
-        source: "me.profile",
-      });
-      return withRequestId(response, context.requestId);
-    }
-
-    const { firstName, lastName, phone, city, address } = result.data;
-    const isComplete = true;
+    const profilePatch = buildProfileUpdatePatch(body);
 
     const [updatedUser] = await db
       .update(users)
-      .set({
-        firstName,
-        lastName,
-        phone,
-        city,
-        address,
-        profileCompletedAt: isComplete ? new Date() : null,
-        updatedAt: new Date(),
-      })
+      .set(profilePatch)
       .where(eq(users.authId, session.user.id))
       .returning();
 
@@ -108,6 +78,17 @@ export async function PATCH(req: Request) {
     });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    if (error instanceof ProfileValidationError) {
+      const response = NextResponse.json(
+        { error: error.message, details: error.details },
+        { status: 400 },
+      );
+      logApiFailure(actorContext, error, 400, startedAt, {
+        source: "me.profile",
+      });
+      return withRequestId(response, context.requestId);
+    }
+
     logApiFailure(actorContext, error, 500, startedAt, { source: "me.profile" });
     return withRequestId(NextResponse.json({ error: "Internal Server Error" }, { status: 500 }), context.requestId);
   }
