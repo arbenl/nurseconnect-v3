@@ -1,5 +1,6 @@
 "use client";
 
+import type { NurseVisitSummary } from "@nurseconnect/contracts";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -8,15 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
-interface ServiceRequest {
-  id: string;
-  address: string;
-  status: string;
-  createdAt: string;
-  requestType: string;
-  scheduledFor: string | null;
-  careType: string | null;
-}
+type ServiceRequest = NurseVisitSummary;
 
 interface NurseAssignmentCardProps {
   activeAssignment: ServiceRequest | null;

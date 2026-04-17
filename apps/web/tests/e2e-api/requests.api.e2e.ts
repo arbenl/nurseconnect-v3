@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
+import { getDbClient, resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
 import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 test.describe("Requests API", () => {
@@ -318,6 +318,90 @@ test.describe("Requests API", () => {
         const latest = mine[0];
         expect(latest.id).toBe(created.id);
         expect(latest.status).toBe("open");
+    });
+
+    test("mine endpoint preserves patient-or-assigned semantics without a hard history cap", async ({
+        request,
+    }) => {
+        const actorEmail = `mine-combined-${Date.now()}@test.local`;
+        const { userId: actorUserId } = await createTestUser(request, actorEmail, "Mine Combined", "nurse");
+
+        const client = getDbClient();
+        await client.connect();
+        try {
+            const patientInsert = await client.query<{ id: string }>(
+                `INSERT INTO users (email, role, name, created_at, updated_at)
+                 VALUES ($1, 'patient', 'Mine Combined Patient', NOW(), NOW())
+                 RETURNING id`,
+                [`mine-combined-patient-${Date.now()}@test.local`],
+            );
+            const patientUserId = patientInsert.rows[0]!.id;
+
+            const values: unknown[] = [];
+            const placeholders: string[] = [];
+            for (let index = 0; index < 52; index += 1) {
+                const base = index * 9;
+                values.push(
+                    patientUserId,
+                    actorUserId,
+                    "completed",
+                    `Assigned History ${index + 1}`,
+                    "42.0",
+                    "21.0",
+                    new Date(Date.UTC(2026, 0, 1, 8, 0, index)).toISOString(),
+                    new Date(Date.UTC(2026, 0, 1, 8, 0, index)).toISOString(),
+                    new Date(Date.UTC(2026, 0, 1, 9, 0, index)).toISOString(),
+                );
+                placeholders.push(
+                    `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`,
+                );
+            }
+
+            await client.query(
+                `INSERT INTO service_requests (
+                    patient_user_id,
+                    assigned_nurse_user_id,
+                    status,
+                    address,
+                    lat,
+                    lng,
+                    created_at,
+                    updated_at,
+                    completed_at
+                ) VALUES ${placeholders.join(", ")}`,
+                values,
+            );
+
+            await client.query(
+                `INSERT INTO service_requests (
+                    patient_user_id,
+                    assigned_nurse_user_id,
+                    status,
+                    address,
+                    lat,
+                    lng,
+                    created_at,
+                    updated_at
+                ) VALUES ($1, NULL, 'open', $2, '42.5', '21.5', $3, $3)`,
+                [
+                    actorUserId,
+                    "My Own Open Request",
+                    "2026-02-01T08:00:00.000Z",
+                ],
+            );
+        } finally {
+            await client.end();
+        }
+
+        await loginTestUser(request, actorEmail);
+
+        const mineResponse = await request.get("/api/requests/mine");
+        expect(mineResponse.ok(), `Mine failed: ${await mineResponse.text()}`).toBeTruthy();
+        const mine = await mineResponse.json();
+
+        expect(mine).toHaveLength(53);
+        expect(mine[0]?.address).toBe("My Own Open Request");
+        expect(mine.at(-1)?.address).toBe("Assigned History 1");
     });
 
     test("location endpoint influences nearest nurse assignment", async ({ request }) => {

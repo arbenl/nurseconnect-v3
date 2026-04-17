@@ -1,19 +1,8 @@
+import type { NurseVisitFeedResponse, NurseVisitSummary } from "@nurseconnect/contracts";
 import { useQuery } from "@tanstack/react-query";
 
-type NurseAssignment = {
-  id: string;
-  address: string;
-  status: string;
-  createdAt: string;
-  requestType: string;
-  scheduledFor: string | null;
-  careType: string | null;
-};
-
-type NurseAssignmentFeedResponse = {
-  activeAssignment: NurseAssignment | null;
-  recentAssignments: NurseAssignment[];
-};
+type NurseAssignment = NurseVisitSummary;
+type NurseAssignmentFeedResponse = NurseVisitFeedResponse;
 
 const NURSE_ASSIGNMENT_FEED_KEY = ["nurse-assignment-feed"];
 
