@@ -110,6 +110,14 @@ test.describe("Admin Nurse Credential API", () => {
     expect(nurseRecord?.verified_at).toBeTruthy();
     expect(nurseRecord?.license_valid_until).toBeTruthy();
     expect(await countAdminAuditActions("nurse.credential.verified", queueItem.id)).toBe(1);
+
+    const verifiedQueueResponse = await request.get("/api/admin/nurses?status=verified");
+    expect(verifiedQueueResponse.ok(), `Verified queue failed: ${await verifiedQueueResponse.text()}`).toBeTruthy();
+    const verifiedQueueBody = await verifiedQueueResponse.json();
+    expect(
+      verifiedQueueBody.items.some((item: { userId: string; status: string }) =>
+        item.userId === applicantUserId && item.status === "verified"),
+    ).toBe(true);
   });
 
   test("invalid nurse status filters do not return the full queue", async ({ request }) => {

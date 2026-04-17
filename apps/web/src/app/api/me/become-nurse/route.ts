@@ -1,5 +1,8 @@
 import { ensureDomainUserFromSession } from "@nurseconnect/domain-identity";
-import { submitNurseApplication } from "@nurseconnect/domain-nurse";
+import {
+  NurseCredentialValidationError,
+  submitOwnNurseApplication,
+} from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -67,13 +70,12 @@ export async function POST(request: Request) {
       return withRequestId(response, context.requestId);
     }
 
-    // Transaction to update role and upsert nurse record (idempotent)
     const actorContextWithRole = {
       ...actorContext,
       actorRole: user.role,
     };
 
-    await submitNurseApplication({
+    await submitOwnNurseApplication({
       userId: user.id,
       licenseNumber,
       licenseJurisdiction,
@@ -87,6 +89,14 @@ export async function POST(request: Request) {
     });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    if (error instanceof NurseCredentialValidationError) {
+      const response = NextResponse.json({ error: error.message }, { status: 400 });
+      logApiFailure(actorContext, error, 400, startedAt, {
+        source: "me.becomeNurse",
+      });
+      return withRequestId(response, context.requestId);
+    }
+
     logApiFailure(actorContext, error, 500, startedAt, {
       source: "me.becomeNurse",
     });
