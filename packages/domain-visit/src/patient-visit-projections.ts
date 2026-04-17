@@ -26,7 +26,11 @@ export type VisitHistoryCursor = {
   id: string;
 };
 
-function normalizeHistoryLimit(limit?: number | null) {
+function normalizeHistoryLimit(limit?: number | null): number | null {
+  if (limit === null) {
+    return null;
+  }
+
   const requestedLimit = limit ?? DEFAULT_HISTORY_LIMIT;
   return Math.min(Math.max(requestedLimit, MIN_HISTORY_LIMIT), MAX_HISTORY_LIMIT);
 }
@@ -103,20 +107,23 @@ export async function getPatientVisitProjection(
     cursorCondition,
   ].filter(isSqlCondition);
 
-  const historyRows = await db
+  const historyQuery = db
     .select()
     .from(serviceRequests)
     .where(and(...historyConditions))
-    .orderBy(desc(serviceRequests.createdAt), desc(serviceRequests.id))
-    .limit(historyLimit + 1);
+    .orderBy(desc(serviceRequests.createdAt), desc(serviceRequests.id));
+  const historyRows =
+    historyLimit === null
+      ? await historyQuery
+      : await historyQuery.limit(historyLimit + 1);
 
-  const pageRows = historyRows.slice(0, historyLimit);
+  const pageRows = historyLimit === null ? historyRows : historyRows.slice(0, historyLimit);
   const recentVisits = GetPatientVisitsResponseSchema.parse(
     pageRows.map((request) => mapToPatientVisitSummary(request)),
   );
   const lastRow = pageRows.at(-1);
   const nextHistoryCursor =
-    historyRows.length > historyLimit && lastRow
+    historyLimit !== null && historyRows.length > historyLimit && lastRow
       ? {
           createdAt: lastRow.createdAt.toISOString(),
           id: lastRow.id,

@@ -11,7 +11,7 @@ import {
 import { requestEvents, serviceRequests } from "@nurseconnect/database/schema";
 import type { SQL } from "drizzle-orm";
 
-type VisitActorRole = "admin" | "nurse" | "patient";
+import { serializeVisitEvent, type VisitActorRole } from "./event-read-shared";
 
 const DEFAULT_NOTIFICATIONS_LIMIT = 25;
 const MIN_NOTIFICATIONS_LIMIT = 1;
@@ -60,22 +60,6 @@ function isSqlCondition(condition: SQL | undefined | null): condition is SQL {
   return condition !== null && condition !== undefined;
 }
 
-function serializeEvent(event: typeof requestEvents.$inferSelect) {
-  const meta =
-    event.meta && typeof event.meta === "object" && !Array.isArray(event.meta)
-      ? (event.meta as Record<string, unknown>)
-      : null;
-
-  return {
-    ...event,
-    fromStatus: event.fromStatus ?? null,
-    toStatus: event.toStatus ?? null,
-    actorUserId: event.actorUserId ?? null,
-    meta,
-    createdAt: event.createdAt.toISOString(),
-  };
-}
-
 export async function getVisitNotificationsForActor(
   db: DbClient,
   input: {
@@ -105,7 +89,7 @@ export async function getVisitNotificationsForActor(
 
     const pageRows = adminRows.slice(0, normalizedLimit);
     const notifications = GetRequestEventsResponseSchema.parse(
-      pageRows.map((event) => serializeEvent(event)),
+      pageRows.map((event) => serializeVisitEvent(event)),
     );
     const lastRow = pageRows.at(-1);
 
@@ -139,7 +123,7 @@ export async function getVisitNotificationsForActor(
 
   const pageRows = rows.slice(0, normalizedLimit);
   const notifications = GetRequestEventsResponseSchema.parse(
-    pageRows.map((row) => serializeEvent(row.event)),
+    pageRows.map((row) => serializeVisitEvent(row.event)),
   );
   const lastRow = pageRows.at(-1)?.event;
 

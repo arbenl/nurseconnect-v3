@@ -117,4 +117,65 @@ describe.sequential("nurse visit projections", () => {
       }),
     ).not.toThrow();
   });
+
+  it("supports an unbounded history adapter when historyLimit is null", async () => {
+    const [nurseUser] = await db
+      .insert(users)
+      .values({ email: "nurse-projection-all@test.local", role: "nurse" })
+      .returning();
+    const [patientUser] = await db
+      .insert(users)
+      .values({ email: "nurse-projection-all-patient@test.local", role: "patient" })
+      .returning();
+
+    const rows = await db
+      .insert(serviceRequests)
+      .values([
+        {
+          patientUserId: patientUser!.id,
+          assignedNurseUserId: nurseUser!.id,
+          status: "assigned",
+          address: "Current Assignment",
+          lat: "42.0",
+          lng: "21.0",
+          createdAt: new Date("2026-01-04T08:00:00.000Z"),
+          updatedAt: new Date("2026-01-04T08:00:00.000Z"),
+        },
+        {
+          patientUserId: patientUser!.id,
+          assignedNurseUserId: nurseUser!.id,
+          status: "completed",
+          address: "Recent A",
+          lat: "42.0",
+          lng: "21.0",
+          createdAt: new Date("2026-01-03T08:00:00.000Z"),
+          updatedAt: new Date("2026-01-03T08:00:00.000Z"),
+          completedAt: new Date("2026-01-03T09:00:00.000Z"),
+        },
+        {
+          patientUserId: patientUser!.id,
+          assignedNurseUserId: nurseUser!.id,
+          status: "completed",
+          address: "Recent B",
+          lat: "42.0",
+          lng: "21.0",
+          createdAt: new Date("2026-01-02T08:00:00.000Z"),
+          updatedAt: new Date("2026-01-02T08:00:00.000Z"),
+          completedAt: new Date("2026-01-02T09:00:00.000Z"),
+        },
+      ])
+      .returning();
+
+    const projection = await getNurseVisitProjection(db, {
+      actorUserId: nurseUser!.id,
+      historyLimit: null,
+    });
+
+    expect(projection.activeAssignment?.id).toBe(rows[0]!.id);
+    expect(projection.recentAssignments.map((row) => row.id)).toEqual([
+      rows[1]!.id,
+      rows[2]!.id,
+    ]);
+    expect(projection.nextHistoryCursor).toBeNull();
+  });
 });

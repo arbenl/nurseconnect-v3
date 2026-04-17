@@ -1,6 +1,7 @@
 import type { RequestStatus } from "@nurseconnect/contracts";
 
 const ACTIVE_VISIT_STATUSES: ReadonlySet<RequestStatus> = new Set([
+  "open",
   "assigned",
   "accepted",
   "enroute",

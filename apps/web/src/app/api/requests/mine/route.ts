@@ -23,24 +23,42 @@ export async function GET(request: Request) {
     const { user } = await requireAnyRole(["admin", "nurse", "patient"]);
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
-    let requests;
-    if (user.role === "nurse") {
-      const projection = await getNurseVisitProjection(db, {
+    const [patientProjection, nurseProjection] = await Promise.all([
+      getPatientVisitProjection(db, {
         actorUserId: user.id,
-        historyLimit: 50,
-      });
-      requests = [projection.activeAssignment, ...projection.recentAssignments].filter(
-        (assignment): assignment is NonNullable<typeof assignment> => assignment !== null,
-      );
-    } else {
-      const projection = await getPatientVisitProjection(db, {
+        historyLimit: null,
+      }),
+      getNurseVisitProjection(db, {
         actorUserId: user.id,
-        historyLimit: 50,
-      });
-      requests = [projection.activeVisit, ...projection.recentVisits].filter(
-        (visit): visit is NonNullable<typeof visit> => visit !== null,
-      );
+        historyLimit: null,
+      }),
+    ]);
+    const requestsById = new Map<
+      string,
+      | NonNullable<typeof patientProjection.activeVisit>
+      | (typeof patientProjection.recentVisits)[number]
+      | NonNullable<typeof nurseProjection.activeAssignment>
+      | (typeof nurseProjection.recentAssignments)[number]
+    >();
+
+    for (const requestItem of [
+      nurseProjection.activeAssignment,
+      ...nurseProjection.recentAssignments,
+      patientProjection.activeVisit,
+      ...patientProjection.recentVisits,
+    ]) {
+      if (!requestItem) {
+        continue;
+      }
+
+      requestsById.set(requestItem.id, requestItem);
     }
+    const requests = [...requestsById.values()].sort(
+      (left, right) =>
+        Date.parse(right.createdAt) - Date.parse(left.createdAt) ||
+        right.id.localeCompare(left.id),
+    );
+
     const response = NextResponse.json(requests);
     logApiSuccess(actorContext, 200, startedAt, { count: requests.length });
     return withRequestId(response, context.requestId);

@@ -147,4 +147,55 @@ describe.sequential("patient visit projections", () => {
 
     expect(sortIds(secondPage.recentVisits)).toEqual([requests[2]!.id]);
   });
+
+  it("supports an unbounded history adapter when historyLimit is null", async () => {
+    const [patient] = await db
+      .insert(users)
+      .values({ email: "patient-visit-all@test.local", role: "patient" })
+      .returning();
+
+    const rows = await db
+      .insert(serviceRequests)
+      .values([
+        {
+          patientUserId: patient!.id,
+          status: "open",
+          address: "Newest Active",
+          lat: "42.1",
+          lng: "21.1",
+          createdAt: new Date("2026-01-04T08:00:00.000Z"),
+          updatedAt: new Date("2026-01-04T08:00:00.000Z"),
+        },
+        {
+          patientUserId: patient!.id,
+          status: "completed",
+          address: "History A",
+          lat: "42.1",
+          lng: "21.1",
+          createdAt: new Date("2026-01-03T08:00:00.000Z"),
+          updatedAt: new Date("2026-01-03T08:00:00.000Z"),
+          completedAt: new Date("2026-01-03T09:00:00.000Z"),
+        },
+        {
+          patientUserId: patient!.id,
+          status: "canceled",
+          address: "History B",
+          lat: "42.1",
+          lng: "21.1",
+          createdAt: new Date("2026-01-02T08:00:00.000Z"),
+          updatedAt: new Date("2026-01-02T08:00:00.000Z"),
+          canceledAt: new Date("2026-01-02T09:00:00.000Z"),
+        },
+      ])
+      .returning();
+
+    const projection = await getPatientVisitProjection(db, {
+      actorUserId: patient!.id,
+      historyLimit: null,
+    });
+
+    expect(projection.activeVisit?.id).toBe(rows[0]!.id);
+    expect(sortIds(projection.recentVisits)).toEqual([rows[1]!.id, rows[2]!.id]);
+    expect(projection.nextHistoryCursor).toBeNull();
+  });
 });
