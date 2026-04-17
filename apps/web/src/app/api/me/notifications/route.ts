@@ -1,7 +1,8 @@
+import { db } from "@nurseconnect/database";
+import { getVisitNotificationsForActor } from "@nurseconnect/domain-visit";
 import { NextResponse } from "next/server";
 
 import { getCachedUser } from "@/lib/auth/user";
-import { getNotificationsForActor } from "@/server/requests/request-events";
 import {
   createApiLogContext,
   logApiFailure,
@@ -102,7 +103,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const notifications = await getNotificationsForActor({
+    const { notifications } = await getVisitNotificationsForActor(db, {
       actorUserId: user.id,
       actorRole: user.role,
       sinceIso: sinceResult.value,

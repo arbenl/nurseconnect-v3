@@ -26,6 +26,7 @@
     "@nurseconnect/domain-identity": "workspace:*",
     "@nurseconnect/domain-nurse": "workspace:*",
     "@nurseconnect/domain-request": "workspace:*",
+    "@nurseconnect/domain-visit": "workspace:*",
     "@nurseconnect/platform-telemetry": "workspace:*",
     "@nurseconnect/ui": "workspace:*",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

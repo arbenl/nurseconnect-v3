@@ -5,9 +5,7 @@ import {
     assignRequestToNurse,
     selectDispatchCandidate,
 } from "@nurseconnect/domain-dispatch";
-import { assertCreateRequestInvariants } from "@nurseconnect/domain-request";
-
-import { appendRequestEvent } from "./request-events";
+import { appendRequestEvent, assertCreateRequestInvariants } from "@nurseconnect/domain-request";
 
 const { serviceRequests } = schema;
 

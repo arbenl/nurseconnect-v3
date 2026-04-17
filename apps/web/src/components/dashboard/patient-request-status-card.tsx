@@ -1,18 +1,11 @@
 "use client";
 
+import type { PatientVisitSummary } from "@nurseconnect/contracts";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export type PatientServiceRequestSummary = {
-  id: string;
-  status: string;
-  address: string;
-  assignedNurseUserId: string | null;
-  createdAt: string;
-  requestType: string;
-  scheduledFor: string | null;
-  careType: string | null;
-};
+export type PatientServiceRequestSummary = PatientVisitSummary;
 
 type PatientRequestStatusCardProps = {
   request: PatientServiceRequestSummary;

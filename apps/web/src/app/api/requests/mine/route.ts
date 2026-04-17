@@ -1,4 +1,5 @@
-import { db, eq, or, schema, desc } from "@nurseconnect/database";
+import { db } from "@nurseconnect/database";
+import { getNurseVisitProjection, getPatientVisitProjection } from "@nurseconnect/domain-visit";
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireAnyRole } from "@/server/auth";
@@ -9,8 +10,6 @@ import {
   logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
-
-const { serviceRequests } = schema;
 
 export async function GET(request: Request) {
   const startedAt = Date.now();
@@ -24,13 +23,24 @@ export async function GET(request: Request) {
     const { user } = await requireAnyRole(["admin", "nurse", "patient"]);
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
-    const requests = await db
-      .select()
-      .from(serviceRequests)
-      .where(
-        or(eq(serviceRequests.patientUserId, user.id), eq(serviceRequests.assignedNurseUserId, user.id)),
-      )
-      .orderBy(desc(serviceRequests.createdAt));
+    let requests;
+    if (user.role === "nurse") {
+      const projection = await getNurseVisitProjection(db, {
+        actorUserId: user.id,
+        historyLimit: 50,
+      });
+      requests = [projection.activeAssignment, ...projection.recentAssignments].filter(
+        (assignment): assignment is NonNullable<typeof assignment> => assignment !== null,
+      );
+    } else {
+      const projection = await getPatientVisitProjection(db, {
+        actorUserId: user.id,
+        historyLimit: 50,
+      });
+      requests = [projection.activeVisit, ...projection.recentVisits].filter(
+        (visit): visit is NonNullable<typeof visit> => visit !== null,
+      );
+    }
     const response = NextResponse.json(requests);
     logApiSuccess(actorContext, 200, startedAt, { count: requests.length });
     return withRequestId(response, context.requestId);
