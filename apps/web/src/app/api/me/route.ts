@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
 import {
   buildMeUserProjection,
   ensureDomainUserFromSession,
   maybeBootstrapFirstAdmin,
 } from "@nurseconnect/domain-identity";
+import { NextResponse } from "next/server";
 
 import { getNurseByUserId } from "@/lib/nurse-record";
 import { getSession } from "@/server/auth";

@@ -1,7 +1,6 @@
 import { db, schema, eq } from "@nurseconnect/database";
 import {
   planUserRoleChange,
-  RoleChangeValidationError,
   UserNotFoundError,
 } from "@nurseconnect/domain-identity";
 import { NextResponse } from "next/server";
