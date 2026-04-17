@@ -48,7 +48,8 @@ export async function GET(request: Request) {
     const bootstrappedUser = await maybeBootstrapFirstAdmin(domainUser);
     const finalUser = bootstrappedUser ?? domainUser;
 
-    const nurse = (await getNurseByUserId(finalUser.id)) ?? null;
+    const nurse =
+      finalUser.role === "nurse" ? ((await getNurseByUserId(finalUser.id)) ?? null) : null;
     const projectedUser = buildMeUserProjection(finalUser, nurse);
 
     const response = NextResponse.json(

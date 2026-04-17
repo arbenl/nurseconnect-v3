@@ -27,6 +27,7 @@ export async function POST(
   });
   logApiStart(context, startedAt);
   let actorContext = context;
+  let targetUserId: string | undefined;
 
   try {
     // 1. Enforce RBAC
@@ -37,12 +38,25 @@ export async function POST(
       actorRole: actor.role,
     };
 
-    const { id: targetUserId } = await params;
-    const payload = await request.json();
+    const { id } = await params;
+    targetUserId = id;
+
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      const response = NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+      logApiFailure(actorContext, "Invalid payload", 400, startedAt, {
+        source: "admin.user.role",
+        targetUserId,
+      });
+      return withRequestId(response, context.requestId);
+    }
+
     const nextRole = typeof payload === "object" && payload !== null ? (payload as { role?: unknown }).role : undefined;
 
     const target = await db.query.users.findFirst({
-      where: eq(users.id, targetUserId),
+      where: eq(users.id, id),
     });
     if (!target) {
       throw new UserNotFoundError("Target user not found");
@@ -67,7 +81,7 @@ export async function POST(
       await tx
         .update(users)
         .set(planned.patch)
-        .where(eq(users.id, targetUserId));
+        .where(eq(users.id, id));
 
       for (const sideEffect of planned.sideEffects) {
         if (sideEffect.type === "admin-audit") {
@@ -111,6 +125,7 @@ export async function POST(
       const response = NextResponse.json({ error: err.message || "Invalid role" }, { status: 400 });
       logApiFailure(actorContext, err.message || "Invalid role", 400, startedAt, {
         source: "admin.user.role",
+        targetUserId,
       });
       return withRequestId(response, context.requestId);
     }
@@ -118,6 +133,7 @@ export async function POST(
       const response = NextResponse.json({ error: err.message || "Target user not found" }, { status: 404 });
       logApiFailure(actorContext, err.message || "Target user not found", 404, startedAt, {
         source: "admin.user.role",
+        targetUserId,
       });
       return withRequestId(response, context.requestId);
     }

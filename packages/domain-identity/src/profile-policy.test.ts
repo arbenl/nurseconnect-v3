@@ -35,6 +35,17 @@ describe("buildProfileUpdatePatch", () => {
     expect(result.address).toBeNull();
   });
 
+  it("leaves address undefined when the patch omits it", () => {
+    const result = buildProfileUpdatePatch({
+      firstName: "Pat",
+      lastName: "Ient",
+      phone: "+38344123456",
+      city: "Pristina",
+    });
+
+    expect(result.address).toBeUndefined();
+  });
+
   it("rejects empty required fields after trimming", () => {
     expect(() =>
       buildProfileUpdatePatch({

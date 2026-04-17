@@ -16,10 +16,10 @@
   "dependencies": {
     "@nurseconnect/contracts": "workspace:*",
     "@nurseconnect/database": "workspace:*",
-    "@nurseconnect/domain-nurse": "workspace:*",
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@nurseconnect/domain-nurse": "workspace:*",
     "@types/node": "^20.19.11",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"

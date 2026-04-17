@@ -12,7 +12,7 @@ const profileSchema = z.object({
     .optional()
     .transform((value) => {
       if (value === undefined) {
-        return null;
+        return undefined;
       }
 
       const trimmed = value.trim();
