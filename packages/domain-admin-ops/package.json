@@ -16,7 +16,7 @@
     "@nurseconnect/contracts": "workspace:*",
     "@nurseconnect/database": "workspace:*",
     "@nurseconnect/domain-nurse": "workspace:*",
-    "zod": "^3.23.8"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@types/node": "^20.19.11",

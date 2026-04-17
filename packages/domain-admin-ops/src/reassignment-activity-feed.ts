@@ -24,7 +24,10 @@ function toPositiveInt(value: unknown): number {
     return value;
   }
   if (typeof value === "string" && /^[0-9]+$/.test(value)) {
-    return Number(value);
+    const parsed = Number(value);
+    if (Number.isSafeInteger(parsed) && parsed > 0) {
+      return parsed;
+    }
   }
   throw new Error(`Invalid activity item id: ${String(value)}`);
 }
