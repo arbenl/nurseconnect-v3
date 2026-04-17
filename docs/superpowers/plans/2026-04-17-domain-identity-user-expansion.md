@@ -249,7 +249,8 @@ test("patching /api/me/profile persists base fields and returns profileComplete 
   // create + login patient
   // PATCH /api/me/profile
   // GET /api/me
-  // assert profileCompletedAt-backed completeness is true
+  // assert /api/me returns profileComplete: true
+  // assert users.profileCompletedAt was set in the database
 });
 
 test("a nurse can have base profile complete while derived /api/me profileComplete stays false until nurse fields exist", async ({ request }) => {

@@ -42,9 +42,10 @@ This keeps the `User` aggregate coherent in one domain package while preserving 
 - `apps/web/src/types/me.ts`
 
 Related but explicitly out of scope:
+Business logic for these areas does not move in this slice. If a file below is touched, it should only be for minimal adapter/bootstrap import rewiring needed to point user bootstrap flows at `@nurseconnect/domain-identity`.
 - `apps/web/src/app/api/profile/route.ts` deprecated legacy profile/session route
-- `apps/web/src/app/api/me/nurse/route.ts`
-- `apps/web/src/app/api/me/become-nurse/route.ts`
+- `apps/web/src/app/api/me/nurse/route.ts` out of scope for nurse/business logic changes; may be touched only for adapter/bootstrap import rewiring
+- `apps/web/src/app/api/me/become-nurse/route.ts` out of scope for nurse/business logic changes; may be touched only for adapter/bootstrap import rewiring
 - `apps/web/src/lib/nurse-record.ts`
 - `apps/web/src/server/admin/audit.ts`
 - onboarding and dashboard profile pages
@@ -191,7 +192,7 @@ This keeps `@nurseconnect/domain-identity` framework-agnostic and reusable.
 
 ## Target Package Shape
 
-```plain text
+```text
 packages/domain-identity/
   src/
     index.ts
