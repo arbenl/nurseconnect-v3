@@ -12,6 +12,7 @@
     "test:api": "vitest -c vitest.config.node.ts run",
     "test:e2e": "playwright test",
     "test:e2e:api": "playwright test --project=api",
+    "test:e2e:launch-rehearsal": "playwright test tests/e2e-api/launch-rehearsal.api.e2e.ts --project=api",
     "test:e2e:ui": "playwright test --project=ui",
     "test:e2e:ui-smoke": "playwright test tests/e2e-ui/smoke.spec.ts"
   },
