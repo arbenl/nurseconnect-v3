@@ -12,6 +12,7 @@ const queueItems: AdminActiveRequestQueueItem[] = [
     status: "open",
     requestType: "same_day",
     referralSource: "consumer",
+    partnerLabel: null,
     careType: null,
     severityScore: 91,
     severityBand: "critical",
@@ -26,6 +27,7 @@ const queueItems: AdminActiveRequestQueueItem[] = [
     status: "assigned",
     requestType: "same_day",
     referralSource: "consumer",
+    partnerLabel: null,
     careType: "Home Care",
     severityScore: 72,
     severityBand: "high",
@@ -40,6 +42,7 @@ const queueItems: AdminActiveRequestQueueItem[] = [
     status: "assigned",
     requestType: "scheduled",
     referralSource: "partner",
+    partnerLabel: "City Clinic",
     careType: null,
     severityScore: 51,
     severityBand: "medium",
@@ -54,6 +57,7 @@ const queueItems: AdminActiveRequestQueueItem[] = [
     status: "open",
     requestType: "same_day",
     referralSource: "consumer",
+    partnerLabel: null,
     careType: null,
     severityScore: 40,
     severityBand: "medium",
@@ -68,6 +72,7 @@ const queueItems: AdminActiveRequestQueueItem[] = [
     status: "accepted",
     requestType: "same_day",
     referralSource: "consumer",
+    partnerLabel: null,
     careType: null,
     severityScore: 39,
     severityBand: "medium",
@@ -82,6 +87,7 @@ const queueItems: AdminActiveRequestQueueItem[] = [
     status: "enroute",
     requestType: "same_day",
     referralSource: "consumer",
+    partnerLabel: null,
     careType: null,
     severityScore: 20,
     severityBand: "low",
@@ -167,6 +173,7 @@ describe("summarizeOpsDashboard", () => {
       "44444444-4444-4444-4444-444444444444",
       "55555555-5555-5555-5555-555555555555",
     ]);
+    expect(summary.recentHotRequests[2]?.partnerLabel).toBe("City Clinic");
     expect(summary.recentActivity).toEqual(recentActivity);
     expect(summary.pendingCredentialItems).toHaveLength(1);
   });

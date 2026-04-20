@@ -23,6 +23,7 @@ export async function resetDb() {
             "service_request_events",
             "admin_audit_logs",
             "service_requests",
+            "referral_partners",
             "nurse_locations",
             "nurses",
             "users",
@@ -51,7 +52,7 @@ export async function resetDb() {
  */
 export async function seedUser(params: {
     email: string;
-    role: "patient" | "nurse" | "admin";
+    role: "patient" | "nurse" | "admin" | "referral_partner";
     displayName?: string;
 }) {
     const client = getDbClient();
@@ -138,6 +139,28 @@ export async function seedNurseLocation(params: {
             `INSERT INTO nurse_locations (nurse_user_id, lat, lng) 
        VALUES ($1, $2, $3)`,
             [params.nurseUserId, params.lat, params.lng]
+        );
+    } finally {
+        await client.end();
+    }
+}
+
+/**
+ * Seed a referral partner profile.
+ */
+export async function seedReferralPartnerProfile(params: {
+    userId: string;
+    organizationName: string;
+    status?: "active" | "inactive";
+}) {
+    const client = getDbClient();
+    await client.connect();
+
+    try {
+        await client.query(
+            `INSERT INTO referral_partners (user_id, organization_name, status, created_at, updated_at)
+             VALUES ($1, $2, $3, NOW(), NOW())`,
+            [params.userId, params.organizationName, params.status ?? "active"]
         );
     } finally {
         await client.end();

@@ -8,3 +8,4 @@ export * from "./patients";
 export * from "./assignments";
 export * from "./visits";
 export * from "./auth";
+export * from "./referral-partners";

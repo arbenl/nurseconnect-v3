@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-type Role = "patient" | "nurse" | "admin";
+type Role = "patient" | "nurse" | "admin" | "referral_partner";
 type Profile = { id: string; displayName?: string; role?: Role };
 
 export default function ProfilePage() {

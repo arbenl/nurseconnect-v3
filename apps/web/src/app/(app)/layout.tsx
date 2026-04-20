@@ -15,7 +15,12 @@ export default async function DashboardLayout({
     currentPath: "/dashboard",
   });
 
-  const shellRole = user.role === "nurse" ? "nurse" : "patient";
+  const shellRole =
+    user.role === "nurse"
+      ? "nurse"
+      : user.role === "referral_partner"
+        ? "partner"
+        : "patient";
   const shell = getAppShellConfig(shellRole);
 
   return (

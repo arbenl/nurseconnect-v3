@@ -12,7 +12,7 @@ export type MeResponse =
             authId: string;
             email: string | null;
             name: string | null;
-            role: "admin" | "nurse" | "patient";
+            role: "admin" | "nurse" | "patient" | "referral_partner";
             profile: {
                 firstName: string | null;
                 lastName: string | null;

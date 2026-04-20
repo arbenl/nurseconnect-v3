@@ -83,4 +83,14 @@ describe("buildMeUserProjection", () => {
       isUserPortalProfileComplete(user, nurse),
     );
   });
+
+  it("treats referral partners like non-nurse actors for profile completeness", () => {
+    const user = userFixture("referral_partner");
+
+    const result = buildMeUserProjection(user, null);
+
+    expect(result.role).toBe("referral_partner");
+    expect(result.profileComplete).toBe(true);
+    expect(result.nurseProfile).toBeNull();
+  });
 });

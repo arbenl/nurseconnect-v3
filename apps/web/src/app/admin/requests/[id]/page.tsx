@@ -69,7 +69,7 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
     events = await getVisitTimelineForActor(db, {
       requestId: request.id,
       actorUserId: user.id,
-      actorRole: user.role,
+      actorRole: "admin",
     });
   } catch (error) {
     if (error instanceof VisitNotFoundError) {

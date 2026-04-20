@@ -22,6 +22,15 @@ export default async function AdminUsersPage({
     limit: 50,
     orderBy: (users, { desc }) => [desc(users.createdAt)],
   });
+  const partnerProfiles = await db.query.referralPartners.findMany();
+  const partnerProfilesByUserId = new Map(
+    partnerProfiles.map((profile) => [profile.userId, profile] as const),
+  );
+
+  const userRows = data.map((user) => ({
+    ...user,
+    referralPartnerProfile: partnerProfilesByUserId.get(user.id) ?? null,
+  }));
 
   return (
     <div>
@@ -47,7 +56,7 @@ export default async function AdminUsersPage({
         </button>
       </form>
 
-      <UserTable users={data} />
+      <UserTable users={userRows} />
     </div>
   );
 }

@@ -46,7 +46,7 @@ export function resolvePortalAccessPolicy(options: {
     return redirectResolution(canonicalRoute);
   }
 
-  if (options.portal === "app" && canonicalRoute === "/admin") {
+  if (options.portal === "app" && canonicalRoute !== "/dashboard") {
     return redirectResolution(canonicalRoute);
   }
 
