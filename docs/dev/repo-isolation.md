@@ -8,6 +8,7 @@ NurseConnect and Interdomestik must run as separate systems. Do not share MCP se
 - Default web dev port: `3010`
 - Local app URL: `http://localhost:3010`
 - Repo MCP config: `.codex/config.toml`
+- Repo-owned QA MCP server: `nurseconnect_qa`
 - Playwright MCP profile: `/Users/arbenlila/development/nurseconnect-v3/.codex/playwright-profile`
 - Playwright MCP output: `/Users/arbenlila/development/nurseconnect-v3/.codex/playwright-output`
 - Evidence root: `/tmp/nurseconnect-evidence`
@@ -16,6 +17,7 @@ NurseConnect and Interdomestik must run as separate systems. Do not share MCP se
 
 - Do not configure NurseConnect by editing `~/.codex/config.toml`.
 - Do not use Interdomestik MCP servers such as `interdomestik_qa` from this repo.
+- Use `nurseconnect_qa` for NurseConnect QA commands when a repo-scoped QA MCP server is available.
 - Do not run NurseConnect on port `3000`; that port belongs to Interdomestik local development.
 - Keep repository-specific paths absolute where MCP tools require persistent state.
 
