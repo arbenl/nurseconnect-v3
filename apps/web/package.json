@@ -24,6 +24,7 @@
     "@nurseconnect/domain-dispatch": "workspace:*",
     "@nurseconnect/domain-identity": "workspace:*",
     "@nurseconnect/domain-nurse": "workspace:*",
+    "@nurseconnect/domain-payments": "workspace:*",
     "@nurseconnect/domain-referral": "workspace:*",
     "@nurseconnect/domain-request": "workspace:*",
     "@nurseconnect/domain-visit": "workspace:*",
