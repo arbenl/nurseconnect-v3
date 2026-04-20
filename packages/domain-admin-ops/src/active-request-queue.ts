@@ -19,6 +19,7 @@ type ActiveQueueDbRow = {
   status: string;
   requestType: "scheduled" | "same_day";
   referralSource: "consumer" | "partner";
+  partnerLabel: string | null;
   careType: string | null;
   assignedNurseUserId: string | null;
   createdAt: Date | string;
@@ -61,6 +62,7 @@ export async function getAdminActiveRequestQueue(
       sr.status::text AS status,
       sr.request_type AS "requestType",
       sr.referral_source AS "referralSource",
+      rp.organization_name AS "partnerLabel",
       sr.care_type AS "careType",
       sr.assigned_nurse_user_id AS "assignedNurseUserId",
       sr.created_at AS "createdAt",
@@ -69,6 +71,7 @@ export async function getAdminActiveRequestQueue(
       sr.lng::text AS lng
     FROM service_requests sr
     LEFT JOIN service_request_events sre ON sre.request_id = sr.id
+    LEFT JOIN referral_partners rp ON rp.user_id = sr.referral_partner_id
     WHERE sr.status::text IN (
       ${sql.join(ACTIVE_REQUEST_STATUSES.map((status) => sql`${status}`), sql`, `)}
     )
@@ -77,6 +80,7 @@ export async function getAdminActiveRequestQueue(
       sr.status,
       sr.request_type,
       sr.referral_source,
+      rp.organization_name,
       sr.care_type,
       sr.assigned_nurse_user_id,
       sr.created_at,
@@ -94,6 +98,7 @@ export async function getAdminActiveRequestQueue(
           status: parsedStatus,
           requestType: row.requestType,
           referralSource: row.referralSource,
+          partnerLabel: row.partnerLabel,
           careType: row.careType,
           assignedNurseUserId: row.assignedNurseUserId,
           createdAt: toIsoString(row.createdAt),

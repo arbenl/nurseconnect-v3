@@ -10,7 +10,12 @@ describe("users.role Enum Hardening", () => {
     });
 
     it("should successfully insert a user with valid enum roles", async () => {
-        const roles: ("patient" | "nurse" | "admin")[] = ["patient", "nurse", "admin"];
+        const roles: ("patient" | "nurse" | "admin" | "referral_partner")[] = [
+            "patient",
+            "nurse",
+            "admin",
+            "referral_partner",
+        ];
 
         for (const validRole of roles) {
             const [inserted] = await db

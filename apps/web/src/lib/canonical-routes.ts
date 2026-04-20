@@ -6,6 +6,7 @@ const ROLE_TO_PATH: Record<Role, string> = {
   patient: "/dashboard",
   nurse: "/dashboard",
   admin: "/admin",
+  referral_partner: "/partner",
 };
 
 export function getCanonicalRouteForRole(role: KnownRole | string): string | null {

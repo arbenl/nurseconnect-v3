@@ -51,6 +51,7 @@ export type RawActiveRequestRow = {
   status: ActiveRequestStatus;
   requestType: "scheduled" | "same_day";
   referralSource: "consumer" | "partner";
+  partnerLabel: string | null;
   careType: string | null;
   assignedNurseUserId: string | null;
   createdAt: string;
@@ -122,6 +123,7 @@ export function buildActiveQueueItem(
     status: row.status,
     requestType: row.requestType,
     referralSource: row.referralSource,
+    partnerLabel: row.partnerLabel,
     careType: row.careType,
     severityScore: normalizedScore,
     severityBand: mapSeverityBand(normalizedScore, policy),

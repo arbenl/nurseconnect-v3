@@ -164,6 +164,9 @@ export default async function AdminDashboardPage() {
                     <Badge variant="outline" className="capitalize">
                       {item.referralSource}
                     </Badge>
+                    {item.partnerLabel ? (
+                      <Badge variant="outline">{item.partnerLabel}</Badge>
+                    ) : null}
                   </div>
                   <p className="mt-2 text-sm text-slate-600">
                     Wait {item.waitMinutes} min • {item.assignedNurse} • {item.locationHint}

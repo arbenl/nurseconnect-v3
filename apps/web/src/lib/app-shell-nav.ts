@@ -1,4 +1,4 @@
-export type AppShellRole = "patient" | "nurse";
+export type AppShellRole = "patient" | "nurse" | "partner";
 
 type AppShellNavItem = {
   href: string;
@@ -21,6 +21,11 @@ const APP_SHELL_CONFIG: Record<AppShellRole, AppShellConfig> = {
     portalLabel: "Nurse Portal",
     summary: "Manage availability and respond to assignments.",
     navItems: [{ href: "/dashboard", label: "Dashboard" }],
+  },
+  partner: {
+    portalLabel: "Partner Portal",
+    summary: "Submit referrals and track your own request outcomes.",
+    navItems: [{ href: "/partner", label: "Dashboard" }],
   },
 };
 

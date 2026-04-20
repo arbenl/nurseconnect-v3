@@ -9,7 +9,7 @@ export async function createTestUser(
     request: APIRequestContext,
     email: string,
     name: string = "Test User",
-    role: "patient" | "nurse" | "admin" = "patient"
+    role: "patient" | "nurse" | "admin" | "referral_partner" = "patient"
 ) {
     // 1. Sign Up (creates user + session)
     const signUpResponse = await request.post("/api/auth/sign-up/email", {

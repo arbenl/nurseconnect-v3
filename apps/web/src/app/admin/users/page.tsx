@@ -1,10 +1,10 @@
-import { db, schema, ilike, or } from "@nurseconnect/database";
+import { db, schema, ilike, inArray, or } from "@nurseconnect/database";
 
 import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 import UserTable from "./user-table"; // Client Component
 
-const { users } = schema;
+const { referralPartners, users } = schema;
 
 export default async function AdminUsersPage({
   searchParams,
@@ -22,6 +22,20 @@ export default async function AdminUsersPage({
     limit: 50,
     orderBy: (users, { desc }) => [desc(users.createdAt)],
   });
+  const userIds = data.map((user) => user.id);
+  const partnerProfiles = userIds.length
+    ? await db.query.referralPartners.findMany({
+        where: inArray(referralPartners.userId, userIds),
+      })
+    : [];
+  const partnerProfilesByUserId = new Map(
+    partnerProfiles.map((profile) => [profile.userId, profile] as const),
+  );
+
+  const userRows = data.map((user) => ({
+    ...user,
+    referralPartnerProfile: partnerProfilesByUserId.get(user.id) ?? null,
+  }));
 
   return (
     <div>
@@ -47,7 +61,7 @@ export default async function AdminUsersPage({
         </button>
       </form>
 
-      <UserTable users={data} />
+      <UserTable users={userRows} />
     </div>
   );
 }

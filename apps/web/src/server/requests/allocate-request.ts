@@ -13,6 +13,7 @@ export type CreateRequestInput = Omit<
     ContractCreateRequestInput,
     "requestType" | "referralSource" | "careType"
 > & {
+    actorUserId?: string;
     patientUserId: string;
     requestType?: ContractCreateRequestInput["requestType"];
     referralSource?: ContractCreateRequestInput["referralSource"];
@@ -25,6 +26,7 @@ export type CreateRequestInput = Omit<
  */
 export async function createAndAssignRequest(input: CreateRequestInput) {
     const { patientUserId, address, lat, lng } = input;
+    const actorUserId = input.actorUserId ?? patientUserId;
     const requestType = input.requestType ?? "same_day";
     const referralSource = input.referralSource ?? "consumer";
 
@@ -58,7 +60,7 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
         await appendRequestEvent(tx, {
             requestId: req.id,
             type: "request_created",
-            actorUserId: patientUserId,
+            actorUserId,
             fromStatus: null,
             toStatus: "open",
             meta: null,

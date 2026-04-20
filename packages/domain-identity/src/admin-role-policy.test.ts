@@ -62,6 +62,31 @@ describe("planUserRoleChange", () => {
     ]);
   });
 
+  it("allows promoting a user into the referral partner role", () => {
+    const result = planUserRoleChange({
+      targetUser: userFixture({ role: "patient", email: "partner@test.local" }),
+      nextRole: "referral_partner",
+    });
+
+    if (result.unchanged) {
+      throw new Error("Expected role change to produce a patch");
+    }
+
+    expect(result.patch).toMatchObject({ role: "referral_partner" });
+    expect(result.sideEffects).toEqual([
+      {
+        type: "admin-audit",
+        action: "user.role.changed",
+        targetUserId: "user_1",
+        details: {
+          previousRole: "patient",
+          nextRole: "referral_partner",
+          targetEmail: "partner@test.local",
+        },
+      },
+    ]);
+  });
+
   it("rejects invalid role input", () => {
     expect(() =>
       planUserRoleChange({

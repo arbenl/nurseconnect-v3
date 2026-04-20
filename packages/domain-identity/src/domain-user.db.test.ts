@@ -85,6 +85,62 @@ describe("maybeBootstrapFirstAdmin", () => {
     expect(dbUser?.role).toBe("admin");
   });
 
+  it("claims an unauthenticated patient shell by email instead of creating a duplicate", async () => {
+    const [shell] = await db
+      .insert(users)
+      .values({
+        email: "shell-patient@test.local",
+        role: "patient",
+        firstName: "Shell",
+        lastName: "Patient",
+      })
+      .returning();
+
+    const domainUser = assertDefined(
+      await ensureDomainUserFromSession({
+        id: "auth_shell_patient_1",
+        email: "SHELL-PATIENT@test.local",
+        name: "Shell Patient",
+      }),
+      "Expected domain user to be created",
+    );
+
+    expect(domainUser.id).toBe(shell?.id);
+    expect(domainUser.authId).toBe("auth_shell_patient_1");
+    expect(domainUser.role).toBe("patient");
+    expect(domainUser.email).toBe("shell-patient@test.local");
+
+    const rows = await db.select().from(users).where(eq(users.email, "shell-patient@test.local"));
+    expect(rows).toHaveLength(1);
+  });
+
+  it("claims an unauthenticated referral partner invite by email without changing role", async () => {
+    const [invite] = await db
+      .insert(users)
+      .values({
+        email: "invited-partner@test.local",
+        role: "referral_partner",
+        name: "Invited Partner",
+      })
+      .returning();
+
+    const domainUser = assertDefined(
+      await ensureDomainUserFromSession({
+        id: "auth_invited_partner_1",
+        email: "invited-partner@test.local",
+        name: "Signed Partner",
+      }),
+      "Expected domain user to be created",
+    );
+
+    expect(domainUser.id).toBe(invite?.id);
+    expect(domainUser.authId).toBe("auth_invited_partner_1");
+    expect(domainUser.role).toBe("referral_partner");
+
+    const rows = await db.select().from(users).where(eq(users.email, "invited-partner@test.local"));
+    expect(rows).toHaveLength(1);
+  });
+
   it("leaves an already-admin user unchanged", async () => {
     delete process.env.FIRST_ADMIN_EMAILS;
 

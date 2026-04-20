@@ -267,6 +267,11 @@ export default async function AdminRequestsPage({ searchParams }: PageProps) {
                       <Badge variant="outline" className="capitalize">
                         {item.referralSource}
                       </Badge>
+                      {item.partnerLabel ? (
+                        <Badge variant="outline">
+                          {item.partnerLabel}
+                        </Badge>
+                      ) : null}
                       {item.careType ? (
                         <Badge variant="outline" className="capitalize">
                           {item.careType}

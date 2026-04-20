@@ -8,7 +8,7 @@ vi.mock("./get-session", () => ({
   getSession: mockGetSession,
 }));
 
-const { users } = schema;
+const { referralPartners, users } = schema;
 
 describe("requireRole", () => {
   let originalFirstAdminEmails: string | undefined;
@@ -56,5 +56,61 @@ describe("requireRole", () => {
     const { requireRole } = await import("./require-role");
 
     await expect(requireRole("admin")).rejects.toBeInstanceOf(UnauthorizedError);
+  });
+
+  it("authorizes a referral partner actor when the required role matches", async () => {
+    const [partner] = await db
+      .insert(users)
+      .values({
+        email: "partner@test.local",
+        authId: "auth_partner_1",
+        role: "referral_partner",
+      })
+      .returning();
+
+    mockGetSession.mockResolvedValue({
+      user: {
+        id: "auth_partner_1",
+        email: "partner@test.local",
+        name: "Partner User",
+      },
+    });
+
+    const { requireRole } = await import("./require-role");
+    const result = await requireRole("referral_partner");
+
+    if (!partner) {
+      throw new Error("Expected inserted referral partner user");
+    }
+    expect(result.user.id).toBe(partner.id);
+    expect(result.user.role).toBe("referral_partner");
+  });
+
+  it("enforces one referral-partner profile row per user", async () => {
+    const [partner] = await db
+      .insert(users)
+      .values({
+        email: "partner-profile@test.local",
+        authId: "auth_partner_profile_1",
+        role: "referral_partner",
+      })
+      .returning();
+
+    if (!partner) {
+      throw new Error("Expected inserted referral partner user");
+    }
+    await db.insert(referralPartners).values({
+      userId: partner.id,
+      organizationName: "City Clinic",
+      status: "active",
+    });
+
+    await expect(
+      db.insert(referralPartners).values({
+        userId: partner.id,
+        organizationName: "City Clinic Duplicate",
+        status: "inactive",
+      }),
+    ).rejects.toThrow();
   });
 });

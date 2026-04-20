@@ -6,10 +6,11 @@ import { eq } from "drizzle-orm";
 import { DispatchValidationError } from "./errors";
 
 type Transaction = Parameters<Parameters<DbClient["transaction"]>[0]>[0];
+type UserRole = typeof users.$inferSelect.role;
 
 type EligibilityInput = {
   userExists: boolean;
-  role: "patient" | "nurse" | "admin" | null;
+  role: UserRole | null;
   nurseExists: boolean;
   nurseStatus: string | null;
   licenseValidUntil: Date | string | null;

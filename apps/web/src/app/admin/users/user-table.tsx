@@ -3,7 +3,19 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function UserTable({ users }: { users: any[] }) {
+type UserTableRow = {
+  id: string;
+  email: string;
+  name: string | null;
+  createdAt: string | Date | null;
+  role: "admin" | "nurse" | "patient" | "referral_partner";
+  referralPartnerProfile: {
+    organizationName: string;
+    status: "active" | "inactive";
+  } | null;
+};
+
+export default function UserTable({ users }: { users: UserTableRow[] }) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
@@ -20,6 +32,43 @@ export default function UserTable({ users }: { users: any[] }) {
       router.refresh();
     } catch {
       alert("Error updating role");
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
+  async function createPartnerProfile(userId: string) {
+    const organizationName = window.prompt("Organization name");
+    if (!organizationName) return;
+
+    setLoadingId(userId);
+    try {
+      const res = await fetch("/api/admin/referral-partners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, organizationName }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      router.refresh();
+    } catch (_error) {
+      alert("Error creating partner profile");
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
+  async function updatePartnerStatus(userId: string, status: "active" | "inactive") {
+    setLoadingId(userId);
+    try {
+      const res = await fetch(`/api/admin/referral-partners/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      router.refresh();
+    } catch (_error) {
+      alert("Error updating partner profile");
     } finally {
       setLoadingId(null);
     }
@@ -49,8 +98,22 @@ export default function UserTable({ users }: { users: any[] }) {
               </td>
               <td style={{ padding: "12px" }}>
                 <span style={{ 
-                  background: u.role === "admin" ? "#332b00" : u.role === "nurse" ? "#002b33" : "#222",
-                  color: u.role === "admin" ? "#ffc" : u.role === "nurse" ? "#cff" : "#ccc",
+                  background:
+                    u.role === "admin"
+                      ? "#332b00"
+                      : u.role === "nurse"
+                        ? "#002b33"
+                        : u.role === "referral_partner"
+                          ? "#1f1a33"
+                          : "#222",
+                  color:
+                    u.role === "admin"
+                      ? "#ffc"
+                      : u.role === "nurse"
+                        ? "#cff"
+                        : u.role === "referral_partner"
+                          ? "#e7ddff"
+                          : "#ccc",
                   padding: "2px 6px",
                   borderRadius: "4px"
                 }}>
@@ -68,6 +131,15 @@ export default function UserTable({ users }: { users: any[] }) {
                       Promote
                     </button>
                   )}
+                  {u.role !== "referral_partner" && (
+                    <button
+                      onClick={() => updateRole(u.id, "referral_partner")}
+                      disabled={loadingId === u.id}
+                      style={{ padding: "4px 8px", background: "#243", border: "none", borderRadius: "4px", cursor: "pointer", color: "white" }}
+                    >
+                      Make Partner
+                    </button>
+                  )}
                   {u.role === "admin" && (
                      <button 
                       onClick={() => updateRole(u.id, "patient")}
@@ -77,7 +149,39 @@ export default function UserTable({ users }: { users: any[] }) {
                       Demote
                     </button>
                   )}
+                  {u.role === "referral_partner" && !u.referralPartnerProfile && (
+                    <button
+                      onClick={() => createPartnerProfile(u.id)}
+                      disabled={loadingId === u.id}
+                      style={{ padding: "4px 8px", background: "#355", border: "none", borderRadius: "4px", cursor: "pointer", color: "white" }}
+                    >
+                      Create Partner
+                    </button>
+                  )}
+                  {u.role === "referral_partner" && u.referralPartnerProfile?.status === "active" && (
+                    <button
+                      onClick={() => updatePartnerStatus(u.id, "inactive")}
+                      disabled={loadingId === u.id}
+                      style={{ padding: "4px 8px", background: "#633", border: "none", borderRadius: "4px", cursor: "pointer", color: "white" }}
+                    >
+                      Deactivate Partner
+                    </button>
+                  )}
+                  {u.role === "referral_partner" && u.referralPartnerProfile?.status === "inactive" && (
+                    <button
+                      onClick={() => updatePartnerStatus(u.id, "active")}
+                      disabled={loadingId === u.id}
+                      style={{ padding: "4px 8px", background: "#253", border: "none", borderRadius: "4px", cursor: "pointer", color: "white" }}
+                    >
+                      Activate Partner
+                    </button>
+                  )}
                 </div>
+                {u.referralPartnerProfile && (
+                  <div style={{ marginTop: "6px", fontSize: "0.75rem", opacity: 0.7 }}>
+                    {u.referralPartnerProfile.organizationName} · {u.referralPartnerProfile.status}
+                  </div>
+                )}
               </td>
             </tr>
           ))}

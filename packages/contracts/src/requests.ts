@@ -82,6 +82,7 @@ export const AdminActiveRequestQueueItemSchema = z.object({
     status: ActiveRequestStatusInfo,
     requestType: z.enum(["scheduled", "same_day"]),
     referralSource: z.enum(["consumer", "partner"]),
+    partnerLabel: z.string().nullable(),
     careType: z.string().nullable(),
     severityScore: z.number().int().nonnegative(),
     severityBand: RequestSeverityBandInfo,

@@ -5,7 +5,7 @@ import { RoleChangeValidationError } from "./errors";
 type DomainUser = typeof schema.users.$inferSelect;
 type UserRole = DomainUser["role"];
 
-const allowedRoles = ["admin", "nurse", "patient"] as const;
+const allowedRoles = ["admin", "nurse", "patient", "referral_partner"] as const;
 
 export type IdentitySideEffect =
   | {

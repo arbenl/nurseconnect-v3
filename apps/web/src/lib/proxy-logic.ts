@@ -8,6 +8,7 @@ export function proxyLogic(req: NextRequest) {
   const requestId = getRequestId(req.headers);
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-request-id", requestId);
+  requestHeaders.set("x-current-path", pathname + (search || ""));
 
   const hasSessionCookie = !!getSessionCookie(req);
   const isAuthRoute =
@@ -20,8 +21,10 @@ export function proxyLogic(req: NextRequest) {
     !isTestRoute &&
     !isHealthRoute &&
     (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/partner") ||
       pathname.startsWith("/admin") ||
       pathname.startsWith("/api/me") ||
+      pathname.startsWith("/api/partner") ||
       pathname.startsWith("/api/admin") ||
       pathname.startsWith("/api/requests"));
   const isApiRoute = pathname.startsWith("/api/");
