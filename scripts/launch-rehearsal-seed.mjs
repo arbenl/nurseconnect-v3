@@ -8,10 +8,10 @@ import dotenv from "dotenv";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
-const requireFromWeb = createRequire(resolve(repoRoot, "apps/web/package.json"));
-const { Client } = requireFromWeb("pg");
+const requireFromDatabase = createRequire(resolve(repoRoot, "packages/database/package.json"));
+const { Client } = requireFromDatabase("pg");
 
-const DEFAULT_APP_URL = "http://localhost:3000";
+const DEFAULT_APP_URL = "http://localhost:3010";
 const PASSWORD = "password123";
 
 const seedUsers = [
@@ -308,10 +308,14 @@ function printSummary({ appUrl, dbName, serviceArea, users }) {
   console.log(`- Pristina Launch Rehearsal (${serviceArea.id})`);
   console.log("");
   console.log("Users");
-  console.log("Role              Email                         Password");
-  console.log("----------------  ----------------------------  ----------");
+  console.log("Role              Email                         Auth        Password");
+  console.log("----------------  ----------------------------  ----------  ----------");
   for (const user of users) {
-    console.log(`${user.role.padEnd(16)}  ${user.email.padEnd(28)}  ${PASSWORD}`);
+    const authState = user.authCreated ? "created" : "existing";
+    const password = user.authCreated ? PASSWORD : "(unchanged)";
+    console.log(
+      `${user.role.padEnd(16)}  ${user.email.padEnd(28)}  ${authState.padEnd(10)}  ${password}`,
+    );
   }
   console.log("");
   console.log("Next: follow docs/runbooks/launch_readiness_review.md from Manual Launch Rehearsal step 7.");
@@ -344,7 +348,7 @@ async function main() {
         authResult = await signUpViaApp(appUrl, user);
       }
       const domainUser = await ensureDomainUser(client, user, authResult.created);
-      userResults.push({ ...user, ...domainUser });
+      userResults.push({ ...user, ...domainUser, authCreated: authResult.created });
     }
 
     const admin = userResults.find((user) => user.key === "admin");

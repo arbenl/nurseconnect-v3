@@ -15,7 +15,7 @@
 
 ## Verify
 
-8. `GET https://<production-url>/api/health/db` returns `{ ok: true }`.
+8. `GET https://<production-url>/api/health/db` returns `{ ok: true, db: "ok" }`.
 9. Login with the primary admin email.
 10. `GET /api/admin/ping` returns 200 with role `admin`.
 11. Admin -> Service Areas shows at least one active launch area.
