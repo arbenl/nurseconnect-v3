@@ -21,8 +21,18 @@ export const RequestStatusInfo = z.enum([
     "completed",
     "canceled",
     "rejected",
+    "needs_review",
+    "declined",
+    "unfulfilled",
 ]);
 export type RequestStatus = z.infer<typeof RequestStatusInfo>;
+
+export const ExceptionRequestStatusInfo = z.enum([
+    "needs_review",
+    "declined",
+    "unfulfilled",
+]);
+export type ExceptionRequestStatus = z.infer<typeof ExceptionRequestStatusInfo>;
 
 export const ServiceRequestSchema = z.object({
     id: z.string().uuid(),
@@ -43,6 +53,9 @@ export const ServiceRequestSchema = z.object({
     completedAt: z.string().datetime({ offset: true }).nullable(),
     canceledAt: z.string().datetime({ offset: true }).nullable(),
     rejectedAt: z.string().datetime({ offset: true }).nullable(),
+    needsReviewAt: z.string().datetime({ offset: true }).nullable(),
+    declinedAt: z.string().datetime({ offset: true }).nullable(),
+    unfulfilledAt: z.string().datetime({ offset: true }).nullable(),
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
 });
@@ -60,6 +73,46 @@ export const RequestActionResponseSchema = z.object({
     request: ServiceRequestSchema,
 });
 export type RequestActionResponse = z.infer<typeof RequestActionResponseSchema>;
+
+const AdminTriageReasonSchema = z.string().trim().min(3).max(1000);
+
+export const AdminTriageActionSchema = z.enum([
+    "needs_review",
+    "decline",
+    "unfulfilled",
+    "reopen",
+]);
+export type AdminTriageAction = z.infer<typeof AdminTriageActionSchema>;
+
+export const AdminDeclineRequestSchema = z.object({
+    reason: AdminTriageReasonSchema,
+});
+export type AdminDeclineRequestInput = z.infer<typeof AdminDeclineRequestSchema>;
+
+export const AdminUnfulfilledRequestSchema = z.object({
+    reason: AdminTriageReasonSchema,
+});
+export type AdminUnfulfilledRequestInput = z.infer<typeof AdminUnfulfilledRequestSchema>;
+
+export const AdminTriageRequestSchema = z.discriminatedUnion("action", [
+    z.object({
+        action: z.literal("needs_review"),
+        reason: AdminTriageReasonSchema.optional(),
+    }),
+    z.object({
+        action: z.literal("decline"),
+        reason: AdminTriageReasonSchema,
+    }),
+    z.object({
+        action: z.literal("unfulfilled"),
+        reason: AdminTriageReasonSchema,
+    }),
+    z.object({
+        action: z.literal("reopen"),
+        reason: AdminTriageReasonSchema.optional(),
+    }),
+]);
+export type AdminTriageRequestInput = z.infer<typeof AdminTriageRequestSchema>;
 
 export const ActiveRequestStatusInfo = z.enum([
     "open",
@@ -99,3 +152,26 @@ export const AdminActiveRequestQueueResponseSchema = z.object({
     items: z.array(AdminActiveRequestQueueItemSchema),
 });
 export type AdminActiveRequestQueueResponse = z.infer<typeof AdminActiveRequestQueueResponseSchema>;
+
+export const AdminExceptionQueueItemSchema = z.object({
+    requestId: z.string().uuid(),
+    status: ExceptionRequestStatusInfo,
+    reason: z.string().nullable(),
+    waitMinutes: z.number().int().nonnegative(),
+    requestType: z.enum(["scheduled", "same_day"]),
+    referralSource: z.enum(["consumer", "partner"]),
+    partnerLabel: z.string().nullable(),
+    careType: z.string().nullable(),
+    locationHint: z.string().min(1),
+    actorUserId: z.string().uuid().nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+    lastEventAt: z.string().datetime({ offset: true }),
+});
+export type AdminExceptionQueueItem = z.infer<typeof AdminExceptionQueueItemSchema>;
+
+export const AdminExceptionQueueResponseSchema = z.object({
+    generatedAt: z.string().datetime({ offset: true }),
+    items: z.array(AdminExceptionQueueItemSchema),
+});
+export type AdminExceptionQueueResponse = z.infer<typeof AdminExceptionQueueResponseSchema>;

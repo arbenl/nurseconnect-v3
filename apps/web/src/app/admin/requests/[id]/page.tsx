@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
 
 import ReassignPanel from "./reassign-panel";
+import TriageExceptionPanel from "./triage-exception-panel";
 
 const { nurses, serviceRequests, users } = schema;
 
@@ -29,6 +30,19 @@ function actorLabel(actorUserId: string | null) {
     return "system";
   }
   return `actor:${actorUserId.slice(0, 8)}`;
+}
+
+function statusBadgeClassName(status: string) {
+  switch (status) {
+    case "needs_review":
+      return "border-amber-200 bg-amber-50 text-amber-700";
+    case "declined":
+      return "border-red-200 bg-red-50 text-red-700";
+    case "unfulfilled":
+      return "border-orange-200 bg-orange-50 text-orange-700";
+    default:
+      return "";
+  }
 }
 
 export default async function AdminRequestDetailPage({ params }: PageProps) {
@@ -97,8 +111,8 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
           </div>
           <div>
             <strong>Status:</strong>{" "}
-            <Badge variant="outline" className="ml-2 capitalize">
-              {request.status}
+            <Badge variant="outline" className={`ml-2 capitalize ${statusBadgeClassName(request.status)}`}>
+              {request.status.replace("_", " ")}
             </Badge>
           </div>
           <div>
@@ -131,8 +145,11 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
         </div>
       </AdminSectionCard>
 
+      <TriageExceptionPanel requestId={request.id} status={request.status} />
+
       <ReassignPanel
         requestId={request.id}
+        currentStatus={request.status}
         currentAssignedNurseUserId={request.assignedNurseUserId}
         nurseCandidates={nurseCandidates.map((candidate) => ({
           ...candidate,

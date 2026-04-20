@@ -9,6 +9,9 @@ export const serviceRequestStatusEnum = pgEnum("service_request_status", [
     "completed",
     "canceled",
     "rejected",
+    "needs_review",
+    "declined",
+    "unfulfilled",
 ]);
 
 export const serviceRequests = pgTable(
@@ -36,6 +39,9 @@ export const serviceRequests = pgTable(
         completedAt: timestamp("completed_at", { withTimezone: true }),
         canceledAt: timestamp("canceled_at", { withTimezone: true }),
         rejectedAt: timestamp("rejected_at", { withTimezone: true }),
+        needsReviewAt: timestamp("needs_review_at", { withTimezone: true }),
+        declinedAt: timestamp("declined_at", { withTimezone: true }),
+        unfulfilledAt: timestamp("unfulfilled_at", { withTimezone: true }),
 
         createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

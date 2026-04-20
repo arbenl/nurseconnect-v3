@@ -17,6 +17,12 @@ describe("partner request status mapping", () => {
     expect(toPartnerRequestStatus("completed")).toBe("completed");
     expect(toPartnerRequestStatus("canceled")).toBe("could_not_fulfill");
     expect(toPartnerRequestStatus("rejected")).toBe("could_not_fulfill");
+    expect(toPartnerRequestStatus("declined")).toBe("could_not_fulfill");
+    expect(toPartnerRequestStatus("unfulfilled")).toBe("could_not_fulfill");
+  });
+
+  it("keeps requests under admin review in the received partner state", () => {
+    expect(toPartnerRequestStatus("needs_review")).toBe("received");
   });
 
   it("throws for unexpected runtime statuses", () => {

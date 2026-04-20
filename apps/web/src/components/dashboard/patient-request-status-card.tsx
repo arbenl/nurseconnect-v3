@@ -5,30 +5,13 @@ import type { PatientVisitSummary } from "@nurseconnect/contracts";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+import { getStatusCopy } from "./patient-request-copy";
+
 export type PatientServiceRequestSummary = PatientVisitSummary;
 
 type PatientRequestStatusCardProps = {
   request: PatientServiceRequestSummary;
 };
-
-function getStatusCopy(status: string) {
-  switch (status) {
-    case "assigned":
-      return "Assigned to a nurse";
-    case "accepted":
-      return "Nurse accepted the visit";
-    case "enroute":
-      return "Nurse is on the way";
-    case "completed":
-      return "Visit completed";
-    case "canceled":
-      return "Request canceled";
-    case "rejected":
-      return "Nurse could not take the visit";
-    default:
-      return "Waiting for assignment";
-  }
-}
 
 export function formatRequestType(requestType: string) {
   return requestType === "scheduled" ? "Scheduled" : "Same day";
@@ -49,7 +32,7 @@ export function PatientRequestStatusCard({ request }: PatientRequestStatusCardPr
       <CardContent className="grid gap-3 text-sm">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={request.status === "completed" ? "secondary" : "default"}>
-            {request.status}
+            {request.status.replace("_", " ")}
           </Badge>
           <Badge variant="outline">{formatRequestType(request.requestType)}</Badge>
         </div>
