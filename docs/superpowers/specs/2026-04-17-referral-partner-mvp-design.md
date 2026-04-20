@@ -315,7 +315,7 @@ Continue to reuse `service_requests`.
 
 Keep using:
 - `referralSource = "partner"`
-- `referralPartnerId = referral_partners.userId` bridge or equivalent actor-owned identity reference
+- `referralPartnerId = users.id` for the authenticated referral partner user; `referral_partners.user_id` remains the bridge to the linked partner profile, not a separate foreign key target
 
 Do not create a separate partner request table.
 

@@ -17,7 +17,7 @@
 - Create: `packages/database/src/schema/referral-partners.ts`
 - Modify: `packages/database/src/schema/index.ts`
 - Modify: `packages/database/src/schema/users.ts`
-- Create: `packages/database/drizzle/0011_*.sql`
+- Create: `packages/database/drizzle/0012_*.sql`
 - Modify: `packages/database/drizzle/meta/_journal.json`
 - Modify: generated snapshot files under `packages/database/drizzle/meta/*`
 - Modify: `apps/web/src/types/role.ts`
@@ -103,7 +103,7 @@
 - Create: `packages/database/src/schema/referral-partners.ts`
 - Modify: `packages/database/src/schema/index.ts`
 - Modify: `packages/database/src/schema/users.ts`
-- Create: `packages/database/drizzle/0011_*.sql`
+- Create: `packages/database/drizzle/0012_*.sql`
 - Modify: `packages/database/drizzle/meta/_journal.json`
 - Modify: generated snapshot files under `packages/database/drizzle/meta/*`
 - Modify: `apps/web/src/types/role.ts`
@@ -143,7 +143,7 @@ Implement:
   - `status`
   - timestamps
 - export the table from `packages/database/src/schema/index.ts`
-- generate and commit the new migration under `packages/database/drizzle/0011_*.sql`
+- generate and commit the new migration under `packages/database/drizzle/0012_*.sql`
 - extend:
   - `apps/web/src/types/role.ts`
   - `apps/web/src/lib/canonical-routes.ts`
@@ -440,7 +440,6 @@ In `packages/domain-referral/src/partner-request-intake.ts`, export something li
 ```ts
 export function buildPartnerRequestInput(input: {
   actorUserId: string;
-  partnerUserId: string;
   partnerStatus: "active" | "inactive";
   request: CreateRequestInput;
 }) {
@@ -449,7 +448,7 @@ export function buildPartnerRequestInput(input: {
   return {
     ...input.request,
     referralSource: "partner" as const,
-    referralPartnerId: input.partnerUserId,
+    referralPartnerId: input.actorUserId,
   };
 }
 ```
