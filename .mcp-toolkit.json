@@ -3,6 +3,9 @@
     "repo": "nurseconnect-v3",
     "root": "/Users/arbenlila/development/nurseconnect-v3",
     "devPort": 3010,
+    "ownedMcpServers": [
+      "nurseconnect_qa"
+    ],
     "forbiddenMcpServers": [
       "interdomestik_qa"
     ]
