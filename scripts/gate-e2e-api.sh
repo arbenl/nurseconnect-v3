@@ -11,4 +11,4 @@ enforce_test_database_url
 
 pnpm db:from-clean
 pnpm --filter @nurseconnect/contracts build
-pnpm --filter web test:e2e:api
+CI=1 pnpm --filter web test:e2e:api
