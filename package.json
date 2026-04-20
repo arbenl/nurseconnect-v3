@@ -51,6 +51,7 @@
     "launch:readiness": "node scripts/launch-readiness-report.mjs",
     "launch:readiness:json": "node scripts/launch-readiness-report.mjs --json",
     "launch:seed": "node scripts/launch-rehearsal-seed.mjs",
+    "launch:rehearsal": "bash scripts/launch-rehearsal.sh",
     "guard:strict": "bash scripts/strict-workflow-guard.sh pre-push",
     "guard:pr-comments": "node scripts/check-pr-bot-comments.mjs",
     "hooks:install": "bash scripts/install-git-hooks.sh",

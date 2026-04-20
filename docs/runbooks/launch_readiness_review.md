@@ -126,6 +126,7 @@ Run these from a clean, synced `main` before launch rehearsal:
 pnpm env:check
 pnpm launch:readiness
 pnpm launch:readiness:json
+pnpm launch:rehearsal
 pnpm gate:release
 ```
 
@@ -136,6 +137,9 @@ Expected result:
   coverage entry points are present.
 - `pnpm launch:readiness:json` returns the same readiness result in structured
   form for CI or PR automation.
+- `pnpm launch:rehearsal` runs readiness plus the automated launch rehearsal
+  API flow for health, admin, service area, patient/nurse lifecycle, payment
+  trace, partner intake, and exception triage.
 - `pnpm gate:release` runs type-check, lint, web build, unit/architecture tests,
   API tests, E2E API gate, and UI smoke gate.
 
@@ -163,22 +167,24 @@ The script refuses non-test/non-rehearsal databases unless
 Use this rehearsal after deployment to the target environment.
 
 1. Confirm `GET /api/health/db` returns `{ ok: true, db: "ok" }`.
-2. Bootstrap the primary admin through `/api/me` using an email in
+2. Run `pnpm launch:rehearsal` against local/test before manual production
+   rehearsal.
+3. Bootstrap the primary admin through `/api/me` using an email in
    `FIRST_ADMIN_EMAILS`.
-3. Confirm `/api/admin/ping` returns the admin role.
-4. Create or verify the launch service area in Admin -> Service Areas.
-5. Create or verify at least one nurse profile with valid credentials.
-6. Mark the nurse verified and available.
-7. Submit a patient request inside the active service area.
-8. Confirm the request is assigned to an eligible nurse inside that service area.
-9. Complete the nurse lifecycle: accept, enroute, complete.
-10. Confirm request timeline, visit projections, payment trace, and payout trace
+4. Confirm `/api/admin/ping` returns the admin role.
+5. Create or verify the launch service area in Admin -> Service Areas.
+6. Create or verify at least one nurse profile with valid credentials.
+7. Mark the nurse verified and available.
+8. Submit a patient request inside the active service area.
+9. Confirm the request is assigned to an eligible nurse inside that service area.
+10. Complete the nurse lifecycle: accept, enroute, complete.
+11. Confirm request timeline, visit projections, payment trace, and payout trace
     are visible to the expected admin/user surfaces.
-11. Submit or simulate a referral partner request and confirm partner-scoped
+12. Submit or simulate a referral partner request and confirm partner-scoped
     visibility.
-12. Exercise one exception flow: needs review, decline or unfulfilled, then
+13. Exercise one exception flow: needs review, decline or unfulfilled, then
     reopen when appropriate.
-13. Confirm anonymous users are redirected away from `/dashboard` and `/admin`.
+14. Confirm anonymous users are redirected away from `/dashboard` and `/admin`.
 
 ## Go/No-Go Checklist
 
@@ -186,6 +192,7 @@ Go only when all items are true:
 
 - [ ] `pnpm gate:release` passes on clean `main`.
 - [ ] `pnpm launch:readiness` passes on clean `main`.
+- [ ] `pnpm launch:rehearsal` passes on clean `main` against local/test.
 - [ ] Accepted exclusions are explicitly reviewed and signed.
 - [ ] Production environment variables are configured.
 - [ ] Production migrations have been applied.
