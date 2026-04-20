@@ -32,6 +32,7 @@ function makeRequestRow(
     scheduledFor: null,
     referralSource: "consumer",
     referralPartnerId: null,
+    serviceAreaId: null,
     careType: null,
     assignedAt: now,
     acceptedAt: null,

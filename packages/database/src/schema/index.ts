@@ -11,3 +11,4 @@ export * from "./auth";
 export * from "./referral-partners";
 export * from "./payment-authorizations";
 export * from "./nurse-payouts";
+export * from "./service-areas";

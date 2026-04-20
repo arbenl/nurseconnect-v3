@@ -10,5 +10,6 @@ export const NurseLocationUpdateResponseSchema = z.object({
   ok: z.literal(true),
   throttled: z.boolean(),
   lastUpdated: z.string().datetime({ offset: true }),
+  serviceAreaId: z.string().uuid().nullable(),
 });
 export type NurseLocationUpdateResponse = z.infer<typeof NurseLocationUpdateResponseSchema>;

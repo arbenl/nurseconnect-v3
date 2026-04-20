@@ -1,4 +1,6 @@
 import { NurseLocationUpdateRequestSchema } from "@nurseconnect/contracts";
+import { db } from "@nurseconnect/database";
+import { findContainingServiceArea, getActiveServiceAreas } from "@nurseconnect/domain-dispatch";
 import { NurseLocationForbiddenError, updateMyNurseLocation } from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -27,11 +29,17 @@ export async function PATCH(request: Request) {
 
     const json = await request.json();
     const body = NurseLocationUpdateRequestSchema.parse(json);
+    const activeServiceAreas = await getActiveServiceAreas(db);
+    const serviceArea = findContainingServiceArea(
+      { lat: body.lat, lng: body.lng },
+      activeServiceAreas,
+    );
 
     const result = await updateMyNurseLocation({
       actorUserId: user.id,
       lat: body.lat,
       lng: body.lng,
+      serviceAreaId: serviceArea?.id ?? null,
     });
 
     const response = NextResponse.json(result, { status: 200 });

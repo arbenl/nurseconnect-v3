@@ -3,6 +3,8 @@ import type { CreateRequestInput as ContractCreateRequestInput } from "@nursecon
 import { db, schema } from "@nurseconnect/database";
 import {
     assignRequestToNurse,
+    findContainingServiceArea,
+    getActiveServiceAreas,
     selectDispatchCandidate,
 } from "@nurseconnect/domain-dispatch";
 import { appendRequestEvent, assertCreateRequestInvariants } from "@nurseconnect/domain-request";
@@ -30,12 +32,20 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
     const requestType = input.requestType ?? "same_day";
     const referralSource = input.referralSource ?? "consumer";
 
-    assertCreateRequestInvariants({
-        requestType,
-        scheduledFor: input.scheduledFor,
-    });
-
     return await db.transaction(async (tx) => {
+        const activeServiceAreas = await getActiveServiceAreas(tx);
+        const serviceArea = findContainingServiceArea({ lat, lng }, activeServiceAreas);
+        const serviceAreaId = serviceArea?.id ?? null;
+
+        assertCreateRequestInvariants({
+            requestType,
+            scheduledFor: input.scheduledFor,
+            serviceAreaId,
+        });
+        if (!serviceAreaId) {
+            throw new Error("Service area invariant failed");
+        }
+
         // 1) create request (open)
         const [req] = await tx
             .insert(serviceRequests)
@@ -49,6 +59,7 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
                 scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
                 referralSource,
                 referralPartnerId: input.referralPartnerId ?? null,
+                serviceAreaId,
                 careType: input.careType ?? null,
             })
             .returning();
@@ -66,7 +77,7 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
             meta: null,
         });
 
-        const chosen = await selectDispatchCandidate(tx, { lat, lng });
+        const chosen = await selectDispatchCandidate(tx, { lat, lng }, serviceAreaId);
         if (!chosen) {
             // leave as open (unassigned)
             return req;

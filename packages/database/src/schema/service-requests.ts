@@ -1,5 +1,6 @@
 import { pgTable, uuid, text, timestamp, numeric, index, pgEnum } from "drizzle-orm/pg-core";
 import { users } from "./users";
+import { serviceAreas } from "./service-areas";
 
 export const serviceRequestStatusEnum = pgEnum("service_request_status", [
     "open",
@@ -32,6 +33,7 @@ export const serviceRequests = pgTable(
         scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
         referralSource: text("referral_source").notNull().default("consumer"),
         referralPartnerId: uuid("referral_partner_id").references(() => users.id),
+        serviceAreaId: uuid("service_area_id").references(() => serviceAreas.id, { onDelete: "set null" }),
         careType: text("care_type"),
         assignedAt: timestamp("assigned_at", { withTimezone: true }),
         acceptedAt: timestamp("accepted_at", { withTimezone: true }),
@@ -50,5 +52,6 @@ export const serviceRequests = pgTable(
         patientIdx: index("service_requests_patient_idx").on(t.patientUserId),
         nurseIdx: index("service_requests_nurse_idx").on(t.assignedNurseUserId),
         statusIdx: index("service_requests_status_idx").on(t.status),
+        serviceAreaIdx: index("service_requests_service_area_id_idx").on(t.serviceAreaId),
     })
 );

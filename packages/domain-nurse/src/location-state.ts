@@ -19,8 +19,9 @@ export async function updateMyNurseLocation(input: {
   actorUserId: string;
   lat: number;
   lng: number;
+  serviceAreaId: string | null;
 }): Promise<NurseLocationUpdateResponse> {
-  const { actorUserId, lat, lng } = input;
+  const { actorUserId, lat, lng, serviceAreaId } = input;
 
   return db.transaction(async (tx) => {
     const [actor] = await tx
@@ -41,13 +42,16 @@ export async function updateMyNurseLocation(input: {
       throw new NurseLocationForbiddenError("Forbidden: Nurse profile is incomplete");
     }
 
-    const upserted = await tx.execute<{ last_updated: Date }>(sql`
-      INSERT INTO nurse_locations (nurse_user_id, lat, lng, last_updated)
-      VALUES (${actorUserId}::uuid, ${String(lat)}::numeric, ${String(lng)}::numeric, NOW())
+    const upserted = await tx.execute<{ last_updated: Date; service_area_id: string | null }>(sql`
+      INSERT INTO nurse_locations (nurse_user_id, lat, lng, service_area_id, last_updated)
+      VALUES (${actorUserId}::uuid, ${String(lat)}::numeric, ${String(lng)}::numeric, ${serviceAreaId}::uuid, NOW())
       ON CONFLICT (nurse_user_id) DO UPDATE
-      SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, last_updated = NOW()
+      SET lat = EXCLUDED.lat,
+        lng = EXCLUDED.lng,
+        service_area_id = EXCLUDED.service_area_id,
+        last_updated = NOW()
       WHERE nurse_locations.last_updated <= NOW() - (${NURSE_LOCATION_THROTTLE_SECONDS} * INTERVAL '1 second')
-      RETURNING last_updated
+      RETURNING last_updated, service_area_id
     `);
 
     if (upserted.rows.length > 0) {
@@ -56,11 +60,15 @@ export async function updateMyNurseLocation(input: {
         ok: true,
         throttled: false,
         lastUpdated: toIsoString(lastUpdated),
+        serviceAreaId: upserted.rows[0]!.service_area_id,
       };
     }
 
     const [current] = await tx
-      .select({ lastUpdated: nurseLocations.lastUpdated })
+      .select({
+        lastUpdated: nurseLocations.lastUpdated,
+        serviceAreaId: nurseLocations.serviceAreaId,
+      })
       .from(nurseLocations)
       .where(eq(nurseLocations.nurseUserId, actorUserId));
 
@@ -72,6 +80,7 @@ export async function updateMyNurseLocation(input: {
       ok: true,
       throttled: true,
       lastUpdated: toIsoString(current.lastUpdated),
+      serviceAreaId: current.serviceAreaId,
     };
   });
 }
