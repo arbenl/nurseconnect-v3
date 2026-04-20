@@ -5,35 +5,14 @@ import { useCallback, useEffect, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+import { describeEvent } from "./patient-request-copy";
+
 type PatientRequestTimelineProps = {
   requestId: string;
   live?: boolean;
 };
 
 const LIVE_POLL_INTERVAL_MS = 3_000;
-
-function describeEvent(type: RequestEvent["type"]) {
-  switch (type) {
-    case "request_created":
-      return "Request created";
-    case "request_assigned":
-      return "Assigned to a nurse";
-    case "request_accepted":
-      return "Accepted by nurse";
-    case "request_rejected":
-      return "Rejected by nurse";
-    case "request_enroute":
-      return "Nurse en route";
-    case "request_completed":
-      return "Visit completed";
-    case "request_canceled":
-      return "Request canceled";
-    case "request_reassigned":
-      return "Reassigned to another nurse";
-    default:
-      return type;
-  }
-}
 
 export function PatientRequestTimeline({ requestId, live = false }: PatientRequestTimelineProps) {
   const [events, setEvents] = useState<RequestEvent[]>([]);

@@ -11,6 +11,10 @@ export const RequestEventTypeSchema = z.enum([
     "request_completed",
     "request_canceled",
     "request_reassigned",
+    "request_needs_review",
+    "request_declined",
+    "request_unfulfilled",
+    "request_reopened",
 ]);
 
 export type RequestEventType = z.infer<typeof RequestEventTypeSchema>;

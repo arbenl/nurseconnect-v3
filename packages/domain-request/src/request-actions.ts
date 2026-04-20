@@ -9,7 +9,12 @@ import {
   RequestNotFoundError,
 } from "./errors";
 import { appendRequestEvent } from "./request-events";
-import { canTransition, type RequestAction } from "./request-lifecycle";
+import {
+  canAdminTransition,
+  canTransition,
+  type AdminTriageAction,
+  type RequestAction,
+} from "./request-lifecycle";
 
 type Transaction = Parameters<Parameters<DbClient["transaction"]>[0]>[0];
 
@@ -48,6 +53,26 @@ export type ApplyRequestActionResult = {
   sideEffects: RequestSideEffect[];
 };
 
+export type ApplyAdminTriageActionInput = {
+  requestId: string;
+  actorUserId: string;
+  action: AdminTriageAction;
+  reason?: string;
+};
+
+export type ApplyAdminTriageActionResult = {
+  request: typeof serviceRequests.$inferSelect;
+  event: {
+    requestId: string;
+    type: RequestEventType;
+    actorUserId: string;
+    fromStatus: RequestStatus;
+    toStatus: RequestStatus;
+    meta: Record<string, unknown> | null;
+  };
+  sideEffects: RequestSideEffect[];
+};
+
 const nurseActions = new Set<RequestAction>([
   "accept",
   "reject",
@@ -62,6 +87,24 @@ const requestActionEventType: Record<RequestAction, RequestEventType> = {
   complete: "request_completed",
   cancel: "request_canceled",
 };
+
+const adminTriageEventType: Record<AdminTriageAction, RequestEventType> = {
+  needs_review: "request_needs_review",
+  decline: "request_declined",
+  unfulfilled: "request_unfulfilled",
+  reopen: "request_reopened",
+};
+
+function normalizeReason(reason: string | undefined) {
+  const trimmed = reason?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function assertTerminalReason(action: AdminTriageAction, reason: string | undefined) {
+  if ((action === "decline" || action === "unfulfilled") && !normalizeReason(reason)) {
+    throw new RequestConflictError("Reason is required for terminal admin triage actions");
+  }
+}
 
 export async function applyRequestAction(
   tx: Transaction,
@@ -186,6 +229,107 @@ export async function applyRequestAction(
       action === "reject" && input.reason !== undefined
         ? { reason: input.reason }
         : null,
+  };
+
+  await appendRequestEvent(tx, event);
+
+  return {
+    request: updated,
+    event,
+    sideEffects,
+  };
+}
+
+export async function applyAdminTriageAction(
+  tx: Transaction,
+  input: ApplyAdminTriageActionInput,
+): Promise<ApplyAdminTriageActionResult> {
+  const { requestId, actorUserId, action } = input;
+  assertTerminalReason(action, input.reason);
+
+  const lockResult = await tx.execute<LockedRequestRow>(sql`
+      SELECT id,
+             status::text as status,
+             patient_user_id,
+             assigned_nurse_user_id,
+             assigned_at
+      FROM service_requests
+      WHERE id = ${requestId}
+      FOR UPDATE
+    `);
+
+  const locked = lockResult.rows[0];
+  if (!locked) {
+    throw new RequestNotFoundError();
+  }
+
+  let nextStatus: RequestStatus;
+  try {
+    nextStatus = canAdminTransition(locked.status, action);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Invalid request transition";
+    throw new RequestConflictError(message);
+  }
+
+  if (locked.status === nextStatus) {
+    throw new RequestConflictError(`Request is already in status '${nextStatus}'`);
+  }
+
+  const now = new Date();
+  const updateData: Partial<typeof serviceRequests.$inferInsert> = {
+    status: nextStatus,
+    updatedAt: now,
+  };
+  const sideEffects: RequestSideEffect[] = [];
+
+  if (locked.assigned_nurse_user_id && (action === "needs_review" || action === "decline" || action === "unfulfilled")) {
+    updateData.assignedNurseUserId = null;
+    updateData.assignedAt = null;
+    sideEffects.push({
+      type: "set-nurse-availability",
+      userId: locked.assigned_nurse_user_id,
+      isAvailable: true,
+    });
+  }
+
+  switch (action) {
+    case "needs_review":
+      updateData.needsReviewAt = now;
+      break;
+    case "decline":
+      updateData.declinedAt = now;
+      break;
+    case "unfulfilled":
+      updateData.unfulfilledAt = now;
+      break;
+    case "reopen":
+      updateData.assignedNurseUserId = null;
+      updateData.assignedAt = null;
+      updateData.needsReviewAt = null;
+      updateData.declinedAt = null;
+      updateData.unfulfilledAt = null;
+      break;
+  }
+
+  const [updated] = await tx
+    .update(serviceRequests)
+    .set(updateData)
+    .where(eq(serviceRequests.id, requestId))
+    .returning();
+
+  if (!updated) {
+    throw new RequestNotFoundError();
+  }
+
+  const reason = normalizeReason(input.reason);
+  const event = {
+    requestId,
+    type: adminTriageEventType[action],
+    actorUserId,
+    fromStatus: locked.status,
+    toStatus: nextStatus,
+    meta: reason ? { reason } : null,
   };
 
   await appendRequestEvent(tx, event);

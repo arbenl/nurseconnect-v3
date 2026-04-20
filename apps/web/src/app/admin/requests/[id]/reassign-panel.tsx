@@ -1,5 +1,6 @@
 "use client";
 
+import type { RequestStatus } from "@nurseconnect/contracts";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -17,6 +18,7 @@ type NurseCandidate = {
 
 type ReassignPanelProps = {
   requestId: string;
+  currentStatus: RequestStatus;
   currentAssignedNurseUserId: string | null;
   nurseCandidates: NurseCandidate[];
 };
@@ -28,6 +30,7 @@ type FeedbackState = {
 
 export default function ReassignPanel({
   requestId,
+  currentStatus,
   currentAssignedNurseUserId,
   nurseCandidates,
 }: ReassignPanelProps) {
@@ -52,6 +55,7 @@ export default function ReassignPanel({
     () => nurseCandidates.find((candidate) => candidate.userId === selectedNurseUserId) ?? null,
     [nurseCandidates, selectedNurseUserId],
   );
+  const canReassign = currentStatus === "open" || currentStatus === "assigned";
 
   useEffect(() => {
     setIsHydrated(true);
@@ -115,7 +119,7 @@ export default function ReassignPanel({
               ref={selectRef}
               value={selectedNurseUserId}
               onChange={(event) => setSelectedNurseUserId(event.target.value)}
-              disabled={isSubmitting || nurseCandidates.length === 0}
+              disabled={!canReassign || isSubmitting || nurseCandidates.length === 0}
               className="min-h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background"
             >
               {nurseCandidates.length === 0 && <option value="">No nurse candidates</option>}
@@ -133,7 +137,7 @@ export default function ReassignPanel({
               const latestSelected = selectRef.current?.value ?? selectedNurseUserId;
               void submitReassignment(latestSelected || null);
             }}
-            disabled={isSubmitting || nurseCandidates.length === 0 || !selectedNurseUserId}
+            disabled={!canReassign || isSubmitting || nurseCandidates.length === 0 || !selectedNurseUserId}
           >
             Assign Selected Nurse
           </Button>
@@ -141,7 +145,7 @@ export default function ReassignPanel({
           <Button
             type="button"
             onClick={() => void submitReassignment(null)}
-            disabled={isSubmitting}
+            disabled={!canReassign || isSubmitting}
             variant="outline"
           >
             Unassign Request
@@ -183,7 +187,10 @@ export default function ReassignPanel({
                 : "border-dashed border-slate-200 bg-slate-50 text-slate-500",
           ].join(" ")}
         >
-          {feedback?.message ?? "Assignment feedback appears here after triage actions run."}
+          {feedback?.message ??
+            (canReassign
+              ? "Assignment feedback appears here after triage actions run."
+              : "Reopen the request before changing nurse assignment.")}
         </div>
       </AdminSectionCard>
     </div>

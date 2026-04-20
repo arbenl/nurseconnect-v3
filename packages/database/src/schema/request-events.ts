@@ -12,6 +12,10 @@ export const requestEventTypeEnum = pgEnum("service_request_event_type", [
     "request_completed",
     "request_canceled",
     "request_reassigned",
+    "request_needs_review",
+    "request_declined",
+    "request_unfulfilled",
+    "request_reopened",
 ]);
 
 export const requestEvents = pgTable(

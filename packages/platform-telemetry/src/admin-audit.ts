@@ -8,6 +8,10 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type AdminAuditAction =
   | "user.role.changed"
   | "request.reassigned"
+  | "request.needs_review"
+  | "request.declined"
+  | "request.unfulfilled"
+  | "request.reopened"
   | "nurse.availability.overridden"
   | "nurse.credential.verified"
   | "nurse.credential.rejected"

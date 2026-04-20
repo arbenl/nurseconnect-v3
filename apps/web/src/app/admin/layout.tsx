@@ -5,6 +5,7 @@ import { requirePortalAccessOrRedirect } from "@/server/auth";
 const adminNavItems = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/requests", label: "Active Queue" },
+  { href: "/admin/requests/exceptions", label: "Exception Queue" },
   { href: "/admin/nurses", label: "Credential Queue" },
   { href: "/admin/activity", label: "Activity Feed" },
   { href: "/admin/users", label: "Users" },
