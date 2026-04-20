@@ -19,8 +19,22 @@ export function buildPartnerRequestInput(input: {
     throw new ReferralPartnerValidationError("Partner identity mismatch");
   }
 
+  const {
+    address,
+    lat,
+    lng,
+    requestType,
+    scheduledFor,
+    careType,
+  } = input.request;
+
   return {
-    ...input.request,
+    address,
+    lat,
+    lng,
+    requestType,
+    scheduledFor,
+    careType,
     referralSource: "partner",
     referralPartnerId: input.partnerUserId,
   };

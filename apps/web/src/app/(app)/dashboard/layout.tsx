@@ -7,7 +7,6 @@ export default async function DashboardLayout({
 }) {
   await requirePortalAccessOrRedirect({
     portal: "app",
-    currentPath: "/dashboard",
     requireProfileComplete: true,
   });
 

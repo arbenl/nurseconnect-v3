@@ -1,7 +1,7 @@
 import type { DbClient } from "@nurseconnect/database";
 import { and, desc, eq, schema } from "@nurseconnect/database";
 
-import { ReferralPartnerNotFoundError } from "./errors";
+import { ReferralPartnerNotFoundError, ReferralPartnerValidationError } from "./errors";
 import { assertReferralPartnerActive, getReferralPartnerProfileByUserId } from "./partner-profile";
 import { toPartnerRequestStatus, type PartnerRequestStatus } from "./partner-status";
 
@@ -31,7 +31,11 @@ export type PartnerRequestDetail = PartnerRequestListItem & {
 };
 
 function normalizeRequestType(value: string): "scheduled" | "same_day" {
-  return value === "scheduled" ? "scheduled" : "same_day";
+  if (value === "scheduled" || value === "same_day") {
+    return value;
+  }
+
+  throw new ReferralPartnerValidationError(`Unsupported request type: ${value}`);
 }
 
 async function assertActivePartnerActor(db: DbClient, actorUserId: string) {

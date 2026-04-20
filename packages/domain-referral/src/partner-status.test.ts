@@ -18,4 +18,10 @@ describe("partner request status mapping", () => {
     expect(toPartnerRequestStatus("canceled")).toBe("could_not_fulfill");
     expect(toPartnerRequestStatus("rejected")).toBe("could_not_fulfill");
   });
+
+  it("throws for unexpected runtime statuses", () => {
+    expect(() => toPartnerRequestStatus("paused" as never)).toThrow(
+      "Unsupported request status: paused",
+    );
+  });
 });

@@ -28,6 +28,10 @@ function redirectResolution(redirectTo: string): PortalAccessResolution {
   };
 }
 
+function pathMatchesRoute(pathname: string, route: string) {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
 export function resolvePortalAccessPolicy(options: {
   currentPath: string;
   portal: Portal;
@@ -46,7 +50,7 @@ export function resolvePortalAccessPolicy(options: {
     return redirectResolution(canonicalRoute);
   }
 
-  if (options.portal === "app" && canonicalRoute !== "/dashboard") {
+  if (options.portal === "app" && !pathMatchesRoute(options.currentPath, canonicalRoute)) {
     return redirectResolution(canonicalRoute);
   }
 

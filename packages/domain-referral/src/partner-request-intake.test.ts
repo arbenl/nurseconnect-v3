@@ -62,4 +62,28 @@ describe("partner request intake policy", () => {
 
     expect(result.referralPartnerId).toBe("partner-user-1");
   });
+
+  it("drops non-request fields before creating the request input", () => {
+    const requestWithExtraFields = {
+      address: "123 Partner St, Pristina",
+      lat: 42.6629,
+      lng: 21.1655,
+      requestType: "same_day",
+      careType: "wound_care",
+      patient: {
+        email: "patient@test.local",
+      },
+    } as Parameters<typeof buildPartnerRequestInput>[0]["request"] & {
+      patient: { email: string };
+    };
+
+    const result = buildPartnerRequestInput({
+      actorUserId: "partner-user-1",
+      partnerUserId: "partner-user-1",
+      partnerStatus: "active",
+      request: requestWithExtraFields,
+    });
+
+    expect(result).not.toHaveProperty("patient");
+  });
 });

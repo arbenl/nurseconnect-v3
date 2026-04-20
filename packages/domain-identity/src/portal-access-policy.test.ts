@@ -141,4 +141,44 @@ describe("resolvePortalAccessPolicy", () => {
       profileComplete: false,
     });
   });
+
+  it("allows referral partners to use their app portal subtree", () => {
+    const now = new Date();
+
+    expect(
+      resolvePortalAccessPolicy({
+        currentPath: "/partner/requests/request_1",
+        portal: "app",
+        canonicalRoute: "/partner",
+        profileComplete: true,
+        resolved: {
+          session: {
+            user: {
+              id: "auth_partner_2",
+              email: "partner2@test.local",
+            },
+          },
+          user: {
+            id: "user_partner_2",
+            authId: "auth_partner_2",
+            email: "partner2@test.local",
+            role: "referral_partner",
+            name: "Partner User",
+            firstName: "Pat",
+            lastName: "Ner",
+            phone: "123",
+            city: "Berlin",
+            address: null,
+            profileCompletedAt: null,
+            createdAt: now,
+            updatedAt: now,
+          },
+        },
+      }),
+    ).toMatchObject({
+      redirectTo: null,
+      canonicalRoute: "/partner",
+      profileComplete: true,
+    });
+  });
 });

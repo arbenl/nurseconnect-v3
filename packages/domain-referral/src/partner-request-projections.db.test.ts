@@ -1,7 +1,7 @@
 import { db, eq, schema, sql } from "@nurseconnect/database";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { ReferralPartnerNotFoundError } from "./errors";
+import { ReferralPartnerNotFoundError, ReferralPartnerValidationError } from "./errors";
 import {
   getPartnerRequestDetail,
   listPartnerRequests,
@@ -180,5 +180,36 @@ describe.sequential("partner request projections", () => {
     });
     expect(detail).not.toHaveProperty("assignedNurseUserId");
     expect(detail).not.toHaveProperty("referralPartnerId");
+  });
+
+  it("rejects unexpected request type text instead of defaulting it", async () => {
+    const [partner, patient] = await db
+      .insert(users)
+      .values([
+        { email: "partner-invalid-type@test.local", role: "referral_partner" },
+        { email: "patient-invalid-type@test.local", role: "patient" },
+      ])
+      .returning();
+
+    await db.insert(referralPartners).values({
+      userId: partner!.id,
+      organizationName: "City Clinic",
+      status: "active",
+    });
+
+    await db.insert(serviceRequests).values({
+      patientUserId: patient!.id,
+      address: "Partner Invalid Type Street",
+      lat: "42.6629",
+      lng: "21.1655",
+      status: "open",
+      requestType: "overnight",
+      referralSource: "partner",
+      referralPartnerId: partner!.id,
+    });
+
+    await expect(
+      listPartnerRequests(db, { actorUserId: partner!.id }),
+    ).rejects.toThrow(ReferralPartnerValidationError);
   });
 });

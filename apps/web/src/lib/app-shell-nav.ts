@@ -25,10 +25,7 @@ const APP_SHELL_CONFIG: Record<AppShellRole, AppShellConfig> = {
   partner: {
     portalLabel: "Partner Portal",
     summary: "Submit referrals and track your own request outcomes.",
-    navItems: [
-      { href: "/partner", label: "Dashboard" },
-      { href: "/partner", label: "Referrals" },
-    ],
+    navItems: [{ href: "/partner", label: "Dashboard" }],
   },
 };
 

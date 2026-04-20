@@ -31,6 +31,11 @@ export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
     setError(null);
 
     try {
+      const scheduledFor =
+        form.requestType === "scheduled" && form.scheduledFor
+          ? new Date(form.scheduledFor).toISOString()
+          : undefined;
+
       const res = await fetch("/api/partner/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,7 +51,7 @@ export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
           lat: Number(form.lat),
           lng: Number(form.lng),
           requestType: form.requestType,
-          scheduledFor: form.requestType === "scheduled" ? form.scheduledFor : undefined,
+          scheduledFor,
           careType: form.careType || undefined,
         }),
       });

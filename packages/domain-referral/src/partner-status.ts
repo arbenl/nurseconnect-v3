@@ -19,5 +19,7 @@ export function toPartnerRequestStatus(status: RequestStatus): PartnerRequestSta
     case "canceled":
     case "rejected":
       return "could_not_fulfill";
+    default:
+      throw new Error(`Unsupported request status: ${String(status)}`);
   }
 }

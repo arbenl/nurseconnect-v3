@@ -12,7 +12,6 @@ export default async function DashboardLayout({
 }) {
   const { user } = await requirePortalAccessOrRedirect({
     portal: "app",
-    currentPath: "/dashboard",
   });
 
   const shellRole =
