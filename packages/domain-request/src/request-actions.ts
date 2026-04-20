@@ -101,8 +101,17 @@ function normalizeReason(reason: string | undefined) {
 }
 
 function assertTerminalReason(action: AdminTriageAction, reason: string | undefined) {
-  if ((action === "decline" || action === "unfulfilled") && !normalizeReason(reason)) {
+  if (action !== "decline" && action !== "unfulfilled") {
+    return;
+  }
+
+  const normalized = normalizeReason(reason);
+  if (!normalized) {
     throw new RequestConflictError("Reason is required for terminal admin triage actions");
+  }
+
+  if (normalized.length < 3 || normalized.length > 1000) {
+    throw new RequestConflictError("Reason must be between 3 and 1000 characters");
   }
 }
 
@@ -283,7 +292,10 @@ export async function applyAdminTriageAction(
   };
   const sideEffects: RequestSideEffect[] = [];
 
-  if (locked.assigned_nurse_user_id && (action === "needs_review" || action === "decline" || action === "unfulfilled")) {
+  if (
+    locked.assigned_nurse_user_id &&
+    (action === "needs_review" || action === "decline" || action === "unfulfilled")
+  ) {
     updateData.assignedNurseUserId = null;
     updateData.assignedAt = null;
     sideEffects.push({

@@ -25,11 +25,12 @@ export async function POST(
   const context = createApiLogContext(request, "/api/admin/requests/[id]/triage", {
     action: "admin.request.triage",
   });
+  let actorContext = context;
   logApiStart(context, startedAt);
 
   try {
     const { user: actor } = await requireRole("admin");
-    const actorContext = { ...context, actorId: actor.id, actorRole: actor.role };
+    actorContext = { ...context, actorId: actor.id, actorRole: actor.role };
     const { id: requestId } = await params;
     const parsed = AdminTriageRequestSchema.parse(await request.json());
 
@@ -50,7 +51,7 @@ export async function POST(
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       const response = NextResponse.json({ error: "Invalid payload", issues: error.issues }, { status: 400 });
-      logApiFailure(context, error, 400, startedAt, {
+      logApiFailure(actorContext, error, 400, startedAt, {
         source: "admin.request.triage",
       });
       return withRequestId(response, context.requestId);
@@ -58,7 +59,7 @@ export async function POST(
 
     if (error instanceof RequestForbiddenError) {
       const response = NextResponse.json({ error: error.message }, { status: 403 });
-      logApiFailure(context, error, 403, startedAt, {
+      logApiFailure(actorContext, error, 403, startedAt, {
         source: "admin.request.triage",
       });
       return withRequestId(response, context.requestId);
@@ -66,7 +67,7 @@ export async function POST(
 
     if (error instanceof RequestNotFoundError) {
       const response = NextResponse.json({ error: error.message }, { status: 404 });
-      logApiFailure(context, error, 404, startedAt, {
+      logApiFailure(actorContext, error, 404, startedAt, {
         source: "admin.request.triage",
       });
       return withRequestId(response, context.requestId);
@@ -74,7 +75,7 @@ export async function POST(
 
     if (error instanceof RequestConflictError) {
       const response = NextResponse.json({ error: error.message }, { status: 409 });
-      logApiFailure(context, error, 409, startedAt, {
+      logApiFailure(actorContext, error, 409, startedAt, {
         source: "admin.request.triage",
       });
       return withRequestId(response, context.requestId);
@@ -83,20 +84,20 @@ export async function POST(
     const err = error as { name?: string; message?: string };
     if (err.name === "UnauthorizedError") {
       const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      logApiFailure(context, "Unauthorized", 401, startedAt, {
+      logApiFailure(actorContext, "Unauthorized", 401, startedAt, {
         source: "admin.request.triage",
       });
       return withRequestId(response, context.requestId);
     }
     if (err.name === "ForbiddenError") {
       const response = NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      logApiFailure(context, "Forbidden", 403, startedAt, {
+      logApiFailure(actorContext, "Forbidden", 403, startedAt, {
         source: "admin.request.triage",
       });
       return withRequestId(response, context.requestId);
     }
 
-    logApiFailure(context, error, 500, startedAt, {
+    logApiFailure(actorContext, error, 500, startedAt, {
       source: "admin.request.triage",
     });
     return withRequestId(NextResponse.json({ error: "Internal Server Error" }, { status: 500 }), context.requestId);

@@ -151,6 +151,21 @@ describe("applyAdminTriageAction", () => {
     expect(appendRequestEvent).not.toHaveBeenCalled();
   });
 
+  it("enforces terminal reason length in the domain layer", async () => {
+    const tx = makeTx(makeRequestRow(), makeRequestRow({ status: "open", assignedNurseUserId: null }));
+
+    await expect(
+      applyAdminTriageAction(tx as unknown as Parameters<typeof applyAdminTriageAction>[0], {
+        requestId: "request-1",
+        actorUserId: "admin-1",
+        action: "decline",
+        reason: "no",
+      }),
+    ).rejects.toThrow("Reason must be between 3 and 1000 characters");
+
+    expect(appendRequestEvent).not.toHaveBeenCalled();
+  });
+
   it("unassigns and frees a nurse when an admin pulls an assigned request into review", async () => {
     const updatedRequest = makeRequestRow({
       status: "needs_review",
@@ -215,6 +230,39 @@ describe("applyAdminTriageAction", () => {
       fromStatus: "assigned",
       toStatus: "declined",
       meta: { reason: "Outside clinical scope" },
+    });
+  });
+
+  it("unassigns and frees a nurse when an admin marks an assigned request unfulfilled", async () => {
+    const updatedRequest = makeRequestRow({
+      status: "unfulfilled",
+      assignedNurseUserId: null,
+      unfulfilledAt: new Date("2026-04-16T00:05:00.000Z"),
+    });
+    const tx = makeTx(updatedRequest, makeRequestRow({ status: "assigned", assignedNurseUserId: "nurse-1" }));
+
+    const result = await applyAdminTriageAction(
+      tx as unknown as Parameters<typeof applyAdminTriageAction>[0],
+      {
+        requestId: "request-1",
+        actorUserId: "admin-1",
+        action: "unfulfilled",
+        reason: "No nurse capacity",
+      },
+    );
+
+    expect(result.sideEffects).toEqual<RequestSideEffect[]>([
+      {
+        type: "set-nurse-availability",
+        userId: "nurse-1",
+        isAvailable: true,
+      },
+    ]);
+    expect(result.event).toMatchObject({
+      type: "request_unfulfilled",
+      fromStatus: "assigned",
+      toStatus: "unfulfilled",
+      meta: { reason: "No nurse capacity" },
     });
   });
 

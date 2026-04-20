@@ -16,6 +16,11 @@ const adminTriageAuditAction: Record<AdminTriageAction, AdminAuditAction> = {
   reopen: "request.reopened",
 };
 
+function normalizeReason(reason: string | undefined) {
+  const trimmed = reason?.trim();
+  return trimmed ? trimmed : null;
+}
+
 export async function applyAdminTriageAction(input: ApplyAdminTriageActionInput) {
   return db.transaction(async (tx) => {
     const result = await applyAdminTriageActionInDomain(tx, input);
@@ -41,7 +46,7 @@ export async function applyAdminTriageAction(input: ApplyAdminTriageActionInput)
         details: {
           requestId: input.requestId,
           action: input.action,
-          reason: input.reason?.trim() ?? null,
+          reason: normalizeReason(input.reason),
           previousStatus: result.event.fromStatus as RequestStatus,
           nextStatus: result.event.toStatus as RequestStatus,
         },

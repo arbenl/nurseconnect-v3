@@ -44,6 +44,7 @@ const adminTransitionMap: Record<AdminTriageAction, Partial<Record<RequestStatus
   },
   unfulfilled: {
     open: "unfulfilled",
+    assigned: "unfulfilled",
     needs_review: "unfulfilled",
   },
   reopen: {

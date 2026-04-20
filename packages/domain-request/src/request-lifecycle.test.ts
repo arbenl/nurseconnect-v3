@@ -22,6 +22,7 @@ describe("canAdminTransition", () => {
     expect(canAdminTransition("needs_review", "decline")).toBe("declined");
     expect(canAdminTransition("assigned", "decline")).toBe("declined");
     expect(canAdminTransition("open", "unfulfilled")).toBe("unfulfilled");
+    expect(canAdminTransition("assigned", "unfulfilled")).toBe("unfulfilled");
     expect(() => canAdminTransition("completed", "decline")).toThrow("Invalid admin transition");
   });
 
