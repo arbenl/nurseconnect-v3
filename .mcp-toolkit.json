@@ -1,0 +1,43 @@
+{
+  "identity": {
+    "repo": "nurseconnect-v3",
+    "root": "/Users/arbenlila/development/nurseconnect-v3",
+    "devPort": 3010,
+    "forbiddenMcpServers": [
+      "interdomestik_qa"
+    ]
+  },
+  "repoContext": {
+    "allowList": [
+      "apps/**",
+      "packages/**",
+      "scripts/**",
+      "docs/**"
+    ],
+    "ignore": [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/dist/**",
+      "**/.turbo/**",
+      "artifacts/**"
+    ]
+  },
+  "qa": {
+    "defaultCwd": ".",
+    "commands": {
+      "build_health": "pnpm -w type-check && pnpm lint && pnpm --filter web build",
+      "unit": "pnpm test:web && pnpm test:contracts",
+      "api": "pnpm test:api",
+      "e2e": "pnpm --filter web test:e2e",
+      "smoke": "pnpm --filter web test:e2e:ui-smoke",
+      "navigation_audit": "pnpm --filter web test:e2e:ui-smoke",
+      "release": "pnpm gate:release"
+    }
+  },
+  "e2e": {
+    "baseUrl": "http://localhost:3010",
+    "artifactRoot": "artifacts/playwright",
+    "mcpProfile": "/Users/arbenlila/development/nurseconnect-v3/.codex/playwright-profile",
+    "mcpOutput": "/Users/arbenlila/development/nurseconnect-v3/.codex/playwright-output"
+  }
+}
