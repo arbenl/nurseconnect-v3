@@ -2,21 +2,16 @@
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve, relative } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(process.env.MCP_REPO_ROOT || resolve(__dirname, "../.."));
-const sdkRoot =
-  process.env.MCP_SDK_ROOT ||
-  "/Users/arbenlila/development/mcp-toolkit/servers/repo-qa-server/node_modules/@modelcontextprotocol/sdk";
-
-const [{ Server }, { StdioServerTransport }, types] = await Promise.all([
-  import(pathToFileURL(resolve(sdkRoot, "dist/server/index.js")).href),
-  import(pathToFileURL(resolve(sdkRoot, "dist/server/stdio.js")).href),
-  import(pathToFileURL(resolve(sdkRoot, "dist/types.js")).href),
-]);
-
-const { ListToolsRequestSchema, CallToolRequestSchema } = types;
+const configuredOutputLimit = Number.parseInt(process.env.MCP_OUTPUT_MAX_BYTES || "65536", 10);
+const maxCapturedOutputBytes =
+  Number.isFinite(configuredOutputLimit) && configuredOutputLimit > 0 ? configuredOutputLimit : 65536;
 
 function wrapResult(payload) {
   return {
@@ -58,6 +53,14 @@ function tailOutput(stdout, stderr, maxLines = 40) {
     .slice(-maxLines);
 }
 
+function appendCappedOutput(current, chunk) {
+  const next = `${current}${chunk.toString()}`;
+  if (next.length <= maxCapturedOutputBytes) {
+    return next;
+  }
+  return next.slice(-maxCapturedOutputBytes);
+}
+
 async function runCommand(command, cwd) {
   const start = Date.now();
   return await new Promise((resolvePromise) => {
@@ -69,18 +72,34 @@ async function runCommand(command, cwd) {
     });
     let stdout = "";
     let stderr = "";
+    let settled = false;
+
+    const finish = (payload) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolvePromise(payload);
+    };
 
     child.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
+      stdout = appendCappedOutput(stdout, chunk);
     });
     child.stderr.on("data", (chunk) => {
-      stderr += chunk.toString();
+      stderr = appendCappedOutput(stderr, chunk);
     });
     child.on("error", (error) => {
-      stderr += `\n${error.message}`;
+      stderr = appendCappedOutput(stderr, `\n${error.message}`);
+      finish({
+        command,
+        exitCode: 1,
+        durationMs: Date.now() - start,
+        stdout,
+        stderr,
+      });
     });
     child.on("close", (code) => {
-      resolvePromise({
+      finish({
         command,
         exitCode: typeof code === "number" ? code : 1,
         durationMs: Date.now() - start,
