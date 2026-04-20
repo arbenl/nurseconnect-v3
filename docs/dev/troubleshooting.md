@@ -2,6 +2,23 @@
 
 ## Environment & Dependency Issues
 
+### Vercel env vars are missing locally
+
+Run:
+
+```bash
+vercel link
+vercel env pull .env.local
+```
+
+Then verify required keys:
+
+```bash
+pnpm env:check
+```
+
+Production custom domains must set `APP_URL` and `BETTER_AUTH_URL` explicitly. Preview deployments can use Vercel's injected `VERCEL_URL`.
+
 ### `pnpm install` / `EPERM` Errors
 If you encounter persistent `EPERM` or file lock errors during `pnpm install` or scripts, it is likely due to file ownership issues or locked processes.
 

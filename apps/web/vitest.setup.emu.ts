@@ -1,3 +1,0 @@
-process.env.NEXT_PUBLIC_USE_EMULATORS ??= "1";
-process.env.FIREBASE_AUTH_EMULATOR_HOST ??= "127.0.0.1:9099";
-process.env.FIRESTORE_EMULATOR_HOST ??= "127.0.0.1:8080";

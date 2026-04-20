@@ -16,8 +16,7 @@
     "type-check": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src test",
-    "test": "vitest run --config vitest.config.ts",
-    "test:emu": "vitest run --config vitest.config.emu.ts"
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
     "zod": "^4.0.17"

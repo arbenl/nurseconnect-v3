@@ -8,7 +8,6 @@ const adminNavItems = [
   { href: "/admin/nurses", label: "Credential Queue" },
   { href: "/admin/activity", label: "Activity Feed" },
   { href: "/admin/users", label: "Users" },
-  { href: "/admin/backfill", label: "Backfill Status" },
 ];
 
 export default async function AdminLayout({

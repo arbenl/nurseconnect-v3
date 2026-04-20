@@ -1,8 +1,8 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-// ── Firebase rejection guard ────────────────────────────────────────
-// V3 does not use Firebase. Fail hard if any Firebase env vars leak in.
+// ── Removed-platform rejection guard ────────────────────────────────
+// V3 is Vercel-native. Fail hard if old platform env vars leak in.
 const REJECTED_FIREBASE_VARS = [
   "NEXT_PUBLIC_USE_EMULATORS",
   "FIRESTORE_EMULATOR_HOST",

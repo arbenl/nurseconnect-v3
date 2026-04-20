@@ -3,7 +3,7 @@
 ![CI](https://github.com/arbenl/nurseconnect-v3/actions/workflows/ci.yml/badge.svg)
 
 NurseConnect is a healthcare platform connecting patients with local nurses for at-home care services.
-**V3 is Postgres/Drizzle + Better-Auth. Firebase has been removed.**
+**V3 is Vercel-native with Postgres/Drizzle + Better Auth. Firebase has been removed.**
 
 ## Tech Stack
 - **Framework**: Next.js 14 (App Router)
@@ -12,11 +12,14 @@ NurseConnect is a healthcare platform connecting patients with local nurses for 
 - **Database**: PostgreSQL (Drizzle ORM)
 - **Auth**: Better-Auth
 - **Monorepo**: Turborepo + pnpm
+- **Deployment**: Vercel previews and production deployments
+- **Observability**: Vercel runtime logs, OpenTelemetry, Web Analytics, and Speed Insights
 
 ## Prerequisites
 - Node.js >= 20
 - pnpm >= 9
 - Docker (for local database)
+- Vercel CLI for linked preview/production environment variables
 
 ## Getting Started
 
@@ -30,6 +33,11 @@ NurseConnect is a healthcare platform connecting patients with local nurses for 
    ```bash
    cp apps/web/.env.example apps/web/.env.local
    # Update DATABASE_URL in .env.local if needed (defaults match docker-compose)
+   ```
+   If the project is linked to Vercel, prefer:
+   ```bash
+   vercel link
+   vercel env pull .env.local
    ```
 
 3. **Start Database**
@@ -50,16 +58,23 @@ NurseConnect is a healthcare platform connecting patients with local nurses for 
    pnpm dev
    # or: pnpm --filter web dev
    ```
-   - Web App: http://localhost:3000
+   - Web App: http://localhost:3010
 
 6. **Verify Health**
    ```bash
-   curl -s http://localhost:3000/api/health/db
+   curl -s http://localhost:3010/api/health/db
    ```
    - Expected response: `{"ok":true,"db":"ok"}`
 
 ## Documentation
 - [Production Bootstrap Runbook](docs/runbooks/production_bootstrap_runbook.md): Guide for deploying V3 from zero to a fully functional administrative state.
+
+## Vercel
+
+- Branch pushes create Vercel preview deployments through Git integration.
+- Production deploys use the configured Vercel production branch.
+- Set `APP_URL` and `BETTER_AUTH_URL` to the canonical production domain.
+- Preview deployments can rely on Vercel's injected `VERCEL_URL`.
 
 ## Commands
 

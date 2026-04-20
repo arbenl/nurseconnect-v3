@@ -556,9 +556,6 @@ Expected: PASS
 Run: `pnpm db:from-clean && pnpm --filter web exec playwright test tests/e2e-ui/nurse.spec.ts --project=ui`
 Expected: PASS
 
-Run: `pnpm --filter web test:emu`
-Expected: PASS (current placeholder script still returns success)
-
 - [ ] **Step 4: Run repo gates**
 
 Run: `pnpm gate:fast`

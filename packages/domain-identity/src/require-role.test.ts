@@ -20,7 +20,6 @@ describe("requireAnyRole", () => {
         user: {
           id: "user_patient_1",
           authId: "auth_patient_1",
-          firebaseUid: null,
           email: "patient@test.local",
           role: "patient",
           name: "Patient User",
@@ -48,7 +47,6 @@ describe("requireAnyRole", () => {
       user: {
         id: "user_admin_1",
         authId: "auth_admin_1",
-        firebaseUid: null,
         email: "admin@test.local",
         role: "admin" as const,
         name: "Admin User",

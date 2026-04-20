@@ -5,7 +5,7 @@
  * Run: pnpm env:check
  *
  * Validates the Next.js app's env.ts module:
- * 1. Rejects any Firebase env vars (hard error)
+ * 1. Rejects removed platform env vars (hard error)
  * 2. Validates DATABASE_URL, BETTER_AUTH_SECRET, and feature flags
  *
  * Exit 0 = all vars present and valid

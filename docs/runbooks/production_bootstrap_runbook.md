@@ -2,8 +2,9 @@
 
 ### 0. Preconditions
 
-* Database is provisioned and reachable.
-* **Migrations have been applied** (recommended: run `pnpm db:migrate` as part of deploy).
+* Database is provisioned and reachable from Vercel.
+* **Migrations have been applied** using the direct database URL.
+* The Vercel project is linked to this repository.
 * Application is deployed and reachable at the intended production URL.
 
 ### 1) Environment Preparation
@@ -18,6 +19,7 @@
 * `APP_URL` — the canonical production origin, e.g. `https://nurseconnect.example.com`
   Better‑Auth uses this as `baseURL` and `trustedOrigins`.
 * `BETTER_AUTH_URL` — optional if `APP_URL` is set; used as fallback if `APP_URL` is missing. Recommended to set it to the same value as `APP_URL`.
+* `VERCEL_URL` — injected automatically by Vercel for preview deployments. Do not set it manually.
 
 #### Bootstrap configuration
 
@@ -33,6 +35,17 @@
 * `DATABASE_POOL_URL` — optional URL representing a pooled connection (e.g. PgBouncer, Neon pooled endpoint). Used by the application at runtime to avoid stranding/starving connections.
 * `PGPOOL_IDLE_TIMEOUT_MS` — recommended to be kept aggressively low (e.g. `5000` ms) in Serverless / Edge functions (like Vercel) instead of relying on default timeouts.
 * `PGPOOL_MAX` — max connections the pool can open. **Caution**: Vercel recommends against `max=1` in Fluid Compute environments; size appropriately based on your downstream limits.
+
+#### Vercel environment setup
+
+For local validation against Vercel-managed environment variables:
+
+```bash
+vercel link
+vercel env pull .env.local
+```
+
+For production, configure the required variables in the Vercel project settings, scoped to Production. Configure preview-specific values in Preview when they differ from production.
 
 ---
 
@@ -89,6 +102,6 @@ Notes:
 
 ### Appendix: Failure Modes
 
-* **Invalid Origin**: If auth redirects repeatedly fail or CSRF errors appear, verify `APP_URL` matches the deployed hostname perfectly. Better-Auth rigorously enforces `trustedOrigins`.
+* **Invalid Origin**: If auth redirects repeatedly fail or CSRF errors appear, verify `APP_URL` matches the deployed production hostname. For previews, verify Vercel injected `VERCEL_URL`.
 * **No Admin Created**: If you login but do not gain admin access, verify `FIRST_ADMIN_EMAILS` is not empty, contains the exact email address, and that `/api/me` is successfully executing without network blockers.
-* **DB Not Migrated**: If `/api/health/db` or login actions throw 500s mentioning missing relations, confirm `pnpm db:migrate` ran successfully on the production container.
+* **DB Not Migrated**: If `/api/health/db` or login actions throw 500s mentioning missing relations, confirm `pnpm db:migrate` ran successfully with the production direct database URL.

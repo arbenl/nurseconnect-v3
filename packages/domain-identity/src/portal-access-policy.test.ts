@@ -40,7 +40,6 @@ describe("resolvePortalAccessPolicy", () => {
           user: {
             id: "user_patient_1",
             authId: "auth_patient_1",
-            firebaseUid: null,
             email: "patient@test.local",
             role: "patient",
             name: "Patient User",
@@ -82,7 +81,6 @@ describe("resolvePortalAccessPolicy", () => {
           user: {
             id: "user_patient_2",
             authId: "auth_patient_2",
-            firebaseUid: null,
             email: "patient2@test.local",
             role: "patient",
             name: "Patient User",
