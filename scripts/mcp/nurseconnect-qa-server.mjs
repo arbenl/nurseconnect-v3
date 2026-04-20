@@ -1,14 +1,16 @@
 #!/usr/bin/env node
+/* eslint-env node */
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(process.env.MCP_REPO_ROOT || resolve(__dirname, "../.."));
+const repoRoot = resolve(__dirname, "../..");
 const configuredOutputLimit = Number.parseInt(process.env.MCP_OUTPUT_MAX_BYTES || "65536", 10);
 const maxCapturedOutputBytes =
   Number.isFinite(configuredOutputLimit) && configuredOutputLimit > 0 ? configuredOutputLimit : 65536;
