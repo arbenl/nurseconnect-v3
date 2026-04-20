@@ -1,13 +1,15 @@
 /* eslint-env node */
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { describe, expect, it } from "vitest";
 
-const repoRoot = resolve(import.meta.dirname, "../../..");
+const currentDir = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(currentDir, "../../..");
 
 describe("nurseconnect QA MCP server", () => {
   it("uses the NurseConnect repo root even when MCP_REPO_ROOT is inherited", async () => {
@@ -26,7 +28,7 @@ describe("nurseconnect QA MCP server", () => {
 
     const client = new Client({ name: "nurseconnect-mcp-test", version: "1.0.0" });
     const transport = new StdioClientTransport({
-      command: "/bin/bash",
+      command: "bash",
       args: ["scripts/start-repo-qa.sh"],
       cwd: repoRoot,
       env: { ...process.env, MCP_REPO_ROOT: fakeRoot },
