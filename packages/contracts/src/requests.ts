@@ -46,6 +46,7 @@ export const ServiceRequestSchema = z.object({
     scheduledFor: z.string().datetime({ offset: true }).nullable(),
     referralSource: z.string(),
     referralPartnerId: z.string().uuid().nullable(),
+    serviceAreaId: z.string().uuid().nullable(),
     careType: z.string().nullable(),
     assignedAt: z.string().datetime({ offset: true }).nullable(),
     acceptedAt: z.string().datetime({ offset: true }).nullable(),

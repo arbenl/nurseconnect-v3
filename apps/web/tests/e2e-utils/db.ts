@@ -28,6 +28,7 @@ export async function resetDb() {
             "referral_partners",
             "nurse_locations",
             "nurses",
+            "service_areas",
             "users",
             "auth_sessions",
             "auth_accounts",
@@ -44,6 +45,15 @@ export async function resetDb() {
             }
             await client.query(`TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`);
         }
+
+        await client.query(
+            `INSERT INTO service_areas
+                (label, center_lat, center_lng, radius_meters, status, created_at, updated_at)
+             VALUES
+                ('Pristina Test Coverage', '42.662900', '21.165500', 100000, 'active', NOW(), NOW()),
+                ('Far Test Coverage', '40.000000', '20.000000', 100000, 'active', NOW(), NOW()),
+                ('Remote Test Coverage', '50.000000', '50.000000', 100000, 'active', NOW(), NOW())`,
+        );
     } finally {
         await client.end();
     }
@@ -132,15 +142,33 @@ export async function seedNurseLocation(params: {
     nurseUserId: string;
     lat: string;
     lng: string;
+    serviceAreaId?: string | null;
 }) {
     const client = getDbClient();
     await client.connect();
 
     try {
+        const serviceAreaId =
+            params.serviceAreaId !== undefined
+                ? params.serviceAreaId
+                : (
+                      await client.query<{ id: string }>(
+                          `SELECT id
+                             FROM service_areas
+                            WHERE status = 'active'
+                            ORDER BY
+                              POWER(center_lat::double precision - $1::double precision, 2) +
+                              POWER(center_lng::double precision - $2::double precision, 2) ASC,
+                              label ASC
+                            LIMIT 1`,
+                          [params.lat, params.lng],
+                      )
+                  ).rows[0]?.id ?? null;
+
         await client.query(
-            `INSERT INTO nurse_locations (nurse_user_id, lat, lng) 
-       VALUES ($1, $2, $3)`,
-            [params.nurseUserId, params.lat, params.lng]
+            `INSERT INTO nurse_locations (nurse_user_id, lat, lng, service_area_id)
+             VALUES ($1, $2, $3, $4)`,
+            [params.nurseUserId, params.lat, params.lng, serviceAreaId]
         );
     } finally {
         await client.end();

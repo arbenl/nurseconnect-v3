@@ -23,12 +23,16 @@ export type AdminAuditAction =
   | "nurse.availability.overridden"
   | "nurse.credential.verified"
   | "nurse.credential.rejected"
-  | "nurse.credential.suspended";
+  | "nurse.credential.suspended"
+  | "service_area.created"
+  | "service_area.updated"
+  | "service_area.paused"
+  | "service_area.reactivated";
 
 type RecordAdminActionInput = {
   actorUserId: string;
   action: AdminAuditAction;
-  targetEntityType: "user" | "request" | "nurse";
+  targetEntityType: "user" | "request" | "nurse" | "service_area";
   targetEntityId: string;
   details?: Record<string, unknown> | null;
 };

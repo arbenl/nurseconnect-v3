@@ -5,7 +5,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createAndAssignRequest } from "./allocate-request";
 import { applyRequestAction } from "./request-actions";
 
-const { users, nurses, nurseLocations, requestEvents } = schema;
+const { users, nurses, nurseLocations, requestEvents, serviceAreas } = schema;
 
 const requestActionTypes = {
   request_created: "request_created",
@@ -17,6 +17,21 @@ const requestActionTypes = {
   request_canceled: "request_canceled",
 } as const;
 
+async function seedServiceArea() {
+  const [area] = await db
+    .insert(serviceAreas)
+    .values({
+      label: "Request Events Test Area",
+      centerLat: "10.000000",
+      centerLng: "10.000000",
+      radiusMeters: 150000,
+      status: "active",
+    })
+    .returning();
+
+  return area!;
+}
+
 describe.sequential("request events", () => {
   beforeAll(async () => {
     await db.execute(sql`SELECT 1`);
@@ -27,10 +42,13 @@ describe.sequential("request events", () => {
     await db.execute(sql`TRUNCATE TABLE service_requests RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE nurse_locations RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE nurses RESTART IDENTITY CASCADE`);
+    await db.execute(sql`TRUNCATE TABLE service_areas RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
   });
 
   it("creates a request_created event for each request", async () => {
+    await seedServiceArea();
+
     const [patient] = await db
       .insert(users)
       .values({ email: "event-created@test.local", role: "patient" })
@@ -60,6 +78,8 @@ describe.sequential("request events", () => {
   });
 
   it("adds request_assigned when allocation succeeds", async () => {
+    const serviceArea = await seedServiceArea();
+
     const [patient] = await db
       .insert(users)
       .values({ email: "event-assigned@test.local", role: "patient" })
@@ -82,6 +102,7 @@ describe.sequential("request events", () => {
       nurseUserId: nurseUser!.id,
       lat: "10.000001",
       lng: "10.000001",
+      serviceAreaId: serviceArea.id,
     });
 
     const request = await createAndAssignRequest({
@@ -109,6 +130,8 @@ describe.sequential("request events", () => {
   });
 
   it("writes timeline events for accepted requests", async () => {
+    const serviceArea = await seedServiceArea();
+
     const [patient] = await db
       .insert(users)
       .values({ email: "event-accept-patient@test.local", role: "patient" })
@@ -131,6 +154,7 @@ describe.sequential("request events", () => {
       nurseUserId: nurseUser!.id,
       lat: "10.000001",
       lng: "10.000001",
+      serviceAreaId: serviceArea.id,
     });
 
     const request = await createAndAssignRequest({
@@ -170,6 +194,8 @@ describe.sequential("request events", () => {
   });
 
   it("does not append events for failed transitions", async () => {
+    const serviceArea = await seedServiceArea();
+
     const [patient] = await db
       .insert(users)
       .values({ email: "event-conflict-patient@test.local", role: "patient" })
@@ -192,6 +218,7 @@ describe.sequential("request events", () => {
       nurseUserId: nurseUser!.id,
       lat: "10.000001",
       lng: "10.000001",
+      serviceAreaId: serviceArea.id,
     });
 
     const request = await createAndAssignRequest({

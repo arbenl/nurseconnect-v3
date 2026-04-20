@@ -4,11 +4,35 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createAndAssignRequest } from "./allocate-request";
 
-const { users, nurses, nurseLocations, serviceRequests } = schema;
+const { users, nurses, nurseLocations, serviceAreas, serviceRequests } = schema;
 
 function uuidLike(id: string) {
     // basic sanity (don't overfit)
     expect(id).toMatch(/^[0-9a-f-]{20,}$/i);
+}
+
+async function seedServiceAreas() {
+    const [originArea, noNurseArea] = await db
+        .insert(serviceAreas)
+        .values([
+            {
+                label: "Origin Test Area",
+                centerLat: "0.000000",
+                centerLng: "0.000000",
+                radiusMeters: 200000,
+                status: "active",
+            },
+            {
+                label: "No Nurse Test Area",
+                centerLat: "10.000000",
+                centerLng: "10.000000",
+                radiusMeters: 200000,
+                status: "active",
+            },
+        ])
+        .returning();
+
+    return { originArea: originArea!, noNurseArea: noNurseArea! };
 }
 
 describe.sequential("createAndAssignRequest", () => {
@@ -23,10 +47,13 @@ describe.sequential("createAndAssignRequest", () => {
         await db.execute(sql`TRUNCATE TABLE service_requests RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE nurse_locations RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE nurses RESTART IDENTITY CASCADE`);
+        await db.execute(sql`TRUNCATE TABLE service_areas RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
     });
 
     it("assigns the nearest available nurse", async () => {
+        const { originArea } = await seedServiceAreas();
+
         // create patient
         const [patient] = await db
             .insert(users)
@@ -57,6 +84,7 @@ describe.sequential("createAndAssignRequest", () => {
             nurseUserId: nurseAUser!.id,
             lat: "0.000000",
             lng: "0.000000",
+            serviceAreaId: originArea.id,
         });
 
         // create nurse B farther
@@ -80,6 +108,7 @@ describe.sequential("createAndAssignRequest", () => {
             nurseUserId: nurseBUser!.id,
             lat: "1.000000",
             lng: "1.000000",
+            serviceAreaId: originArea.id,
         });
 
         const req = await createAndAssignRequest({
@@ -91,11 +120,14 @@ describe.sequential("createAndAssignRequest", () => {
 
         uuidLike(req.id);
         expect(req.patientUserId).toBe(patient!.id);
+        expect(req.serviceAreaId).toBe(originArea.id);
         expect(req.status).toBe("assigned");
         expect(req.assignedNurseUserId).toBe(nurseAUser!.id);
     });
 
     it("marks the chosen nurse unavailable before the next request is matched", async () => {
+        const { originArea } = await seedServiceAreas();
+
         const [firstPatient] = await db
             .insert(users)
             .values({
@@ -132,6 +164,7 @@ describe.sequential("createAndAssignRequest", () => {
             nurseUserId: nurseAUser!.id,
             lat: "0.000000",
             lng: "0.000000",
+            serviceAreaId: originArea.id,
         });
 
         const [nurseBUser] = await db
@@ -154,6 +187,7 @@ describe.sequential("createAndAssignRequest", () => {
             nurseUserId: nurseBUser!.id,
             lat: "1.000000",
             lng: "1.000000",
+            serviceAreaId: originArea.id,
         });
 
         const firstRequest = await createAndAssignRequest({
@@ -199,6 +233,8 @@ describe.sequential("createAndAssignRequest", () => {
     });
 
     it("leaves request open if no nurses are available", async () => {
+        const { noNurseArea } = await seedServiceAreas();
+
         const [patient] = await db
             .insert(users)
             .values({ email: "p2@test.local", role: "patient" })
@@ -213,9 +249,12 @@ describe.sequential("createAndAssignRequest", () => {
 
         expect(req.status).toBe("open");
         expect(req.assignedNurseUserId ?? null).toBeNull();
+        expect(req.serviceAreaId).toBe(noNurseArea.id);
     });
 
     it("rejects invalid request-type and scheduledFor combinations before persistence", async () => {
+        await seedServiceAreas();
+
         const [patient] = await db
             .insert(users)
             .values({ email: "p-invalid-shape@test.local", role: "patient" })
@@ -266,7 +305,38 @@ describe.sequential("createAndAssignRequest", () => {
         expect(persistedRequests).toHaveLength(0);
     });
 
+    it("rejects request creation outside all active service areas before persistence", async () => {
+        await seedServiceAreas();
+        const [patient] = await db
+            .insert(users)
+            .values({ email: "p-outside-service-area@test.local", role: "patient" })
+            .returning();
+
+        await expect(
+            createAndAssignRequest({
+                patientUserId: patient!.id,
+                address: "Outside operating area",
+                lat: 45,
+                lng: 45,
+            })
+        ).rejects.toThrow(RequestCreationValidationError);
+        await expect(
+            createAndAssignRequest({
+                patientUserId: patient!.id,
+                address: "Outside operating area",
+                lat: 45,
+                lng: 45,
+            })
+        ).rejects.toThrow("Request location is outside all active service areas");
+
+        const persistedRequests = await db.select().from(serviceRequests);
+
+        expect(persistedRequests).toHaveLength(0);
+    });
+
     it("does not assign a verified nurse record when the linked user is not in the nurse role", async () => {
+        const { originArea } = await seedServiceAreas();
+
         const [patient] = await db
             .insert(users)
             .values({ email: "p3@test.local", role: "patient" })
@@ -292,6 +362,7 @@ describe.sequential("createAndAssignRequest", () => {
             nurseUserId: nonNurseUser!.id,
             lat: "0.000000",
             lng: "0.000000",
+            serviceAreaId: originArea.id,
         });
 
         const req = await createAndAssignRequest({

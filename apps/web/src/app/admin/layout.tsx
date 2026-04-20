@@ -7,6 +7,7 @@ const adminNavItems = [
   { href: "/admin/requests", label: "Active Queue" },
   { href: "/admin/requests/exceptions", label: "Exception Queue" },
   { href: "/admin/nurses", label: "Credential Queue" },
+  { href: "/admin/service-areas", label: "Service Areas" },
   { href: "/admin/activity", label: "Activity Feed" },
   { href: "/admin/users", label: "Users" },
 ];

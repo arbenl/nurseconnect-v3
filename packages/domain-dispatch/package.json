@@ -10,7 +10,8 @@
   },
   "scripts": {
     "type-check": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --config vitest.config.ts"
+    "test": "vitest run --config vitest.config.ts",
+    "test:db": "vitest run --config vitest.db.config.ts"
   },
   "dependencies": {
     "@nurseconnect/contracts": "workspace:*",

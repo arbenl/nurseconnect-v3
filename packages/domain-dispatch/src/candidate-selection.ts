@@ -40,6 +40,7 @@ export function pickDispatchCandidate(
 export async function selectDispatchCandidate(
   tx: Transaction,
   origin: { lat: number; lng: number },
+  serviceAreaId: string,
 ) {
   const rows = await tx.execute<{
     nurse_user_id: string;
@@ -54,6 +55,7 @@ export async function selectDispatchCandidate(
       AND u.role = 'nurse'
       AND n.status = 'verified'
       AND (n.license_valid_until IS NULL OR n.license_valid_until > NOW())
+      AND nl.service_area_id = ${serviceAreaId}::uuid
     FOR UPDATE OF nl SKIP LOCKED
   `);
 
