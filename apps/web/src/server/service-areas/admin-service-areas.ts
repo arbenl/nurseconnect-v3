@@ -40,7 +40,10 @@ export async function listAdminServiceAreas(): Promise<AdminServiceAreaListRespo
   return { items: rows.map(normalizeServiceArea) };
 }
 
-export async function createAdminServiceArea(input: {
+export async function createAdminServiceArea({
+  actorUserId,
+  input: payload,
+}: {
   actorUserId: string;
   input: CreateServiceAreaInput;
 }): Promise<ServiceAreaDto> {
@@ -48,10 +51,10 @@ export async function createAdminServiceArea(input: {
     const [created] = await tx
       .insert(serviceAreas)
       .values({
-        label: input.input.label,
-        centerLat: String(input.input.centerLat),
-        centerLng: String(input.input.centerLng),
-        radiusMeters: input.input.radiusMeters,
+        label: payload.label,
+        centerLat: String(payload.centerLat),
+        centerLng: String(payload.centerLng),
+        radiusMeters: payload.radiusMeters,
         status: "active",
       })
       .returning();
@@ -62,7 +65,7 @@ export async function createAdminServiceArea(input: {
 
     await recordAdminAction(
       {
-        actorUserId: input.actorUserId,
+        actorUserId,
         action: "service_area.created",
         targetEntityType: "service_area",
         targetEntityId: created.id,
@@ -81,7 +84,11 @@ export async function createAdminServiceArea(input: {
   });
 }
 
-export async function updateAdminServiceArea(input: {
+export async function updateAdminServiceArea({
+  actorUserId,
+  id,
+  input: payload,
+}: {
   actorUserId: string;
   id: string;
   input: UpdateServiceAreaInput;
@@ -90,27 +97,27 @@ export async function updateAdminServiceArea(input: {
     const [updated] = await tx
       .update(serviceAreas)
       .set({
-        ...(input.input.label !== undefined ? { label: input.input.label } : {}),
-        ...(input.input.centerLat !== undefined ? { centerLat: String(input.input.centerLat) } : {}),
-        ...(input.input.centerLng !== undefined ? { centerLng: String(input.input.centerLng) } : {}),
-        ...(input.input.radiusMeters !== undefined ? { radiusMeters: input.input.radiusMeters } : {}),
+        ...(payload.label !== undefined ? { label: payload.label } : {}),
+        ...(payload.centerLat !== undefined ? { centerLat: String(payload.centerLat) } : {}),
+        ...(payload.centerLng !== undefined ? { centerLng: String(payload.centerLng) } : {}),
+        ...(payload.radiusMeters !== undefined ? { radiusMeters: payload.radiusMeters } : {}),
         updatedAt: new Date(),
       })
-      .where(eq(serviceAreas.id, input.id))
+      .where(eq(serviceAreas.id, id))
       .returning();
 
     if (!updated) {
-      throw new ServiceAreaNotFoundError(input.id);
+      throw new ServiceAreaNotFoundError(id);
     }
 
     await recordAdminAction(
       {
-        actorUserId: input.actorUserId,
+        actorUserId,
         action: "service_area.updated",
         targetEntityType: "service_area",
         targetEntityId: updated.id,
         details: {
-          changes: input.input,
+          changes: payload,
         },
       },
       tx,

@@ -11,7 +11,7 @@ type CreateRequestInvariantInput = Pick<
 
 export function assertCreateRequestInvariants(
   input: CreateRequestInvariantInput,
-): void {
+): asserts input is CreateRequestInvariantInput & { serviceAreaId: string } {
   if (input.requestType === "scheduled" && !input.scheduledFor) {
     throw new RequestCreationValidationError(
       "scheduledFor is required for scheduled requests",

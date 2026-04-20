@@ -35,16 +35,14 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
     return await db.transaction(async (tx) => {
         const activeServiceAreas = await getActiveServiceAreas(tx);
         const serviceArea = findContainingServiceArea({ lat, lng }, activeServiceAreas);
-        const serviceAreaId = serviceArea?.id ?? null;
-
-        assertCreateRequestInvariants({
+        const createInvariants = {
             requestType,
             scheduledFor: input.scheduledFor,
-            serviceAreaId,
-        });
-        if (!serviceAreaId) {
-            throw new Error("Service area invariant failed");
-        }
+            serviceAreaId: serviceArea?.id ?? null,
+        };
+
+        assertCreateRequestInvariants(createInvariants);
+        const serviceAreaId = createInvariants.serviceAreaId;
 
         // 1) create request (open)
         const [req] = await tx
