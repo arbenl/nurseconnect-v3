@@ -9,10 +9,22 @@ const {
   authVerifications,
 } = schema;
 
-// Prefer env.ts server-side if you have it; otherwise fall back safely.
 // NOTE: This file runs on the server (route handler imports it).
+const VERCEL_DEPLOYMENT_URL = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : undefined;
 const APP_URL =
-  process.env.APP_URL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+  process.env.APP_URL ??
+  process.env.BETTER_AUTH_URL ??
+  VERCEL_DEPLOYMENT_URL ??
+  "http://localhost:3010";
+const TRUSTED_ORIGINS = Array.from(
+  new Set(
+    [APP_URL, process.env.BETTER_AUTH_URL, VERCEL_DEPLOYMENT_URL].filter(
+      (origin): origin is string => Boolean(origin),
+    ),
+  ),
+);
 const BASE_PATH = "/api/auth";
 
 export const auth = betterAuth({
@@ -21,7 +33,7 @@ export const auth = betterAuth({
   basePath: BASE_PATH,
 
   // Lock trusted origins (CSRF/origin checks).
-  trustedOrigins: [APP_URL],
+  trustedOrigins: TRUSTED_ORIGINS,
 
   // Database (Drizzle + Postgres).
   database: drizzleAdapter(db, {

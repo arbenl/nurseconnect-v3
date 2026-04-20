@@ -1,7 +1,0 @@
-{
-  "extends": "../../packages/tsconfig/node20.json",
-  "compilerOptions": {
-    "baseUrl": "."
-  },
-  "include": ["src/**/*.ts"]
-}

@@ -9,7 +9,6 @@ export const users = pgTable(
     email: text("email").notNull(),
     name: text("name"),
     role: userRoleEnum("role").notNull().default("patient"), // Hardened to enum
-    firebaseUid: text("firebase_uid"),
     authId: text("auth_id"), // Link to better-auth user.id
 
     // Profile fields (Phase 3.3)
@@ -25,7 +24,6 @@ export const users = pgTable(
   },
   (t) => ({
     emailIdx: index("users_email_idx").on(t.email),
-    firebaseUidIdx: uniqueIndex("users_firebase_uid_idx").on(t.firebaseUid),
     authIdIdx: uniqueIndex("users_auth_id_idx").on(t.authId),
   })
 );

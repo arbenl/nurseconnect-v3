@@ -10,7 +10,6 @@ function userFixture(overrides: Partial<DomainUser> = {}): DomainUser {
   return {
     id: "user_1",
     authId: "auth_1",
-    firebaseUid: null,
     email: "user@test.local",
     role: "patient",
     name: "Test User",

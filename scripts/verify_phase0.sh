@@ -13,7 +13,10 @@ pnpm install --frozen-lockfile 2>&1 | tee -a tmp/verify/01-install.txt
 echo "== type-check ==" | tee tmp/verify/02-typecheck.txt
 pnpm type-check 2>&1 | tee -a tmp/verify/02-typecheck.txt
 
-echo "== e2e smoke ==" | tee tmp/verify/03-e2e-smoke.txt
-pnpm web:test:emu 2>&1 | tee -a tmp/verify/03-e2e-smoke.txt
+echo "== tests ==" | tee tmp/verify/03-tests.txt
+pnpm test:ci 2>&1 | tee -a tmp/verify/03-tests.txt
+
+echo "== web build ==" | tee tmp/verify/04-web-build.txt
+pnpm --filter web build 2>&1 | tee -a tmp/verify/04-web-build.txt
 
 echo "✅ Phase 0 verified"

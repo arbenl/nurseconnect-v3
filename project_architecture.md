@@ -1,56 +1,34 @@
 # Project Architecture: NurseConnect V3 Monorepo
 
-This document outlines the project structure and architectural state of the `nurseconnect-v3` monorepo.
+NurseConnect V3 is a Vercel-native Next.js monorepo.
 
-## 1. Current State (Post-Hardening)
+## Current Architecture
 
-- **Internal packages**: `@nurseconnect/contracts`, `@nurseconnect/ui`, `@nurseconnect/tsconfig`, `@nurseconnect/database`
-- **Auth**: NextAuth (legacy, Phase 2 target: Better-Auth + Postgres)
-- **Database**: PostgreSQL via Drizzle ORM (`packages/database`)
-- **Firebase**: Env vars rejected at boot by `apps/web/src/env.ts`; runtime Firebase code still exists in legacy files (Phase 3 removal target)
-- **Feature flags**: `FEATURE_BACKEND_*` locked to `postgres` only
+- `apps/web`: Next.js App Router application and API route handlers.
+- `packages/database`: PostgreSQL schema, Drizzle migrations, and DB client.
+- `packages/contracts`: Shared Zod contracts and types.
+- `packages/domain-*`: Domain packages for identity, nurse, request, dispatch, and admin operations.
+- `packages/platform-telemetry`: Shared structured logging utilities.
+- `packages/ui`: Shared UI components.
 
-## 2. Core Structure
+## Runtime Model
 
-- **`apps/web/`**: Next.js application (main UI)
-- **`packages/contracts/`**: Shared Zod schemas and types
-- **`packages/database/`**: Drizzle ORM schema, migrations, and DB client (Postgres)
-- **`packages/tsconfig/`**: Shared TypeScript configurations
-- **`packages/ui/`**: Shared UI component library
-- **`scripts/`**: Utility scripts (`env-check.mjs`, `seedUser.js`, etc.)
-- **`docs/migration/`**: Migration planning docs (`data-sources.md`)
+- Vercel hosts previews and production deployments.
+- Next.js route handlers and server modules own backend-for-frontend logic.
+- PostgreSQL is the source of truth for domain state.
+- Better Auth owns authentication and session state.
 
-## 3. Key Tooling
+## Tooling
 
-- **pnpm + Turborepo**: Workspace management and task orchestration
-- **TypeScript 5.x**: Strict type-checking
-- **Vitest**: Unit + emulator tests (split configs)
-- **Drizzle ORM**: Schema definition, migrations, Postgres client
-- **@t3-oss/env-nextjs**: Runtime environment validation
+- pnpm and Turborepo manage workspace tasks.
+- Drizzle manages schema and migrations.
+- Vitest covers unit and integration tests.
+- Playwright covers API and UI E2E tests.
+- Vercel Observability receives runtime logs, traces, analytics, and speed insights.
 
-## 4. Known Issues
+## Boundaries
 
-| Issue | Impact | Resolution |
-|---|---|---|
-| Dual Zod versions (root `^3.25.76`, web `^4.0.17`) | Type-check errors in `env.ts` | Unify on Zod 4 monorepo-wide |
-| `better-auth` not installed | Type errors on `auth.ts`, `auth-client.ts` | Install in Phase 2 |
-| Legacy Firebase code in `src/lib/firebase*` | Dead code, won't execute (env rejected) | Remove in Phase 3 |
-| NextAuth still active in middleware + pages | Cannot remove NEXTAUTH_* env vars yet | Replace in Phase 2 |
-| `next@14` + `react@19` peer dep mismatch | Warnings only, builds succeed | Upgrade Next.js |
-
-## 5. Firebase Status
-
-**Firebase is not supported in V3.** The env validation (`apps/web/src/env.ts`) rejects 13 Firebase-related environment variables at boot time. Legacy Firebase runtime code still exists but cannot execute without configuration. Files to remove in Phase 3:
-
-- `src/lib/firebaseClient.ts`
-- `src/lib/firebase/client.ts`
-- `src/lib/firebase/auth-events.ts`
-- `src/lib/auth/config.ts` (FirestoreAdapter)
-- `vitest.config.emu.ts` (Firebase emulator test config)
-
-## 6. Configuration
-
-- **Dependency Management**: Use `pnpm add --filter <workspace>` for workspace-specific deps
-- **TypeScript Paths**: `@nurseconnect/*` packages resolve via workspace protocol
-- **Env Validation**: All server env vars validated by `apps/web/src/env.ts` at import time
-- **CI**: `unit` job (type-check, build, tests) + `db-sanity` job (Postgres migrations + health check)
+- Do not add Firebase, Firestore, Firebase Auth, Firebase Functions, or emulator workflows.
+- Do not put privileged state changes in client components.
+- Do not commit secrets. Use `.env.local` locally and Vercel environment variables for deployed environments.
+- Keep deployment-specific behavior in Vercel config, environment variables, and Next.js server code.

@@ -10,7 +10,6 @@ function userFixture(role: DomainUser["role"]): DomainUser {
   return {
     id: "user_1",
     authId: "auth_1",
-    firebaseUid: null,
     email: "user@test.local",
     role,
     name: "Test User",
