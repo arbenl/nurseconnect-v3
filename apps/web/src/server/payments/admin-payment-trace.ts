@@ -43,6 +43,7 @@ function auditDetails(
     providerReference: "providerReference" in input ? normalizeText(input.providerReference) : undefined,
     nurseUserId: "nurseUserId" in input ? input.nurseUserId : undefined,
     failureReason: "failureReason" in input ? normalizeText(input.failureReason) : undefined,
+    note: "note" in input ? normalizeText(input.note) : undefined,
   };
 }
 
@@ -72,7 +73,6 @@ export async function mutateAdminPaymentTrace(
       if (input.action === "record") {
         await recordPaymentAuthorizationTrace(tx, {
           requestId,
-          actorUserId,
           amountCents: input.amountCents,
           currency: input.currency,
           provider: input.provider,
@@ -82,7 +82,6 @@ export async function mutateAdminPaymentTrace(
       } else {
         await updatePaymentAuthorizationTraceStatus(tx, {
           requestId,
-          actorUserId,
           action: input.action,
           providerReference:
             input.action === "capture" ? input.providerReference : undefined,
@@ -94,7 +93,6 @@ export async function mutateAdminPaymentTrace(
     } else if (input.action === "record") {
       await recordNursePayoutTrace(tx, {
         requestId,
-        actorUserId,
         nurseUserId: input.nurseUserId,
         amountCents: input.amountCents,
         currency: input.currency,
@@ -105,7 +103,6 @@ export async function mutateAdminPaymentTrace(
     } else {
       await updateNursePayoutTraceStatus(tx, {
         requestId,
-        actorUserId,
         action: input.action,
         providerReference:
           input.action === "mark_paid" ? input.providerReference : undefined,

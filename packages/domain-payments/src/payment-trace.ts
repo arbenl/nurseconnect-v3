@@ -33,7 +33,6 @@ type PaymentTraceDb = DbClient | Transaction;
 
 type RecordPaymentAuthorizationTraceInput = {
   requestId: string;
-  actorUserId: string;
   amountCents: number;
   currency: string;
   provider?: string;
@@ -43,7 +42,6 @@ type RecordPaymentAuthorizationTraceInput = {
 
 type UpdatePaymentAuthorizationTraceStatusInput = {
   requestId: string;
-  actorUserId: string;
   action: PaymentAuthorizationAction;
   providerReference?: string;
   failureReason?: string;
@@ -52,7 +50,6 @@ type UpdatePaymentAuthorizationTraceStatusInput = {
 
 type RecordNursePayoutTraceInput = {
   requestId: string;
-  actorUserId: string;
   nurseUserId: string;
   amountCents: number;
   currency: string;
@@ -63,7 +60,6 @@ type RecordNursePayoutTraceInput = {
 
 type UpdateNursePayoutTraceStatusInput = {
   requestId: string;
-  actorUserId: string;
   action: NursePayoutAction;
   providerReference?: string;
   failureReason?: string;

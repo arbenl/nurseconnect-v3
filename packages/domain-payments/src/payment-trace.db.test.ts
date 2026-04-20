@@ -49,7 +49,6 @@ describe.sequential("payment traceability", () => {
 
     await recordPaymentAuthorizationTrace(db, {
       requestId: request!.id,
-      actorUserId: patient!.id,
       amountCents: 15000,
       currency: "USD",
       provider: "manual",
@@ -58,7 +57,6 @@ describe.sequential("payment traceability", () => {
 
     const captured = await updatePaymentAuthorizationTraceStatus(db, {
       requestId: request!.id,
-      actorUserId: patient!.id,
       action: "capture",
       providerReference: "capture-001",
     });
@@ -108,7 +106,6 @@ describe.sequential("payment traceability", () => {
 
     await recordNursePayoutTrace(db, {
       requestId: request!.id,
-      actorUserId: patient!.id,
       nurseUserId: nurseUser!.id,
       amountCents: 9000,
       currency: "USD",
@@ -117,7 +114,6 @@ describe.sequential("payment traceability", () => {
 
     const paid = await updateNursePayoutTraceStatus(db, {
       requestId: request!.id,
-      actorUserId: patient!.id,
       action: "mark_paid",
       providerReference: "payout-001",
     });
@@ -159,7 +155,6 @@ describe.sequential("payment traceability", () => {
     await expect(
       recordNursePayoutTrace(db, {
         requestId: request!.id,
-        actorUserId: patient!.id,
         nurseUserId: nurseUser!.id,
         amountCents: 9000,
         currency: "USD",
@@ -191,13 +186,11 @@ describe.sequential("payment traceability", () => {
 
     await recordPaymentAuthorizationTrace(db, {
       requestId: request!.id,
-      actorUserId: patient!.id,
       amountCents: 15000,
       currency: "USD",
     });
     await recordNursePayoutTrace(db, {
       requestId: request!.id,
-      actorUserId: patient!.id,
       nurseUserId: nurseUser!.id,
       amountCents: 9000,
       currency: "USD",
@@ -206,7 +199,6 @@ describe.sequential("payment traceability", () => {
     await expect(
       recordPaymentAuthorizationTrace(db, {
         requestId: request!.id,
-        actorUserId: patient!.id,
         amountCents: 15000,
         currency: "USD",
       }),
@@ -214,7 +206,6 @@ describe.sequential("payment traceability", () => {
     await expect(
       recordNursePayoutTrace(db, {
         requestId: request!.id,
-        actorUserId: patient!.id,
         nurseUserId: nurseUser!.id,
         amountCents: 9000,
         currency: "USD",

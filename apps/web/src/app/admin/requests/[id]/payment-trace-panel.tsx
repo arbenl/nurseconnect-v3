@@ -82,7 +82,11 @@ function toCents(value: string) {
   if (!normalized) {
     return 0;
   }
-  return Math.round(Number(normalized) * 100);
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    return 0;
+  }
+  return Math.round(parsed * 100);
 }
 
 export default function PaymentTracePanel({
