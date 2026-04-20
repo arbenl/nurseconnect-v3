@@ -6,7 +6,9 @@ import { notFound } from "next/navigation";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
+import { getAdminPaymentTrace } from "@/server/payments/admin-payment-trace";
 
+import PaymentTracePanel from "./payment-trace-panel";
 import ReassignPanel from "./reassign-panel";
 import TriageExceptionPanel from "./triage-exception-panel";
 
@@ -78,6 +80,8 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
     )
     .orderBy(desc(nurses.isAvailable), asc(users.email));
 
+  const paymentTrace = await getAdminPaymentTrace(request.id);
+
   let events;
   try {
     events = await getVisitTimelineForActor(db, {
@@ -146,6 +150,13 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
       </AdminSectionCard>
 
       <TriageExceptionPanel requestId={request.id} status={request.status} />
+
+      <PaymentTracePanel
+        requestId={request.id}
+        requestStatus={request.status}
+        assignedNurseUserId={request.assignedNurseUserId}
+        trace={paymentTrace}
+      />
 
       <ReassignPanel
         requestId={request.id}

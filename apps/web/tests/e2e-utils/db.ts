@@ -20,6 +20,8 @@ export async function resetDb() {
 
     try {
         const tables = [
+            "nurse_payouts",
+            "payment_authorizations",
             "service_request_events",
             "admin_audit_logs",
             "service_requests",
