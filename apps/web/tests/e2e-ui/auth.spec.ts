@@ -100,7 +100,7 @@ test.describe("Authentication", () => {
 
     await page.waitForURL(/\/admin$/);
     await expect(page).toHaveURL(/\/admin$/);
-    await expect(page.getByRole("heading", { name: /dashboard/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /operations console/i })).toBeVisible();
   });
 
   test("patient keeps a safe dashboard callback after login", async ({ page }) => {
@@ -117,7 +117,7 @@ test.describe("Authentication", () => {
 
     await page.waitForURL(/\/dashboard\/profile$/);
     await expect(page).toHaveURL(/\/dashboard\/profile$/);
-    await expect(page.getByRole("heading", { name: /update profile/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /profile details/i })).toBeVisible();
   });
 
   test("patient visiting admin is redirected back to dashboard", async ({ page }) => {

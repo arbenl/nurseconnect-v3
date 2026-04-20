@@ -2,7 +2,7 @@ import {
   ensureDomainUserFromSession,
   maybeBootstrapFirstAdmin,
   type DomainUser,
-} from "./user-projection";
+} from "./domain-user";
 
 export type SessionUser = {
   id?: string | null;

@@ -1,6 +1,9 @@
 import { db, schema, eq } from "@nurseconnect/database";
+import {
+  planUserRoleChange,
+  UserNotFoundError,
+} from "@nurseconnect/domain-identity";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import { recordAdminAction } from "@/server/admin/audit";
 import { requireRole } from "@/server/auth";
@@ -14,10 +17,6 @@ import {
 
 const { users } = schema;
 
-const roleSchema = z.object({
-  role: z.enum(["admin", "nurse", "patient"]),
-});
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -28,6 +27,7 @@ export async function POST(
   });
   logApiStart(context, startedAt);
   let actorContext = context;
+  let targetUserId: string | undefined;
 
   try {
     // 1. Enforce RBAC
@@ -38,35 +38,36 @@ export async function POST(
       actorRole: actor.role,
     };
 
-    const { id: targetUserId } = await params;
+    const { id } = await params;
+    targetUserId = id;
 
-    let payload: z.infer<typeof roleSchema>;
+    let payload: unknown;
     try {
-      payload = roleSchema.parse(await request.json());
+      payload = await request.json();
     } catch {
-      const response = NextResponse.json({ error: "Invalid role" }, { status: 400 });
-      logApiFailure(actorContext, "Invalid role", 400, startedAt, {
-        targetUserId,
+      const response = NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+      logApiFailure(actorContext, "Invalid payload", 400, startedAt, {
         source: "admin.user.role",
+        targetUserId,
       });
       return withRequestId(response, context.requestId);
     }
 
-    const { role } = payload;
+    const nextRole = typeof payload === "object" && payload !== null ? (payload as { role?: unknown }).role : undefined;
 
     const target = await db.query.users.findFirst({
-      where: eq(users.id, targetUserId),
+      where: eq(users.id, id),
     });
     if (!target) {
-      const response = NextResponse.json({ error: "Target user not found" }, { status: 404 });
-      logApiFailure(actorContext, "Target user not found", 404, startedAt, {
-        targetUserId,
-        source: "admin.user.role",
-      });
-      return withRequestId(response, context.requestId);
+      throw new UserNotFoundError("Target user not found");
     }
 
-    if (target.role === role) {
+    const planned = planUserRoleChange({
+      targetUser: target,
+      nextRole,
+    });
+
+    if (planned.unchanged) {
       const response = NextResponse.json({ ok: true, unchanged: true });
       logApiSuccess(actorContext, 200, startedAt, {
         source: "admin.user.role",
@@ -79,23 +80,23 @@ export async function POST(
     await db.transaction(async (tx) => {
       await tx
         .update(users)
-        .set({ role, updatedAt: new Date() })
-        .where(eq(users.id, targetUserId));
+        .set(planned.patch)
+        .where(eq(users.id, id));
 
-      await recordAdminAction(
-        {
-          actorUserId: actor.id,
-          action: "user.role.changed",
-          targetEntityType: "user",
-          targetEntityId: targetUserId,
-          details: {
-            previousRole: target.role,
-            nextRole: role,
-            targetEmail: target.email,
-          },
-        },
-        tx,
-      );
+      for (const sideEffect of planned.sideEffects) {
+        if (sideEffect.type === "admin-audit") {
+          await recordAdminAction(
+            {
+              actorUserId: actor.id,
+              action: sideEffect.action,
+              targetEntityType: "user",
+              targetEntityId: sideEffect.targetUserId,
+              details: sideEffect.details,
+            },
+            tx,
+          );
+        }
+      }
     });
 
     const response = NextResponse.json({ ok: true });
@@ -117,6 +118,22 @@ export async function POST(
       const response = NextResponse.json({ error: "Forbidden" }, { status: 403 });
       logApiFailure(actorContext, "Forbidden", 403, startedAt, {
         source: "admin.user.role",
+      });
+      return withRequestId(response, context.requestId);
+    }
+    if (err.name === "RoleChangeValidationError") {
+      const response = NextResponse.json({ error: err.message || "Invalid role" }, { status: 400 });
+      logApiFailure(actorContext, err.message || "Invalid role", 400, startedAt, {
+        source: "admin.user.role",
+        targetUserId,
+      });
+      return withRequestId(response, context.requestId);
+    }
+    if (err.name === "UserNotFoundError") {
+      const response = NextResponse.json({ error: err.message || "Target user not found" }, { status: 404 });
+      logApiFailure(actorContext, err.message || "Target user not found", 404, startedAt, {
+        source: "admin.user.role",
+        targetUserId,
       });
       return withRequestId(response, context.requestId);
     }

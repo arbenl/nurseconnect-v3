@@ -6,6 +6,6 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["src/**/*.test.ts"],
-    exclude: ["**/node_modules/**", "**/dist/**"],
+    exclude: ["src/**/*.db.test.ts", "**/node_modules/**", "**/dist/**"],
   },
 });

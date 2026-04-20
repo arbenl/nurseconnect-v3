@@ -1,11 +1,12 @@
+import { db } from "@nurseconnect/database";
+import {
+  VisitForbiddenError,
+  VisitNotFoundError,
+  getVisitTimelineForActor,
+} from "@nurseconnect/domain-visit";
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireAnyRole } from "@/server/auth";
-import {
-  RequestEventForbiddenError,
-  RequestEventNotFoundError,
-  getRequestEventsForUser,
-} from "@/server/requests/request-events";
 import {
   createApiLogContext,
   logApiFailure,
@@ -29,7 +30,7 @@ export async function GET(request: Request, { params }: Params) {
     const { user } = await requireAnyRole(["admin", "nurse", "patient"]);
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
-    const events = await getRequestEventsForUser({
+    const events = await getVisitTimelineForActor(db, {
       requestId: params.id,
       actorUserId: user.id,
       actorRole: user.role,
@@ -43,12 +44,12 @@ export async function GET(request: Request, { params }: Params) {
       return authResponse;
     }
 
-    if (error instanceof RequestEventNotFoundError) {
+    if (error instanceof VisitNotFoundError) {
       const response = NextResponse.json({ error: (error as Error).message }, { status: 404 });
       logApiFailure(actorContext, error, 404, startedAt, { source: "request-events" });
       return withRequestId(response, context.requestId);
     }
-    if (error instanceof RequestEventForbiddenError) {
+    if (error instanceof VisitForbiddenError) {
       const response = NextResponse.json({ error: (error as Error).message }, { status: 403 });
       logApiFailure(actorContext, error, 403, startedAt, { source: "request-events" });
       return withRequestId(response, context.requestId);

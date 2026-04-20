@@ -1,4 +1,5 @@
-import { db, desc, eq, schema } from "@nurseconnect/database";
+import { db } from "@nurseconnect/database";
+import { getNurseVisitProjection } from "@nurseconnect/domain-visit";
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
@@ -9,10 +10,6 @@ import {
   logApiSuccess,
   withRequestId,
 } from "@/server/telemetry/ops-logger";
-
-const { serviceRequests } = schema;
-
-const ACTIVE_ASSIGNMENT_STATUSES = new Set(["assigned", "accepted", "enroute"]);
 
 export async function GET(request: Request) {
   const startedAt = Date.now();
@@ -26,25 +23,19 @@ export async function GET(request: Request) {
     const { user } = await requireRole("nurse");
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
-    const assignments = await db
-      .select()
-      .from(serviceRequests)
-      .where(eq(serviceRequests.assignedNurseUserId, user.id))
-      .orderBy(desc(serviceRequests.createdAt));
-
-    const activeAssignment =
-      assignments.find((requestRow) => ACTIVE_ASSIGNMENT_STATUSES.has(requestRow.status)) ?? null;
-    const recentAssignments = assignments
-      .filter((requestRow) => requestRow.id !== activeAssignment?.id)
-      .slice(0, 5);
+    const projection = await getNurseVisitProjection(db, {
+      actorUserId: user.id,
+      historyLimit: 5,
+    });
 
     const response = NextResponse.json({
-      activeAssignment,
-      recentAssignments,
+      activeAssignment: projection.activeAssignment,
+      recentAssignments: projection.recentAssignments,
     });
     logApiSuccess(actorContext, 200, startedAt, {
-      activeAssignmentId: activeAssignment?.id ?? null,
-      count: assignments.length,
+      activeAssignmentId: projection.activeAssignment?.id ?? null,
+      count:
+        projection.recentAssignments.length + (projection.activeAssignment ? 1 : 0),
     });
     return withRequestId(response, context.requestId);
   } catch (error) {

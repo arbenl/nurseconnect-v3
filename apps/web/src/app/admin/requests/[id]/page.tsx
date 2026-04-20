@@ -1,14 +1,11 @@
 import { asc, db, desc, eq, schema, and, or, isNull, gt } from "@nurseconnect/database";
 import { toLocationHint } from "@nurseconnect/domain-admin-ops";
+import { VisitNotFoundError, getVisitTimelineForActor } from "@nurseconnect/domain-visit";
 import { notFound } from "next/navigation";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
-import {
-  RequestEventNotFoundError,
-  getRequestEventsForUser,
-} from "@/server/requests/request-events";
 
 import ReassignPanel from "./reassign-panel";
 
@@ -69,13 +66,13 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
 
   let events;
   try {
-    events = await getRequestEventsForUser({
+    events = await getVisitTimelineForActor(db, {
       requestId: request.id,
       actorUserId: user.id,
       actorRole: user.role,
     });
   } catch (error) {
-    if (error instanceof RequestEventNotFoundError) {
+    if (error instanceof VisitNotFoundError) {
       notFound();
     }
     throw error;

@@ -1,4 +1,5 @@
 import {
+  isUserPortalProfileComplete,
   resolvePortalAccessPolicy,
   type ResolvedSessionUser,
 } from "@nurseconnect/domain-identity";
@@ -33,28 +34,15 @@ type PortalAccessResolution =
 
 type GrantedPortalAccess = Extract<PortalAccessResolution, { redirectTo: null }>;
 
-async function isProfileComplete(user: DomainUser): Promise<boolean> {
-  const hasPatientFields = Boolean(
-    user.firstName &&
-      user.lastName &&
-      user.phone &&
-      user.city,
-  );
-
-  if (!hasPatientFields) return false;
-  if (user.role !== "nurse") return true;
-
-  const nurse = await getNurseByUserId(user.id);
-  return Boolean(nurse?.licenseNumber && nurse?.specialization);
-}
-
 export async function resolvePortalAccess(options: {
   currentPath: string;
   portal: Portal;
   requireProfileComplete?: boolean;
 }): Promise<PortalAccessResolution> {
   const resolved = await resolveCurrentSessionUser();
-  const profileComplete = resolved ? await isProfileComplete(resolved.user) : false;
+  const nurse =
+    resolved?.user.role === "nurse" ? (await getNurseByUserId(resolved.user.id)) ?? null : null;
+  const profileComplete = resolved ? isUserPortalProfileComplete(resolved.user, nurse) : false;
   const canonicalRoute = resolved ? getCanonicalRouteForRole(resolved.user.role) ?? "/dashboard" : null;
 
   return resolvePortalAccessPolicy({

@@ -1,9 +1,13 @@
 import { and, db, eq, or, schema } from "@nurseconnect/database";
-import { NurseAvailabilityError, assertCanSetSelfAvailability } from "@nurseconnect/domain-nurse";
+import { ensureDomainUserFromSession } from "@nurseconnect/domain-identity";
+import {
+  NurseAvailabilityError,
+  NurseProfileNotFoundError,
+  setMyAvailability,
+} from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { ensureDomainUserFromSession } from "@/lib/user-service";
 import { getSession } from "@/server/auth";
 import {
   createApiLogContext,
@@ -62,35 +66,7 @@ export async function PATCH(request: Request) {
       return withRequestId(response, context.requestId);
     }
 
-    const existingNurse = await db.query.nurses.findFirst({
-      where: eq(schema.nurses.userId, user.id),
-    });
-
-    if (!existingNurse) {
-      const response = NextResponse.json({ error: "Nurse profile not found" }, { status: 404 });
-      logApiFailure(actorContext, "Nurse profile not found", 404, startedAt, {
-        source: "me.nurse",
-      });
-      return withRequestId(response, context.requestId);
-    }
-
     if (isAvailable) {
-      try {
-        assertCanSetSelfAvailability({
-          status: existingNurse.status,
-          licenseValidUntil: existingNurse.licenseValidUntil,
-        });
-      } catch (error) {
-        if (error instanceof NurseAvailabilityError) {
-          const response = NextResponse.json({ error: error.message }, { status: 403 });
-          logApiFailure(actorContext, error.message, 403, startedAt, {
-            source: "me.nurse",
-          });
-          return withRequestId(response, context.requestId);
-        }
-        throw error;
-      }
-
       const activeAssignment = await db.query.serviceRequests.findFirst({
         where: and(
           eq(schema.serviceRequests.assignedNurseUserId, user.id),
@@ -115,18 +91,31 @@ export async function PATCH(request: Request) {
       }
     }
 
-    await db
-      .update(schema.nurses)
-      .set({
-        isAvailable,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.nurses.userId, user.id));
+    await setMyAvailability({
+      actorUserId: user.id,
+      isAvailable,
+    });
 
     const response = NextResponse.json({ ok: true });
     logApiSuccess(actorContext, 200, startedAt, { source: "me.nurse" });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    if (error instanceof NurseProfileNotFoundError) {
+      const response = NextResponse.json({ error: error.message }, { status: 404 });
+      logApiFailure(actorContext, error, 404, startedAt, {
+        source: "me.nurse",
+      });
+      return withRequestId(response, context.requestId);
+    }
+
+    if (error instanceof NurseAvailabilityError) {
+      const response = NextResponse.json({ error: error.message }, { status: 403 });
+      logApiFailure(actorContext, error, 403, startedAt, {
+        source: "me.nurse",
+      });
+      return withRequestId(response, context.requestId);
+    }
+
     logApiFailure(actorContext, error, 500, startedAt, { source: "me.nurse" });
     return withRequestId(NextResponse.json({ error: "Internal Server Error" }, { status: 500 }), context.requestId);
   }
