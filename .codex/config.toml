@@ -16,3 +16,8 @@ args = [
   "--output-dir",
   "/Users/arbenlila/development/nurseconnect-v3/.codex/playwright-output",
 ]
+
+[mcp_servers.nurseconnect_qa]
+command = "/bin/bash"
+args = ["scripts/start-repo-qa.sh"]
+cwd = "."
