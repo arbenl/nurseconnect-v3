@@ -16,7 +16,7 @@
 
 ## Verify
 
-9. `GET https://<production-url>/api/health/db` returns `{ ok: true, db: "ok" }`.
+9. `GET https://<production-url>/api/health` returns `ok: true`.
 10. Login with the primary admin email.
 11. `GET /api/admin/ping` returns 200 with role `admin`.
 12. Admin -> Service Areas shows at least one active launch area.
@@ -36,3 +36,19 @@
 
 19. If all steps are green, proceed with controlled launch.
 20. If any step fails, record the failure and do not launch.
+
+## Post-Deploy First-Hour Monitoring
+
+21. Poll `GET https://<production-url>/api/health` every 5 minutes for the
+    first hour. If it does not return `ok: true`, pause intake immediately.
+22. As an authenticated admin, poll `GET /api/admin/ops/status` every 5
+    minutes and record service area, nurse supply, request, exception, and
+    payment counts.
+23. Refresh Admin -> Active Queue, Admin -> Exception Queue, and Admin ->
+    Service Areas every 5 minutes during the first hour.
+24. Watch the first real request from intake through assignment, nurse accept,
+    enroute, completion, payment trace, and payout trace.
+25. Escalate immediately if active service areas equals 0, verified and
+    available nurse supply equals 0, unassigned requests reach 3 or more for
+    more than 5 minutes, any enroute request becomes stale, exception queue
+    reaches 5 or more, or any payment authorization or payout failure appears.

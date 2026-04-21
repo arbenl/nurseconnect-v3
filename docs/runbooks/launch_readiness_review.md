@@ -197,12 +197,29 @@ Go only when all items are true:
 - [ ] Production environment variables are configured.
 - [ ] Production migrations have been applied.
 - [ ] Primary admin bootstrap is verified.
+- [ ] `GET /api/health` returns `ok: true`.
 - [ ] At least one active launch service area exists.
-- [ ] Verified nurse supply exists inside the launch service area.
+- [ ] Verified and available nurse supply exists inside the launch service area.
+- [ ] `GET /api/admin/ops/status` is reachable by an authenticated admin and
+      confirms launch thresholds are green.
 - [ ] Patient request, partner request, nurse assignment, visit completion,
       payment trace, payout trace, and exception handling are rehearsed.
 - [ ] Known exclusions are accepted by the operator.
 - [ ] Rollback path is understood before launch.
+
+Escalate or no-go when any launch threshold is breached:
+
+- `GET /api/health` does not return `ok: true`: stop launch or pause intake
+  immediately.
+- Active service areas equals 0: do not launch or pause intake.
+- Verified and available nurse supply equals 0: do not accept new requests.
+- Unassigned requests are 3 or more for more than 5 minutes: escalate to the
+  operator.
+- Any stale enroute request exists: escalate to the operator.
+- Exception queue is 5 or more: operator review is required before expanding
+  intake.
+- Any recent failed payment authorization or payout exists: finance and
+  operator review is required.
 
 ## Rollback Guidance
 

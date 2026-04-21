@@ -11,6 +11,7 @@ import {
 } from "@nurseconnect/domain-payments";
 
 import { recordAdminAction, type AdminAuditAction } from "@/server/admin/audit";
+import { notifyOpsAlert } from "@/server/alerts/ops-alert";
 
 const authorizationAuditAction: Record<"capture" | "void" | "fail", AdminAuditAction> = {
   capture: "payment.authorization.captured",
@@ -68,6 +69,8 @@ export async function mutateAdminPaymentTrace(
   actorUserId: string,
   input: AdminPaymentTraceMutationInput,
 ) {
+  const auditAction = adminAuditAction(input);
+
   await db.transaction(async (tx) => {
     if (input.kind === "authorization") {
       if (input.action === "record") {
@@ -115,7 +118,7 @@ export async function mutateAdminPaymentTrace(
     await recordAdminAction(
       {
         actorUserId,
-        action: adminAuditAction(input),
+        action: auditAction,
         targetEntityType: "request",
         targetEntityId: requestId,
         details: auditDetails(requestId, input),
@@ -123,6 +126,8 @@ export async function mutateAdminPaymentTrace(
       tx,
     );
   });
+
+  notifyOpsAlert({ action: auditAction, requestId, actorUserId });
 
   return getAdminPaymentTrace(requestId);
 }

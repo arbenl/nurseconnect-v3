@@ -8,3 +8,5 @@ export * from "./location";
 export * from "./nurse-credential";
 export * from "./payments";
 export * from "./service-areas";
+export * from "./health";
+export * from "./admin-ops-status";
