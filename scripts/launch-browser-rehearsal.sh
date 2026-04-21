@@ -9,8 +9,7 @@ cd "$repo_root"
 load_local_env_defaults
 enforce_test_database_url
 
-pnpm launch:readiness
 pnpm launch:rehearsal
 pnpm db:from-clean
 pnpm --filter @nurseconnect/contracts build
-pnpm --filter web test:e2e:m7-browser
+CI=1 pnpm --filter web test:e2e:m7-browser

@@ -30,9 +30,11 @@ export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
     setError(null);
 
     try {
+      const submittedRequestType =
+        formData.get("requestType") === "scheduled" ? "scheduled" : "same_day";
       const scheduledForValue = String(formData.get("scheduledFor") ?? "");
       const scheduledFor =
-        requestType === "scheduled" && scheduledForValue
+        submittedRequestType === "scheduled" && scheduledForValue
           ? new Date(scheduledForValue).toISOString()
           : undefined;
 
@@ -50,7 +52,7 @@ export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
           address: String(formData.get("address") ?? ""),
           lat: Number(formData.get("lat")),
           lng: Number(formData.get("lng")),
-          requestType,
+          requestType: submittedRequestType,
           scheduledFor,
           careType: String(formData.get("careType") ?? "") || undefined,
         }),
@@ -141,6 +143,7 @@ export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
           name="requestType"
           className="rounded-xl border border-slate-200 px-4 py-3"
           value={requestType}
+          disabled={!isHydrated || isSubmitting}
           onChange={(event) => setRequestType(event.target.value as "same_day" | "scheduled")}
         >
           <option value="same_day">Same day</option>
