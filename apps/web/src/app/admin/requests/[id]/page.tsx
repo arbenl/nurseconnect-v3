@@ -109,7 +109,7 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
         title="Request summary"
         description="Operational context for the request before reassignment or timeline review."
       >
-        <div className="grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+        <div data-testid="request-summary" className="grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
           <div>
             <strong>Request:</strong> <span className="font-mono text-xs">{request.id}</span>
           </div>

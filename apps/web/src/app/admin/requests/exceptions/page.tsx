@@ -77,7 +77,11 @@ export default async function AdminRequestExceptionsPage() {
             </thead>
             <tbody>
               {queue.items.map((item) => (
-                <tr key={item.requestId} className="bg-white transition odd:bg-slate-50/60 hover:bg-sky-50/40">
+                <tr
+                  key={item.requestId}
+                  data-testid={`exception-request-row-${item.requestId}`}
+                  className="bg-white transition odd:bg-slate-50/60 hover:bg-sky-50/40"
+                >
                   <td className="border-b border-slate-100 px-4 py-3">
                     <Link
                       href={`/admin/requests/${item.requestId}`}

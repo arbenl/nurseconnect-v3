@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "test:e2e:api": "playwright test --project=api",
     "test:e2e:launch-rehearsal": "playwright test tests/e2e-api/launch-rehearsal.api.e2e.ts --project=api",
+    "test:e2e:m7-browser": "playwright test tests/e2e-ui/m7-full-milestone-browser-rehearsal.spec.ts --project=ui",
     "test:e2e:ui": "playwright test --project=ui",
     "test:e2e:ui-smoke": "playwright test tests/e2e-ui/smoke.spec.ts"
   },

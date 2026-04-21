@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,17 +12,24 @@ import { authClient } from "@/lib/auth-client";
 import { resolvePostAuthRedirectTarget } from "@/lib/post-auth-redirect";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async () => {
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
+    const formData = new FormData(event.currentTarget);
+    const submittedEmail = String(formData.get("email") ?? "");
+    const submittedPassword = String(formData.get("password") ?? "");
     await authClient.signIn.email(
       {
-        email,
-        password,
+        email: submittedEmail,
+        password: submittedPassword,
       },
       {
         onSuccess: async () => {
@@ -50,29 +57,29 @@ export default function LoginPage() {
           <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
           <CardDescription className="text-center">Sign in to your account</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <Button onClick={handleLogin} className="w-full" disabled={loading}>
-            {loading ? "Signing In..." : "Sign In"}
-          </Button>
+        <CardContent>
+          <form className="space-y-4" method="post" onSubmit={(event) => void handleLogin(event)}>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="name@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading || !isHydrated}>
+              {loading ? "Signing In..." : "Sign In"}
+            </Button>
+          </form>
         </CardContent>
         <CardFooter className="justify-center">
           <p className="text-sm text-gray-500">
