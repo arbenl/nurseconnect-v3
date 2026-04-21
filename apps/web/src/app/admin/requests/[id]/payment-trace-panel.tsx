@@ -6,7 +6,7 @@ import type {
   RequestStatus,
 } from "@nurseconnect/contracts";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Button } from "@/components/ui/button";
@@ -89,6 +89,14 @@ function toCents(value: string) {
   return Math.round(parsed * 100);
 }
 
+function inputValue(id: string, fallback: string) {
+  if (typeof document === "undefined") {
+    return fallback;
+  }
+  const input = document.getElementById(id);
+  return input instanceof HTMLInputElement ? input.value : fallback;
+}
+
 export default function PaymentTracePanel({
   requestId,
   requestStatus,
@@ -106,8 +114,13 @@ export default function PaymentTracePanel({
   const [payoutProvider, setPayoutProvider] = useState("manual");
   const [payoutReference, setPayoutReference] = useState("");
   const [payoutFailureReason, setPayoutFailureReason] = useState("");
+  const [isHydrated, setIsHydrated] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState>(null);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const canRecordPayout = useMemo(
     () => requestStatus === "completed" && Boolean(assignedNurseUserId),
@@ -149,8 +162,6 @@ export default function PaymentTracePanel({
     }
   }
 
-  const authAmountCents = toCents(authAmount);
-  const payoutAmountCents = toCents(payoutAmount);
   const authTerminal =
     trace.authorization?.status === "captured" ||
     trace.authorization?.status === "voided" ||
@@ -196,6 +207,7 @@ export default function PaymentTracePanel({
                     id="auth-amount"
                     value={authAmount}
                     onChange={(event) => setAuthAmount(event.target.value)}
+                    disabled={!isHydrated || pendingAction !== null}
                     inputMode="decimal"
                     className="rounded-md border border-input px-3 py-2 text-sm"
                     placeholder="150.00"
@@ -207,6 +219,7 @@ export default function PaymentTracePanel({
                     id="auth-currency"
                     value={authCurrency}
                     onChange={(event) => setAuthCurrency(event.target.value.toUpperCase())}
+                    disabled={!isHydrated || pendingAction !== null}
                     maxLength={3}
                     className="rounded-md border border-input px-3 py-2 text-sm"
                   />
@@ -217,6 +230,7 @@ export default function PaymentTracePanel({
                     id="auth-provider"
                     value={authProvider}
                     onChange={(event) => setAuthProvider(event.target.value)}
+                    disabled={!isHydrated || pendingAction !== null}
                     className="rounded-md border border-input px-3 py-2 text-sm"
                   />
                 </div>
@@ -226,22 +240,28 @@ export default function PaymentTracePanel({
                     id="auth-reference"
                     value={authReference}
                     onChange={(event) => setAuthReference(event.target.value)}
+                    disabled={!isHydrated || pendingAction !== null}
                     className="rounded-md border border-input px-3 py-2 text-sm"
                   />
                 </div>
                 <Button
                   type="button"
-                  disabled={pendingAction !== null || authAmountCents <= 0}
-                  onClick={() =>
+                  disabled={!isHydrated || pendingAction !== null}
+                  onClick={() => {
+                    const amountCents = toCents(inputValue("auth-amount", authAmount));
+                    if (amountCents <= 0) {
+                      setFeedback({ tone: "error", message: "Authorization amount is required." });
+                      return;
+                    }
                     void submitMutation("authorization.record", {
                       kind: "authorization",
                       action: "record",
-                      amountCents: authAmountCents,
-                      currency: authCurrency,
-                      provider: clean(authProvider),
-                      providerReference: clean(authReference),
-                    })
-                  }
+                      amountCents,
+                      currency: inputValue("auth-currency", authCurrency).toUpperCase(),
+                      provider: clean(inputValue("auth-provider", authProvider)),
+                      providerReference: clean(inputValue("auth-reference", authReference)),
+                    });
+                  }}
                 >
                   {pendingAction === "authorization.record" ? "Saving..." : "Record Authorization"}
                 </Button>
@@ -257,6 +277,7 @@ export default function PaymentTracePanel({
                   id="auth-status-reference"
                   value={authReference}
                   onChange={(event) => setAuthReference(event.target.value)}
+                  disabled={!isHydrated || pendingAction !== null}
                   className="rounded-md border border-input px-3 py-2 text-sm"
                 />
               </div>
@@ -266,18 +287,19 @@ export default function PaymentTracePanel({
                   id="auth-failure"
                   value={authFailureReason}
                   onChange={(event) => setAuthFailureReason(event.target.value)}
+                  disabled={!isHydrated || pendingAction !== null}
                   className="rounded-md border border-input px-3 py-2 text-sm"
                 />
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
-                  disabled={pendingAction !== null}
+                  disabled={!isHydrated || pendingAction !== null}
                   onClick={() =>
                     void submitMutation("authorization.capture", {
                       kind: "authorization",
                       action: "capture",
-                      providerReference: clean(authReference),
+                      providerReference: clean(inputValue("auth-status-reference", authReference)),
                     })
                   }
                 >
@@ -286,7 +308,7 @@ export default function PaymentTracePanel({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={pendingAction !== null}
+                  disabled={!isHydrated || pendingAction !== null}
                   onClick={() =>
                     void submitMutation("authorization.void", {
                       kind: "authorization",
@@ -299,7 +321,7 @@ export default function PaymentTracePanel({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={pendingAction !== null || authFailureReason.trim().length < 3}
+                  disabled={!isHydrated || pendingAction !== null || authFailureReason.trim().length < 3}
                   onClick={() =>
                     void submitMutation("authorization.fail", {
                       kind: "authorization",
@@ -345,6 +367,7 @@ export default function PaymentTracePanel({
                     id="payout-amount"
                     value={payoutAmount}
                     onChange={(event) => setPayoutAmount(event.target.value)}
+                    disabled={!isHydrated || pendingAction !== null}
                     inputMode="decimal"
                     className="rounded-md border border-input px-3 py-2 text-sm"
                     placeholder="90.00"
@@ -356,6 +379,7 @@ export default function PaymentTracePanel({
                     id="payout-currency"
                     value={payoutCurrency}
                     onChange={(event) => setPayoutCurrency(event.target.value.toUpperCase())}
+                    disabled={!isHydrated || pendingAction !== null}
                     maxLength={3}
                     className="rounded-md border border-input px-3 py-2 text-sm"
                   />
@@ -366,6 +390,7 @@ export default function PaymentTracePanel({
                     id="payout-provider"
                     value={payoutProvider}
                     onChange={(event) => setPayoutProvider(event.target.value)}
+                    disabled={!isHydrated || pendingAction !== null}
                     className="rounded-md border border-input px-3 py-2 text-sm"
                   />
                 </div>
@@ -375,25 +400,31 @@ export default function PaymentTracePanel({
                     id="payout-reference"
                     value={payoutReference}
                     onChange={(event) => setPayoutReference(event.target.value)}
+                    disabled={!isHydrated || pendingAction !== null}
                     className="rounded-md border border-input px-3 py-2 text-sm"
                   />
                 </div>
                 <Button
                   type="button"
-                  disabled={pendingAction !== null || !canRecordPayout || payoutAmountCents <= 0}
-                  onClick={() =>
-                    assignedNurseUserId
-                      ? void submitMutation("payout.record", {
-                          kind: "payout",
-                          action: "record",
-                          nurseUserId: assignedNurseUserId,
-                          amountCents: payoutAmountCents,
-                          currency: payoutCurrency,
-                          provider: clean(payoutProvider),
-                          providerReference: clean(payoutReference),
-                        })
-                      : undefined
-                  }
+                  disabled={!isHydrated || pendingAction !== null || !canRecordPayout}
+                  onClick={() => {
+                    const amountCents = toCents(inputValue("payout-amount", payoutAmount));
+                    if (amountCents <= 0) {
+                      setFeedback({ tone: "error", message: "Payout amount is required." });
+                      return;
+                    }
+                    if (assignedNurseUserId) {
+                      void submitMutation("payout.record", {
+                        kind: "payout",
+                        action: "record",
+                        nurseUserId: assignedNurseUserId,
+                        amountCents,
+                        currency: inputValue("payout-currency", payoutCurrency).toUpperCase(),
+                        provider: clean(inputValue("payout-provider", payoutProvider)),
+                        providerReference: clean(inputValue("payout-reference", payoutReference)),
+                      });
+                    }
+                  }}
                 >
                   {pendingAction === "payout.record" ? "Saving..." : "Record Payout Owed"}
                 </Button>
@@ -409,6 +440,7 @@ export default function PaymentTracePanel({
                   id="payout-status-reference"
                   value={payoutReference}
                   onChange={(event) => setPayoutReference(event.target.value)}
+                  disabled={!isHydrated || pendingAction !== null}
                   className="rounded-md border border-input px-3 py-2 text-sm"
                 />
               </div>
@@ -418,18 +450,19 @@ export default function PaymentTracePanel({
                   id="payout-failure"
                   value={payoutFailureReason}
                   onChange={(event) => setPayoutFailureReason(event.target.value)}
+                  disabled={!isHydrated || pendingAction !== null}
                   className="rounded-md border border-input px-3 py-2 text-sm"
                 />
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
-                  disabled={pendingAction !== null}
+                  disabled={!isHydrated || pendingAction !== null}
                   onClick={() =>
                     void submitMutation("payout.mark_paid", {
                       kind: "payout",
                       action: "mark_paid",
-                      providerReference: clean(payoutReference),
+                      providerReference: clean(inputValue("payout-status-reference", payoutReference)),
                     })
                   }
                 >
@@ -438,7 +471,7 @@ export default function PaymentTracePanel({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={pendingAction !== null || payoutFailureReason.trim().length < 3}
+                  disabled={!isHydrated || pendingAction !== null || payoutFailureReason.trim().length < 3}
                   onClick={() =>
                     void submitMutation("payout.fail", {
                       kind: "payout",
@@ -452,7 +485,7 @@ export default function PaymentTracePanel({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={pendingAction !== null}
+                  disabled={!isHydrated || pendingAction !== null}
                   onClick={() =>
                     void submitMutation("payout.cancel", {
                       kind: "payout",

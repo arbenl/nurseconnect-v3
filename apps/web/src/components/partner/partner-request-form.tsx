@@ -1,39 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type PartnerRequestFormProps = {
   onCreated: () => Promise<void> | void;
 };
 
 const initialState = {
-  patientEmail: "",
-  patientFirstName: "",
-  patientLastName: "",
-  patientPhone: "",
-  patientCity: "",
-  address: "",
   lat: "42.6629",
   lng: "21.1655",
   requestType: "same_day" as "same_day" | "scheduled",
-  scheduledFor: "",
-  careType: "",
 };
 
 export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
-  const [form, setForm] = useState(initialState);
+  const [requestType, setRequestType] = useState(initialState.requestType);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     setIsSubmitting(true);
     setError(null);
 
     try {
+      const submittedRequestType =
+        formData.get("requestType") === "scheduled" ? "scheduled" : "same_day";
+      const scheduledForValue = String(formData.get("scheduledFor") ?? "");
       const scheduledFor =
-        form.requestType === "scheduled" && form.scheduledFor
-          ? new Date(form.scheduledFor).toISOString()
+        submittedRequestType === "scheduled" && scheduledForValue
+          ? new Date(scheduledForValue).toISOString()
           : undefined;
 
       const res = await fetch("/api/partner/requests", {
@@ -41,18 +43,18 @@ export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           patient: {
-            email: form.patientEmail,
-            firstName: form.patientFirstName,
-            lastName: form.patientLastName,
-            phone: form.patientPhone || undefined,
-            city: form.patientCity || undefined,
+            email: String(formData.get("patientEmail") ?? ""),
+            firstName: String(formData.get("patientFirstName") ?? ""),
+            lastName: String(formData.get("patientLastName") ?? ""),
+            phone: String(formData.get("patientPhone") ?? "") || undefined,
+            city: String(formData.get("patientCity") ?? "") || undefined,
           },
-          address: form.address,
-          lat: Number(form.lat),
-          lng: Number(form.lng),
-          requestType: form.requestType,
+          address: String(formData.get("address") ?? ""),
+          lat: Number(formData.get("lat")),
+          lng: Number(formData.get("lng")),
+          requestType: submittedRequestType,
           scheduledFor,
-          careType: form.careType || undefined,
+          careType: String(formData.get("careType") ?? "") || undefined,
         }),
       });
 
@@ -61,7 +63,8 @@ export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
         throw new Error(body?.error ?? body?.message ?? "Failed to submit referral");
       }
 
-      setForm(initialState);
+      form.reset();
+      setRequestType(initialState.requestType);
       await onCreated();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to submit referral");
@@ -78,88 +81,86 @@ export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
         </p>
         <h2 className="mt-2 text-xl font-semibold text-slate-900">Submit a patient referral</h2>
       </div>
-      <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+      <form className="grid gap-4 md:grid-cols-2" method="post" onSubmit={handleSubmit}>
         <input
+          aria-label="Patient email"
+          name="patientEmail"
           className="rounded-xl border border-slate-200 px-4 py-3"
           placeholder="Patient email"
-          value={form.patientEmail}
-          onChange={(event) => setForm((current) => ({ ...current, patientEmail: event.target.value }))}
           required
         />
         <input
+          aria-label="Patient first name"
+          name="patientFirstName"
           className="rounded-xl border border-slate-200 px-4 py-3"
           placeholder="Patient first name"
-          value={form.patientFirstName}
-          onChange={(event) => setForm((current) => ({ ...current, patientFirstName: event.target.value }))}
           required
         />
         <input
+          aria-label="Patient last name"
+          name="patientLastName"
           className="rounded-xl border border-slate-200 px-4 py-3"
           placeholder="Patient last name"
-          value={form.patientLastName}
-          onChange={(event) => setForm((current) => ({ ...current, patientLastName: event.target.value }))}
           required
         />
         <input
+          aria-label="Patient phone"
+          name="patientPhone"
           className="rounded-xl border border-slate-200 px-4 py-3"
           placeholder="Patient phone"
-          value={form.patientPhone}
-          onChange={(event) => setForm((current) => ({ ...current, patientPhone: event.target.value }))}
         />
         <input
+          aria-label="Patient city"
+          name="patientCity"
           className="rounded-xl border border-slate-200 px-4 py-3"
           placeholder="Patient city"
-          value={form.patientCity}
-          onChange={(event) => setForm((current) => ({ ...current, patientCity: event.target.value }))}
         />
         <input
+          aria-label="Visit address"
+          name="address"
           className="rounded-xl border border-slate-200 px-4 py-3 md:col-span-2"
           placeholder="Visit address"
-          value={form.address}
-          onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))}
           required
         />
         <input
+          aria-label="Latitude"
+          name="lat"
           className="rounded-xl border border-slate-200 px-4 py-3"
           placeholder="Latitude"
-          value={form.lat}
-          onChange={(event) => setForm((current) => ({ ...current, lat: event.target.value }))}
+          defaultValue={initialState.lat}
           required
         />
         <input
+          aria-label="Longitude"
+          name="lng"
           className="rounded-xl border border-slate-200 px-4 py-3"
           placeholder="Longitude"
-          value={form.lng}
-          onChange={(event) => setForm((current) => ({ ...current, lng: event.target.value }))}
+          defaultValue={initialState.lng}
           required
         />
         <select
+          aria-label="Visit type"
+          name="requestType"
           className="rounded-xl border border-slate-200 px-4 py-3"
-          value={form.requestType}
-          onChange={(event) =>
-            setForm((current) => ({
-              ...current,
-              requestType: event.target.value as "same_day" | "scheduled",
-              scheduledFor:
-                event.target.value === "scheduled" ? current.scheduledFor : "",
-            }))
-          }
+          value={requestType}
+          disabled={!isHydrated || isSubmitting}
+          onChange={(event) => setRequestType(event.target.value as "same_day" | "scheduled")}
         >
           <option value="same_day">Same day</option>
           <option value="scheduled">Scheduled</option>
         </select>
         <input
+          aria-label="Care type"
+          name="careType"
           className="rounded-xl border border-slate-200 px-4 py-3"
           placeholder="Care type"
-          value={form.careType}
-          onChange={(event) => setForm((current) => ({ ...current, careType: event.target.value }))}
         />
-        {form.requestType === "scheduled" && (
+        {requestType === "scheduled" && (
           <input
+            aria-label="Scheduled for"
+            name="scheduledFor"
             className="rounded-xl border border-slate-200 px-4 py-3 md:col-span-2"
             type="datetime-local"
-            value={form.scheduledFor}
-            onChange={(event) => setForm((current) => ({ ...current, scheduledFor: event.target.value }))}
             required
           />
         )}
@@ -167,7 +168,7 @@ export function PartnerRequestForm({ onCreated }: PartnerRequestFormProps) {
         <div className="md:col-span-2">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !isHydrated}
             className="rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-60"
           >
             {isSubmitting ? "Submitting..." : "Submit Referral"}

@@ -2,7 +2,7 @@
 
 import type { AdminTriageAction, RequestStatus } from "@nurseconnect/contracts";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Button } from "@/components/ui/button";
@@ -80,8 +80,13 @@ export default function TriageExceptionPanel({
 }: TriageExceptionPanelProps) {
   const router = useRouter();
   const [reason, setReason] = useState("");
+  const [isHydrated, setIsHydrated] = useState(false);
   const [pendingAction, setPendingAction] = useState<AdminTriageAction | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState>(null);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const actions = useMemo(() => getAvailableActions(status), [status]);
   const trimmedReason = reason.trim();
@@ -132,6 +137,7 @@ export default function TriageExceptionPanel({
             id="triage-reason"
             value={reason}
             onChange={(event) => setReason(event.target.value)}
+            disabled={!isHydrated || pendingAction !== null}
             maxLength={1000}
             rows={3}
             className="min-h-24 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background"
@@ -141,6 +147,7 @@ export default function TriageExceptionPanel({
         <div className="flex flex-wrap gap-2">
           {actions.map((option) => {
             const disabled =
+              !isHydrated ||
               pendingAction !== null ||
               (option.requiresReason && trimmedReason.length < 3);
 
