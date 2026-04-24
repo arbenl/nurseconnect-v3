@@ -57,7 +57,7 @@ export async function getAdminOpsStatus(
       db.execute<ServiceAreaCountRow>(sql`
         SELECT COUNT(*) AS active
         FROM service_areas
-        WHERE status::text = 'active'
+        WHERE status = 'active'::service_area_status
       `),
       getVerifiedAndAvailableNurseCount(),
       db.execute<RequestStatusCountRow>(sql`
@@ -68,19 +68,28 @@ export async function getAdminOpsStatus(
         )
         SELECT
           COUNT(*) FILTER (
-            WHERE sr.status::text IN ('open', 'assigned', 'accepted', 'enroute')
+            WHERE sr.status IN (
+              'open'::service_request_status,
+              'assigned'::service_request_status,
+              'accepted'::service_request_status,
+              'enroute'::service_request_status
+            )
               AND sr.assigned_nurse_user_id IS NULL
           ) AS "unassigned",
           COUNT(*) FILTER (
-            WHERE sr.status::text = 'assigned'
+            WHERE sr.status = 'assigned'::service_request_status
               AND COALESCE(lre.last_event_at, sr.created_at) < ${staleBefore}
           ) AS "staleAssigned",
           COUNT(*) FILTER (
-            WHERE sr.status::text = 'enroute'
+            WHERE sr.status = 'enroute'::service_request_status
               AND COALESCE(lre.last_event_at, sr.created_at) < ${staleBefore}
           ) AS "staleEnroute",
           COUNT(*) FILTER (
-            WHERE sr.status::text IN ('needs_review', 'declined', 'unfulfilled')
+            WHERE sr.status IN (
+              'needs_review'::service_request_status,
+              'declined'::service_request_status,
+              'unfulfilled'::service_request_status
+            )
           ) AS "exceptionQueue"
         FROM service_requests sr
         LEFT JOIN latest_request_events lre ON lre.request_id = sr.id
@@ -91,7 +100,10 @@ export async function getAdminOpsStatus(
             SELECT COUNT(*)
             FROM payment_authorizations pa
             LEFT JOIN nurse_payouts np ON np.request_id = pa.request_id
-            WHERE pa.status::text IN ('authorized', 'captured')
+            WHERE pa.status IN (
+              'authorized'::payment_authorization_status,
+              'captured'::payment_authorization_status
+            )
               AND np.id IS NULL
           ) AS "authorizationsWithoutPayout",
           (
