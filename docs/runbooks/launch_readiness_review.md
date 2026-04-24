@@ -112,11 +112,14 @@ Date: __________________________
 
 | Milestone | Status | Evidence |
 | --- | --- | --- |
-| M1 Referral Partner MVP | Done | PR #48 design/plan, PR #49 implementation |
+| M1 Referral Partner MVP | Done | PR #48 design/plan, merge commit `f5f24133b84d9a72e3be6f724e5e326682d2f9fb`; PR #49 implementation, merge commit `aa04ee94e684e72d682b6b01aa7e0fc9df555e26` |
 | M2 Triage and Exception Model | Done | PR #50, merge commit `4256f568d3052005b52622acc706678cd23bb307` |
 | M3 Private-Pay and Payout Traceability | Done | PR #51, merge commit `ba54509d7acf2fdd49ca37caeb16cebbb67c77b7` |
 | M4 Service-Area Controls | Done | PR #52, merge commit `2905c8d338964a3a70d8f1602d5851c04144b8a4` |
-| M5 Launch Readiness Review | This slice | `docs/runbooks/launch_readiness_review.md` and `pnpm launch:readiness` |
+| M5 Launch Readiness Review | Done | PR #53, merge commit `debf2455532ea9e83c9535067880e5fe599f2532` |
+| M6 Automated Launch Rehearsal | Done | PR #54, merge commit `60e270a50442a88587af058bc3552e4f9fcf6e96` |
+| M7 Full Milestone Browser Rehearsal | Done | PR #55, merge commit `0117fabdd2cb810a6c51ce9497e31425f9dc71aa` |
+| M8 Production Monitoring and Alerting | Done | PR #56, merge commit `38d947fe32a5c428f8ef85cabcf83b1709c3af68` |
 
 ## Required Validation Commands
 
