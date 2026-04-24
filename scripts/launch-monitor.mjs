@@ -6,7 +6,7 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 
 function parseArgs(argv) {
   const options = {
-    baseUrl: process.env.LAUNCH_MONITOR_URL || process.env.APP_URL || "http://localhost:3000",
+    baseUrl: process.env.LAUNCH_MONITOR_URL || process.env.APP_URL || "http://localhost:3010",
     intervalMs: DEFAULT_INTERVAL_MS,
     iterations: DEFAULT_ITERATIONS,
     timeoutMs: DEFAULT_TIMEOUT_MS,
@@ -90,7 +90,7 @@ Usage:
   pnpm launch:monitor -- --url https://production.example.com --once --json
 
 Options:
-  --url <url>             Base app URL. Defaults to LAUNCH_MONITOR_URL, APP_URL, or http://localhost:3000.
+  --url <url>             Base app URL. Defaults to LAUNCH_MONITOR_URL, APP_URL, or http://localhost:3010.
   --once                  Run one sample instead of the default first-hour loop.
   --iterations <n>        Number of samples. Default: ${DEFAULT_ITERATIONS}.
   --interval-ms <n>       Delay between samples. Default: ${DEFAULT_INTERVAL_MS}.
