@@ -52,7 +52,8 @@ All hard gates must be green for GO:
 - Stale enroute requests are 0.
 - Recent failed payment authorizations are 0.
 - Recent failed payouts are 0.
-- Required CI checks on the release branch or `main` are green.
+- Required CI checks on the release branch or `main` are green, including the
+  blocking `Sonar Quality Gate` check on the release PR.
 - Rollback owner and pause-intake owner are named.
 
 ## Soft Launch Gates

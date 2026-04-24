@@ -53,20 +53,22 @@
 22. Open `docs/runbooks/controlled_launch_execution_readiness.md` and copy the
     operator decision ledger template into Notion or a private launch evidence
     artifact. Do not fill production evidence into the tracked repo runbook.
-23. Record one decision:
+23. Confirm the release PR had a green `Sonar Quality Gate` check and PR-facing
+    Sonar summary. A green scheduled `Sonar Baseline` is not a substitute.
+24. Record one decision:
     - **GO**: all hard gates are green, any soft gate has an accepted
       mitigation, and authenticated first-hour monitoring is ready to start.
     - **HOLD**: no hard gate is red, but intake stays closed while an owner
       completes a bounded mitigation and re-check.
     - **NO-GO**: any hard gate is red, production state cannot be verified, or
       a secret/token/PHI exposure occurred.
-24. Proceed with controlled launch only on GO, and start the authenticated
+25. Proceed with controlled launch only on GO, and start the authenticated
     first-hour monitor before opening intake.
-25. On HOLD or NO-GO, record the failed gate and do not open intake.
+26. On HOLD or NO-GO, record the failed gate and do not open intake.
 
 ## Post-Deploy First-Hour Monitoring
 
-26. Run the authenticated first-hour monitor:
+27. Run the authenticated first-hour monitor:
 
     ```bash
     LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
@@ -77,7 +79,7 @@
     every 5 minutes for the first hour. If it fails, pause intake immediately.
     Public health-only monitoring is not sufficient for GO.
 
-27. In a second terminal, run the auth/session monitor every 10 minutes:
+28. In a second terminal, run the auth/session monitor every 10 minutes:
 
     ```bash
     LAUNCH_AUTH_MONITOR_EMAIL='<synthetic admin email>' \
@@ -86,13 +88,13 @@
     ```
 
     Never paste the password or cookie into notes, PRs, logs, or Notion.
-28. Refresh Admin -> Dashboard every 5 minutes during the first hour and review
+29. Refresh Admin -> Dashboard every 5 minutes during the first hour and review
     the Launch operator signals section. Drill into Active Queue, Exception
     Queue, Service Areas, and the Payment follow-up request links when any
     badge turns non-zero or blocked.
-29. Watch the first real request from intake through assignment, nurse accept,
+30. Watch the first real request from intake through assignment, nurse accept,
     enroute, completion, payment trace, and payout trace.
-30. Escalate immediately if active service areas equals 0, verified and
+31. Escalate immediately if active service areas equals 0, verified and
     available nurse supply equals 0, unassigned requests reach 3 or more for
     more than 5 minutes, any enroute request becomes stale, exception queue
     reaches 5 or more, any payment authorization or payout failure appears, or

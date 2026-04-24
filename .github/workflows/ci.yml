@@ -66,6 +66,275 @@ jobs:
       - name: Build Web Application
         run: pnpm --filter web build
 
+  sonar-coverage:
+    name: Sonar Coverage
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: quality
+    permissions:
+      contents: read
+    env:
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.15.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run coverage for Sonar
+        run: pnpm test:coverage
+
+      - name: Upload Sonar coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-coverage-${{ github.run_id }}
+          path: |
+            apps/web/coverage/
+            packages/*/coverage/
+          if-no-files-found: error
+          retention-days: 7
+
+  sonar-quality-gate:
+    name: Sonar Quality Gate
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'pull_request'
+    needs: [quality, sonar-coverage]
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      NODE_ENV: test
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || secrets.SONAR_PROJECT_KEY || 'arbenl_nurseconnect-v3' }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || secrets.SONAR_ORGANIZATION || 'arbenl' }}
+      SONAR_SCANNER_SKIP_JRE_PROVISIONING: "true"
+      EVIDENCE_DIR: tmp/sonar-evidence/${{ github.run_id }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Sonar coverage
+        if: needs.sonar-coverage.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-coverage-${{ github.run_id }}
+          path: .
+
+      - name: Validate Sonar configuration
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ needs.sonar-coverage.result }}" != "success" ]]; then
+            mkdir -p "${EVIDENCE_DIR}/notes"
+            {
+              echo "# Sonar Quality Gate Failed"
+              echo
+              echo "- reason: Sonar coverage job did not pass."
+              echo "- coverage_result: ${{ needs.sonar-coverage.result }}"
+              echo "- run_id: ${GITHUB_RUN_ID}"
+            } > "${EVIDENCE_DIR}/notes/sonar-summary.md"
+            echo "::error::Sonar coverage job did not pass: ${{ needs.sonar-coverage.result }}"
+            exit 2
+          fi
+
+          required=(SONAR_TOKEN SONAR_HOST_URL SONAR_PROJECT_KEY)
+          if [[ "${SONAR_HOST_URL:-}" == *"sonarcloud.io"* ]]; then
+            required+=(SONAR_ORGANIZATION)
+          fi
+
+          missing=()
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              missing+=("${name}")
+            fi
+          done
+
+          if (( ${#missing[@]} > 0 )); then
+            mkdir -p "${EVIDENCE_DIR}/notes"
+            {
+              echo "# Sonar Quality Gate Failed"
+              echo
+              echo "- reason: Missing Sonar configuration in GitHub Actions context."
+              echo "- missing: ${missing[*]}"
+              echo "- run_id: ${GITHUB_RUN_ID}"
+            } > "${EVIDENCE_DIR}/notes/sonar-summary.md"
+            echo "::error::Missing required Sonar configuration: ${missing[*]}"
+            exit 2
+          fi
+
+      - name: Run Sonar quality gate
+        id: sonar_scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.host.url=${{ env.SONAR_HOST_URL }}
+            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
+            -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+            -Dsonar.pullrequest.branch=${{ github.head_ref }}
+            -Dsonar.pullrequest.base=${{ github.base_ref }}
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.scanner.skipJreProvisioning=true
+
+      - name: Write Sonar quality gate evidence
+        if: always()
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SCAN_OUTCOME: ${{ steps.sonar_scan.outcome }}
+          SONAR_PULLREQUEST_KEY: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p "${EVIDENCE_DIR}/logs" "${EVIDENCE_DIR}/notes"
+          QG_JSON="${EVIDENCE_DIR}/logs/sonar-qualitygate.json"
+          SUMMARY_MD="${EVIDENCE_DIR}/notes/sonar-summary.md"
+          COMMENT_MD="${EVIDENCE_DIR}/notes/sonar-pr-comment.md"
+          QG_URL="${SONAR_HOST_URL%/}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}&pullRequest=${SONAR_PULLREQUEST_KEY}"
+          DASHBOARD_URL="${SONAR_HOST_URL%/}/dashboard?id=${SONAR_PROJECT_KEY}&pullRequest=${SONAR_PULLREQUEST_KEY}"
+
+          qg_status="UNKNOWN"
+          if [[ -n "${SONAR_TOKEN:-}" ]]; then
+            if curl -fsS -u "${SONAR_TOKEN}:" "$QG_URL" -o "$QG_JSON"; then
+              qg_status="$(node -e "const fs=require('node:fs');const d=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write((d?.projectStatus?.status)||'UNKNOWN');" "$QG_JSON")"
+            else
+              echo "::warning::Could not fetch Sonar quality gate evidence from ${QG_URL}"
+            fi
+          fi
+
+          {
+            echo "# Sonar Summary"
+            echo
+            echo "- scan_outcome: ${SCAN_OUTCOME}"
+            echo "- quality_gate: ${qg_status}"
+            echo "- enforcement: enforce"
+            echo "- host: ${SONAR_HOST_URL}"
+            echo "- project: ${SONAR_PROJECT_KEY}"
+            echo "- pull_request: ${SONAR_PULLREQUEST_KEY}"
+            echo "- dashboard: ${DASHBOARD_URL}"
+          } > "$SUMMARY_MD"
+
+          if [[ "$qg_status" == "OK" ]]; then
+            headline="Quality Gate passed"
+          elif [[ "$qg_status" == "UNKNOWN" ]]; then
+            headline="Quality Gate status unknown"
+          else
+            headline="Quality Gate failed: ${qg_status}"
+          fi
+
+          {
+            echo "<!-- nurseconnect-sonar-quality-gate -->"
+            echo "## Sonar Quality Gate"
+            echo
+            echo "$headline"
+            echo
+            cat "$SUMMARY_MD"
+            echo
+            echo "[See analysis details on SonarQube Cloud](${DASHBOARD_URL})"
+          } > "$COMMENT_MD"
+
+          if [[ "$qg_status" != "OK" ]]; then
+            echo "::error::Sonar quality gate is ${qg_status}"
+            exit 4
+          fi
+
+      - name: Upload Sonar evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: sonar-quality-gate-${{ github.run_id }}
+          path: |
+            ${{ env.EVIDENCE_DIR }}/logs/sonar-scan.log
+            ${{ env.EVIDENCE_DIR }}/logs/sonar-qualitygate.json
+            ${{ env.EVIDENCE_DIR }}/notes/sonar-summary.md
+            ${{ env.EVIDENCE_DIR }}/notes/sonar-pr-comment.md
+          if-no-files-found: warn
+          retention-days: 14
+
+  sonar-pr-summary:
+    name: Sonar PR Summary
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'pull_request'
+    needs: sonar-quality-gate
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      EVIDENCE_DIR: tmp/sonar-evidence/${{ github.run_id }}
+
+    steps:
+      - name: Download Sonar evidence
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-quality-gate-${{ github.run_id }}
+          path: ${{ env.EVIDENCE_DIR }}
+
+      - name: Publish Sonar PR summary
+        continue-on-error: true
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          COMMENT_FILE="${EVIDENCE_DIR}/notes/sonar-pr-comment.md"
+          if [[ ! -s "$COMMENT_FILE" ]]; then
+            echo "::warning::Sonar PR comment evidence missing at ${COMMENT_FILE}"
+            exit 0
+          fi
+
+          comments_json="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate --slurp)"
+          existing_id="$(
+            COMMENTS_JSON="$comments_json" node -e "const pages=JSON.parse(process.env.COMMENTS_JSON||'[]');const comments=pages.flatMap((p)=>Array.isArray(p)?p:[p]);const found=[...comments].reverse().find((c)=>typeof c?.body==='string'&&c.body.includes('<!-- nurseconnect-sonar-quality-gate -->'));process.stdout.write(found?.id?String(found.id):'');"
+          )"
+
+          if [[ -n "$existing_id" ]]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing_id}" \
+              --input - < <(node -e "const fs=require('node:fs');process.stdout.write(JSON.stringify({body:fs.readFileSync(process.argv[1],'utf8')}));" "$COMMENT_FILE")
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              --input - < <(node -e "const fs=require('node:fs');process.stdout.write(JSON.stringify({body:fs.readFileSync(process.argv[1],'utf8')}));" "$COMMENT_FILE")
+          fi
+
   unit:
     name: Unit Tests (jsdom)
     runs-on: ubuntu-latest
@@ -414,8 +683,8 @@ jobs:
   pr-finalizer:
     name: PR Finalizer
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    needs: [quality, unit, db-integration, e2e-api, e2e-ui-smoke]
+    if: always() && github.event_name == 'pull_request'
+    needs: [quality, sonar-quality-gate, unit, db-integration, e2e-api, e2e-ui-smoke]
     permissions:
       contents: read
       pull-requests: read
@@ -456,6 +725,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_FINALIZER_REQUIRED_CHECKS: |
             Type Check & Lint
+            Sonar Quality Gate
             Unit Tests (jsdom)
             DB Integration Tests (node)
             E2E API Tests

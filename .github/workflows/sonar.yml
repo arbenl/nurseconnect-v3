@@ -1,15 +1,6 @@
 name: Sonar Baseline
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/sonar.yml"
-      - "sonar-project.properties"
-      - "scripts/sonar-*.mjs"
-      - "scripts/sonar-*.sh"
-      - "package.json"
-      - "pnpm-lock.yaml"
   schedule:
     - cron: "35 3 * * 1"
   workflow_dispatch:
@@ -101,7 +92,7 @@ jobs:
       - name: Run Sonar baseline
         if: steps.sonar_config.outputs.enabled == 'true'
         env:
-          SONAR_ENFORCEMENT: warn
+          SONAR_ENFORCEMENT: enforce
           SONAR_RUN_COVERAGE: true
         run: bash scripts/sonar-gate.sh
 

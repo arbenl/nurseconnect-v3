@@ -9,6 +9,7 @@
 - [ ] `MUST_FIX` count:
 - [ ] `pnpm verify-slice -- --run-root <run-root> --static` result:
 - [ ] `pnpm verify-slice -- --run-root <run-root> --required-gates` result:
+- [ ] PR `Sonar Quality Gate` result:
 
 ### Logs
 - [ ] Logs path: `artifacts/<TASK_ID>/validation.log`
