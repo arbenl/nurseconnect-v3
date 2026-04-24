@@ -211,13 +211,13 @@ Go only when all items are true:
 - [ ] `pnpm gate:release` passes on clean `main`.
 - [ ] `pnpm launch:readiness` passes on clean `main`.
 - [ ] `pnpm launch:rehearsal` passes on clean `main` against local/test.
-- [ ] `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url
-      <production-url> --once` returns green and does not skip admin ops status
-      before production intake opens.
+- [ ] `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once`
+      returns green and does not skip admin ops status before production intake
+      opens.
 - [ ] `LAUNCH_AUTH_MONITOR_EMAIL` and `LAUNCH_AUTH_MONITOR_PASSWORD` are set in
-      the operator terminal, and `pnpm launch:auth-monitor -- --url
-      <production-url>` returns green for the dedicated synthetic admin
-      credential.
+      the operator terminal, and
+      `pnpm launch:auth-monitor -- --url <production-url>` returns green for
+      the dedicated synthetic admin credential.
 - [ ] Accepted exclusions are explicitly reviewed and signed.
 - [ ] Controlled launch execution decision ledger template from
       `docs/runbooks/controlled_launch_execution_readiness.md` is completed in
@@ -259,9 +259,8 @@ Minimum hard gates for GO:
 - active service area count greater than 0
 - verified and available nurse supply greater than 0
 - primary admin and synthetic admin auth checks pass
-- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url
-  <production-url> --once` passes for production and does not skip admin ops
-  status
+- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once`
+  passes for production and does not skip admin ops status
 - authenticated `/api/admin/ops/status` is reachable
 - unassigned requests below 3
 - stale enroute requests equals 0

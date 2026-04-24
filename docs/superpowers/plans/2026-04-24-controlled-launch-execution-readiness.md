@@ -17,8 +17,11 @@
 - [x] Wire the launch readiness verifier to require the controlled-launch
       runbook and decision section.
 - [x] Run focused checks: `pnpm launch:readiness`, `pnpm test:scripts`.
-- [ ] Run `pnpm verify-slice`, static gate, reviewer pool, required gates.
-- [ ] Open PR, fix review/CI findings, merge, sync Notion, delete branch.
+- [x] Run `pnpm verify-slice`, static gate, reviewer pool, required gates.
+- [x] Open PR.
+- [x] Fix PR review findings.
+- [ ] Fix CI findings if any.
+- [ ] Merge, sync Notion, and delete branch.
 
 ## Verification Commands
 

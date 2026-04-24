@@ -19,8 +19,8 @@ Collect these inputs before making the launch decision:
 - `pnpm gate:release` result from clean, synced `main`.
 - `pnpm launch:readiness` result from clean, synced `main`.
 - `pnpm launch:rehearsal` result from local/test.
-- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url
-  <production-url> --once` result.
+- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once`
+  result.
 - `pnpm launch:auth-monitor -- --url <production-url>` result using the
   dedicated synthetic admin.
 - `GET /api/health` result from production.
@@ -147,8 +147,8 @@ production evidence.
 - `pnpm gate:release` result:
 - `pnpm launch:readiness` result:
 - `pnpm launch:rehearsal` result:
-- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url
-  https://<production-url> --once` result:
+- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url https://<production-url> --once`
+  result:
 - Authenticated first-hour monitor output location:
 - `pnpm launch:auth-monitor` result:
 - Auth monitor output location:

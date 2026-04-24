@@ -204,7 +204,9 @@ function printHumanReport(report) {
   console.log("Launch readiness checks passed.");
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+const entrypointPath = process.argv[1];
+
+if (entrypointPath && import.meta.url === pathToFileURL(entrypointPath).href) {
   const report = buildReport(repoRoot);
   if (process.argv.includes("--json")) {
     printJsonReport(report);
