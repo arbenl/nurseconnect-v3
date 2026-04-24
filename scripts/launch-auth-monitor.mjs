@@ -45,6 +45,10 @@ export function parseArgs(argv, env = process.env) {
     }
   }
 
+  if (options.help) {
+    return options;
+  }
+
   options.baseUrl = normalizeBaseUrl(options.baseUrl);
   return options;
 }
@@ -224,7 +228,7 @@ export async function runAuthMonitor(options) {
     headers: authHeaders,
   });
   const meRole = typeof me.body?.user?.role === "string" ? me.body.user.role : null;
-  steps.push(publicStep("me", me, { role: meRole ?? "missing" }));
+  steps.push(publicStep("/api/me", me, { role: meRole ?? "missing" }));
 
   if (!me.ok) {
     failures.push(`/api/me returned HTTP ${me.status}`);
@@ -240,7 +244,7 @@ export async function runAuthMonitor(options) {
     headers: authHeaders,
   });
   const adminRole = typeof adminPing.body?.user?.role === "string" ? adminPing.body.user.role : null;
-  steps.push(publicStep("admin-ping", adminPing, { role: adminRole ?? "missing" }));
+  steps.push(publicStep("/api/admin/ping", adminPing, { role: adminRole ?? "missing" }));
 
   if (!adminPing.ok) {
     failures.push(`/api/admin/ping returned HTTP ${adminPing.status}`);

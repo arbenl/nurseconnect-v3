@@ -17,9 +17,9 @@ auth/session degradation from product workflow or ops-status failures.
 - [x] Add `launch:auth-monitor` and script checks to `scripts/launch-readiness-report.mjs`.
 - [x] Add focused tests for auth/session/admin reachability and redaction.
 - [x] Update launch runbooks with auth monitor usage and thresholds.
-- [ ] Run focused deterministic checks.
-- [ ] Run `pnpm verify-slice`, static review, reviewer pool, and required gates.
-- [ ] Open PR and fix Copilot/Sonar/CI feedback.
+- [x] Run focused deterministic checks.
+- [x] Run `pnpm verify-slice`, static review, reviewer pool, and required gates.
+- [x] Open PR and fix Copilot/Sonar/CI feedback.
 - [ ] Merge only after all required checks, including PR Finalizer, are green.
 - [ ] Sync Notion, delete local and remote branch, and start the next slice from
       fresh `main`.

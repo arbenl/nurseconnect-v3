@@ -63,6 +63,17 @@ describe("launch-auth-monitor", () => {
     ).toBe("http://localhost:3010");
   });
 
+  it("prints help without validating a misconfigured default URL", () => {
+    expect(
+      parseArgs(["--help"], {
+        LAUNCH_AUTH_MONITOR_URL: "not-a-valid-url",
+      }),
+    ).toMatchObject({
+      baseUrl: "not-a-valid-url",
+      help: true,
+    });
+  });
+
   it("extracts only the redacted session cookie pair", () => {
     expect(
       extractSessionCookie([
@@ -114,8 +125,8 @@ describe("launch-auth-monitor", () => {
     expect(result.timeoutMs).toBe(1000);
     expect(result.steps.map((step) => step.name)).toEqual([
       "sign-in",
-      "me",
-      "admin-ping",
+      "/api/me",
+      "/api/admin/ping",
       "sign-out",
     ]);
     expect(human).toContain("sessionCookie=present");
