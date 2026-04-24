@@ -29,6 +29,7 @@ const requiredScripts = [
   "launch:seed",
   "launch:rehearsal",
   "launch:monitor",
+  "launch:auth-monitor",
 ];
 
 const requiredFiles = [
@@ -40,7 +41,9 @@ const requiredFiles = [
   "scripts/launch-rehearsal-seed.mjs",
   "scripts/launch-rehearsal.sh",
   "scripts/launch-monitor.mjs",
+  "scripts/launch-auth-monitor.mjs",
   "apps/web/tests/e2e-api/launch-rehearsal.api.e2e.ts",
+  "apps/web/tests/e2e-api/auth.api.e2e.ts",
   "apps/web/tests/e2e-api/authz.api.e2e.ts",
   "apps/web/tests/e2e-api/partner.api.e2e.ts",
   "apps/web/tests/e2e-api/admin-request-triage.api.e2e.ts",
@@ -99,6 +102,7 @@ for (const command of [
   "pnpm launch:seed",
   "pnpm launch:rehearsal",
   "pnpm launch:monitor",
+  "pnpm launch:auth-monitor",
   "pnpm gate:release",
 ]) {
   addCheck(`launch runbook command: ${command}`, runbook.includes(command), command);

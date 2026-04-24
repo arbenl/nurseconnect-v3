@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { resetDb } from "../e2e-utils/db";
+import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
 test.describe("Authentication API", () => {
     test.beforeEach(async () => {
@@ -53,5 +54,31 @@ test.describe("Authentication API", () => {
         expect(meResponse.ok()).toBeTruthy();
         const me = await meResponse.json();
         expect(me.user.email).toBe(email);
+    });
+
+    test("admin session reaches /api/me and /api/admin/ping", async ({ request }) => {
+        const email = `api-auth-admin-${Date.now()}@test.local`;
+
+        await createTestUser(request, email, "Auth Admin", "admin");
+        await loginTestUser(request, email);
+
+        const meResponse = await request.get("/api/me");
+        expect(meResponse.ok()).toBeTruthy();
+        const me = await meResponse.json();
+        expect(me.user.email).toBe(email);
+        expect(me.user.role).toBe("admin");
+
+        const pingResponse = await request.get("/api/admin/ping");
+        expect(pingResponse.ok()).toBeTruthy();
+        const ping = await pingResponse.json();
+        expect(ping).toMatchObject({
+            ok: true,
+            user: {
+                role: "admin",
+            },
+        });
+
+        const signOutResponse = await request.post("/api/auth/sign-out", { data: {} });
+        expect(signOutResponse.ok()).toBeTruthy();
     });
 });
