@@ -257,7 +257,7 @@ export default async function AdminDashboardPage() {
                   danger: 3,
                 })}
               >
-                {opsStatus.requests.exceptionQueue} exceptions
+                {signalLabel(opsStatus.requests.exceptionQueue, "exception")}
               </Badge>
             </div>
             <p className="mt-3 text-sm text-slate-600">

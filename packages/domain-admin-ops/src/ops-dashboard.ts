@@ -34,7 +34,13 @@ function toCount(value: number | string | null | undefined) {
 }
 
 function normalizeDate(value: Date | string) {
-  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+  const parsed = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`Invalid timestamp in ops dashboard data: ${String(value)}`);
+  }
+
+  return parsed.toISOString();
 }
 
 function isQueueItemStale(item: AdminActiveRequestQueueItem, generatedAt: string) {
@@ -110,6 +116,10 @@ export function summarizeOpsDashboard<
 }
 
 export async function getAdminOpsDashboard() {
+  const generatedAt = new Date().toISOString();
+  const recentSince = new Date(
+    Date.parse(generatedAt) - RECENT_FAILURE_WINDOW_HOURS * 60 * 60_000,
+  );
   const [
     { getAdminActiveRequestQueue },
     { getNurseCredentialCounts, getVerifiedAndAvailableNurseCount, listNurseCredentials },
@@ -135,11 +145,10 @@ export async function getAdminOpsDashboard() {
     getVerifiedAndAvailableNurseCount(),
     listNurseCredentials({ statuses: Array.from(attentionStatuses), limit: 5 }),
     getAdminReassignmentActivityFeed(6),
-    getDashboardOpsStatusRows(),
-    getPaymentFollowUpRows(),
+    getDashboardOpsStatusRows(recentSince),
+    getPaymentFollowUpRows(recentSince),
   ]);
   const dashboardStatus = dashboardStatusRows.rows[0];
-  const generatedAt = new Date().toISOString();
   const opsStatus: AdminOpsStatusCounts = {
     generatedAt,
     serviceAreas: {
@@ -181,11 +190,8 @@ export async function getAdminOpsDashboard() {
   });
 }
 
-async function getDashboardOpsStatusRows() {
+async function getDashboardOpsStatusRows(recentSince: Date) {
   const { db, sql } = await import("@nurseconnect/database");
-  const recentSince = new Date(
-    Date.now() - RECENT_FAILURE_WINDOW_HOURS * 60 * 60_000,
-  );
 
   return db.execute<DashboardOpsStatusRow>(sql`
     SELECT
@@ -228,11 +234,8 @@ async function getDashboardOpsStatusRows() {
   `);
 }
 
-async function getPaymentFollowUpRows() {
+async function getPaymentFollowUpRows(recentSince: Date) {
   const { db, sql } = await import("@nurseconnect/database");
-  const recentSince = new Date(
-    Date.now() - RECENT_FAILURE_WINDOW_HOURS * 60 * 60_000,
-  );
 
   return db.execute<PaymentFollowUpRow>(sql`
     WITH authorization_gaps AS (

@@ -256,7 +256,7 @@ test.describe("Dashboard UX", () => {
     await expect(launchSignals.getByText("1 unassigned", { exact: true })).toBeVisible();
     await expect(launchSignals.getByText("1 stale assigned", { exact: true })).toBeVisible();
     await expect(launchSignals.getByText("1 stale enroute", { exact: true })).toBeVisible();
-    await expect(launchSignals.getByText("1 exceptions", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("1 exception", { exact: true })).toBeVisible();
     await expect(launchSignals.getByText("1 auth no payout", { exact: true })).toBeVisible();
     await expect(launchSignals.getByText("1 auth failed", { exact: true })).toBeVisible();
     await expect(launchSignals.getByText("1 payout failed", { exact: true })).toBeVisible();
