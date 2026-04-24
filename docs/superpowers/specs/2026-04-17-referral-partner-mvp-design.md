@@ -1,6 +1,6 @@
 # NurseConnect Referral Partner MVP
 Date: 2026-04-17
-Status: Proposed
+Status: Done via PR #48 planning and PR #49 implementation
 Scope: First launch-defining product slice after the enterprise architecture migration completed through Step 8
 
 ## Purpose

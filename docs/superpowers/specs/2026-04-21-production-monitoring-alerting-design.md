@@ -32,9 +32,9 @@ The codebase already has:
 M8 uses Option A for launch: existing structured logs plus Vercel OTel/log
 drains as the primary alerting path.
 
-Sentry is explicitly deferred to M9. It remains useful for client-side error
-capture and grouped release tracking, but adding it is not required for the
-controlled first launch.
+Sentry is explicitly deferred to a later monitoring slice. It remains useful
+for client-side error capture and grouped release tracking, but adding it is
+not required for the controlled first launch.
 
 ## Scope
 
