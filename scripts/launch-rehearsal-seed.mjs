@@ -131,6 +131,27 @@ function appOrigin(appUrl) {
   return new URL(appUrl).origin;
 }
 
+function splitCombinedSetCookieHeader(value) {
+  return value
+    .split(/,(?=\s*[^;,=\s]+=[^;,]+)/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function cookieHeaderFromSetCookie(headers) {
+  const getSetCookie = headers.getSetCookie?.bind(headers);
+  const setCookieValues =
+    typeof getSetCookie === "function"
+      ? getSetCookie().flatMap(splitCombinedSetCookieHeader)
+      : splitCombinedSetCookieHeader(headers.get("set-cookie") ?? "");
+
+  const cookiePairs = setCookieValues
+    .map((value) => value.split(";")[0]?.trim() ?? "")
+    .filter(Boolean);
+
+  return cookiePairs.length > 0 ? cookiePairs.join("; ") : null;
+}
+
 export async function signUpViaApp(appUrl, user, fetchImpl = fetch) {
   const normalizedAppUrl = appUrl.replace(/\/$/, "");
   const origin = appOrigin(normalizedAppUrl);
@@ -156,7 +177,7 @@ export async function signUpViaApp(appUrl, user, fetchImpl = fetch) {
     throw new Error(`Sign-up failed for ${user.email}: ${response.status} ${body}`);
   }
 
-  const cookie = response.headers.get("set-cookie");
+  const cookie = cookieHeaderFromSetCookie(response.headers);
   if (cookie) {
     const sessionResponse = await fetchImpl(`${normalizedAppUrl}/api/me`, {
       headers: {

@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { assertSafeDatabase, getDatabaseName, signUpViaApp } from "../launch-rehearsal-seed.mjs";
+import {
+  assertSafeDatabase,
+  cookieHeaderFromSetCookie,
+  getDatabaseName,
+  signUpViaApp,
+} from "../launch-rehearsal-seed.mjs";
 
 function jsonResponse(body, init = {}) {
   return new Response(JSON.stringify(body), {
@@ -55,9 +60,35 @@ describe("launch-rehearsal-seed", () => {
     });
     expect(fetchMock.mock.calls[1][0]).toBe("http://localhost:3010/api/me");
     expect(fetchMock.mock.calls[1][1].headers).toMatchObject({
-      cookie: "better-auth.session_token=session-secret; Path=/; HttpOnly",
+      cookie: "better-auth.session_token=session-secret",
       origin: "http://localhost:3010",
     });
+  });
+
+  it("builds a Cookie header from one or more Set-Cookie values", () => {
+    const single = new Headers({
+      "set-cookie": "better-auth.session_token=session-secret; Path=/; HttpOnly",
+    });
+    expect(cookieHeaderFromSetCookie(single)).toBe("better-auth.session_token=session-secret");
+
+    const multiple = {
+      getSetCookie: () => [
+        "better-auth.session_token=session-secret; Path=/; HttpOnly",
+        "better-auth.csrf_token=csrf-secret; Path=/; SameSite=Lax",
+      ],
+      get: () => null,
+    };
+    expect(cookieHeaderFromSetCookie(multiple)).toBe(
+      "better-auth.session_token=session-secret; better-auth.csrf_token=csrf-secret",
+    );
+
+    const combined = new Headers({
+      "set-cookie":
+        "better-auth.session_token=session-secret; Expires=Wed, 21 Oct 2030 07:28:00 GMT; Path=/; HttpOnly, better-auth.csrf_token=csrf-secret; Path=/; SameSite=Lax",
+    });
+    expect(cookieHeaderFromSetCookie(combined)).toBe(
+      "better-auth.session_token=session-secret; better-auth.csrf_token=csrf-secret",
+    );
   });
 
   it("treats duplicate sign-up responses as existing users", async () => {
