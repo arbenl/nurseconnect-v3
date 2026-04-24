@@ -4,6 +4,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/theme-provider";
+import { shouldEnableVercelClientTelemetry } from "@/lib/vercel-telemetry";
+
+const enableVercelClientTelemetry = shouldEnableVercelClientTelemetry();
 
 export default function RootLayout({
   children,
@@ -23,8 +26,12 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </Providers>
-        <Analytics />
-        <SpeedInsights />
+        {enableVercelClientTelemetry ? (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        ) : null}
       </body>
     </html>
   );

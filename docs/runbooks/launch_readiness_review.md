@@ -137,6 +137,7 @@ pnpm env:check
 pnpm launch:readiness
 pnpm launch:readiness:json
 pnpm launch:rehearsal
+pnpm launch:browser-rehearsal:headed
 pnpm launch:monitor
 pnpm launch:auth-monitor
 pnpm gate:release
@@ -152,6 +153,8 @@ Expected result:
 - `pnpm launch:rehearsal` runs readiness plus the automated launch rehearsal
   API flow for health, admin, service area, patient/nurse lifecycle, payment
   trace, partner intake, and exception triage.
+- `pnpm launch:browser-rehearsal:headed` runs the full milestone browser
+  rehearsal in visible Chrome with slow interactions for operator observation.
 - `pnpm launch:monitor` polls launch health and, when supplied
   `LAUNCH_MONITOR_ADMIN_COOKIE`, admin ops status for first-hour production
   monitoring. Authenticated ops polling is required for the production GO path.
