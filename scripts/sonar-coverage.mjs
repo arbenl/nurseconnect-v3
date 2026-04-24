@@ -24,15 +24,10 @@ const targets = [
   ["@nurseconnect/domain-referral", "vitest.config.ts"],
 ];
 
-for (const [filter, config] of targets) {
-  console.log(`\n[sonar-coverage] ${filter}`);
-  const result = spawnSync(
-    "pnpm",
-    ["--filter", filter, "exec", "vitest", "run", "--config", config, ...coverageArgs],
-    {
-      stdio: "inherit",
-    }
-  );
+function runPnpm(args) {
+  const result = spawnSync("pnpm", args, {
+    stdio: "inherit",
+  });
 
   if (result.error) {
     console.error(result.error.message);
@@ -42,4 +37,12 @@ for (const [filter, config] of targets) {
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
+}
+
+console.log("\n[sonar-coverage] building @nurseconnect/contracts");
+runPnpm(["--filter", "@nurseconnect/contracts", "build"]);
+
+for (const [filter, config] of targets) {
+  console.log(`\n[sonar-coverage] ${filter}`);
+  runPnpm(["--filter", filter, "exec", "vitest", "run", "--config", config, ...coverageArgs]);
 }
