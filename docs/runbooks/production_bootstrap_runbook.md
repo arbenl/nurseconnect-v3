@@ -49,6 +49,19 @@
   * Leave empty when only public `/api/health` monitoring is needed.
   * Do not commit this value. Use a terminal-local export for launch day.
 
+#### Optional auth/session synthetic monitor configuration
+
+* `LAUNCH_AUTH_MONITOR_URL` — optional base URL used by
+  `pnpm launch:auth-monitor` when `--url` is omitted.
+* `LAUNCH_AUTH_MONITOR_EMAIL` — dedicated synthetic admin email for
+  auth/session monitoring.
+* `LAUNCH_AUTH_MONITOR_PASSWORD` — password for the synthetic admin.
+
+  * The synthetic user must be an admin before launch monitoring begins.
+  * Do not reuse a human operator credential.
+  * Do not commit, paste, or log the password, session cookie, or Better Auth
+    session token.
+
 #### DB connection strategy (Connection Pooling)
 
 * `DATABASE_URL` — should be the **direct** (unpooled) database URL. This is critical for Drizzle migrations (`pnpm db:migrate`) to succeed without hanging.
@@ -84,6 +97,9 @@ For the first-hour synthetic monitor:
 ```bash
 pnpm launch:monitor -- --url https://<production-url> --once
 pnpm launch:monitor -- --url https://<production-url>
+LAUNCH_AUTH_MONITOR_EMAIL='<synthetic admin email>' \
+LAUNCH_AUTH_MONITOR_PASSWORD='<synthetic admin password>' \
+  pnpm launch:auth-monitor -- --url https://<production-url>
 ```
 
 To include authenticated admin ops status:
@@ -117,6 +133,9 @@ LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
   * `GET /api/admin/ops/status` should return operational counts for service
     areas, nurse supply, active requests, exception queue, and payment/payout
     status.
+  * `pnpm launch:auth-monitor -- --url https://<production-url>` should
+    sign in the synthetic admin, confirm `/api/me`, confirm `/api/admin/ping`,
+    and sign out without printing secrets.
 
 ---
 
@@ -147,3 +166,8 @@ Notes:
 * **Invalid Origin**: If auth redirects repeatedly fail or CSRF errors appear, verify `APP_URL` matches the deployed production hostname. For previews, verify Vercel injected `VERCEL_URL`.
 * **No Admin Created**: If you login but do not gain admin access, verify `FIRST_ADMIN_EMAILS` is not empty, contains the exact email address, and that `/api/me` is successfully executing without network blockers.
 * **DB Not Migrated**: If `/api/health/db` or login actions throw 500s mentioning missing relations, confirm `pnpm db:migrate` ran successfully with the production direct database URL.
+* **Auth Monitor Failing**: If `pnpm launch:auth-monitor` fails at sign-in,
+  verify the synthetic admin email/password and `APP_URL`/`BETTER_AUTH_URL`.
+  If sign-in passes but `/api/me` or `/api/admin/ping` fails, verify the domain
+  user role is `admin` and session cookies are being accepted by the production
+  origin.

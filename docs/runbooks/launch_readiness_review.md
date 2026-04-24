@@ -131,6 +131,7 @@ pnpm launch:readiness
 pnpm launch:readiness:json
 pnpm launch:rehearsal
 pnpm launch:monitor
+pnpm launch:auth-monitor
 pnpm gate:release
 ```
 
@@ -146,6 +147,9 @@ Expected result:
   trace, partner intake, and exception triage.
 - `pnpm launch:monitor` polls launch health and optional admin ops status for
   first-hour production monitoring.
+- `pnpm launch:auth-monitor` validates synthetic admin sign-in, `/api/me`
+  session bootstrap, admin RBAC reachability, and sign-out without printing
+  credentials or cookies.
 - `pnpm gate:release` runs type-check, lint, web build, unit/architecture tests,
   API tests, E2E API gate, and UI smoke gate.
 
@@ -201,6 +205,10 @@ Go only when all items are true:
 - [ ] `pnpm launch:rehearsal` passes on clean `main` against local/test.
 - [ ] `pnpm launch:monitor -- --url <production-url> --once` returns green
       before production intake opens.
+- [ ] `LAUNCH_AUTH_MONITOR_EMAIL` and `LAUNCH_AUTH_MONITOR_PASSWORD` are set in
+      the operator terminal, and `pnpm launch:auth-monitor -- --url
+      <production-url>` returns green for the dedicated synthetic admin
+      credential.
 - [ ] Accepted exclusions are explicitly reviewed and signed.
 - [ ] Production environment variables are configured.
 - [ ] Production migrations have been applied.
@@ -230,6 +238,11 @@ Escalate or no-go when any launch threshold is breached:
   failure before proceeding.
 - Any recent failed payment authorization or payout exists: finance and
   operator review is required.
+- `pnpm launch:auth-monitor` exits nonzero: stop launch or pause intake until
+  sign-in, `/api/me`, and `/api/admin/ping` are green with the synthetic admin.
+- The synthetic admin password, session cookie, or Better Auth token appears in
+  any log, PR, Notion page, or terminal transcript: rotate the credential and
+  treat the copied output as sensitive.
 
 ## Rollback Guidance
 
