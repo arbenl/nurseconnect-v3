@@ -132,7 +132,11 @@ Date: __________________________
 | M14 Rehearsal Browser Hardening | Done | PR #64, merge commit `79457dbbc90e52d663ce54136917039f0767ee4b` |
 | SonarCloud PR Quality-Gate Parity | Done | PR #65, merge commit `475f20e0b0f0dcddf438ee01206d2755e6ca13f7` |
 
-## Planned Program Sequence
+## Next Program Slice
+
+The full post-M14 program sequence (M15-M19) is locked in
+`docs/superpowers/specs/2026-04-24-program-roadmap-lock-design.md`.
+The table below lists only the next slice to execute.
 
 | Milestone | Status | Evidence |
 | --- | --- | --- |
