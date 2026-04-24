@@ -1,0 +1,25 @@
+{
+  "name": "Contracts Reviewer",
+  "enabled": true,
+  "mode": "review",
+  "canModifyProduct": false,
+  "ownedScope": [
+    "packages/contracts",
+    "packages/database/src/schema",
+    "packages/database/drizzle",
+    "apps/web/src/app/api",
+    "scripts",
+    ".github/workflows",
+    "package.json",
+    "pnpm-lock.yaml",
+    "config"
+  ],
+  "checks": [
+    "API contract drift",
+    "contract schema compatibility",
+    "database migration/schema consistency",
+    "script and workflow contract changes",
+    "environment variable contract drift"
+  ],
+  "notes": "Conditional read-only reviewer. Run when APIs, contracts, schema, scripts, workflows, package metadata, or environment contracts changed."
+}

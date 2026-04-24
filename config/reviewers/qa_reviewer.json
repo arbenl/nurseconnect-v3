@@ -1,0 +1,21 @@
+{
+  "name": "QA Reviewer",
+  "enabled": true,
+  "mode": "review",
+  "canModifyProduct": false,
+  "ownedScope": [
+    "apps/web/tests",
+    "apps/web/src",
+    "packages",
+    "scripts",
+    "docs/runbooks"
+  ],
+  "checks": [
+    "missing unit, API, or E2E coverage",
+    "deterministic gate relevance",
+    "launch rehearsal impact",
+    "regression risk",
+    "test flakiness risk"
+  ],
+  "notes": "Read-only pre-PR reviewer focused on tests and user-visible regressions caused by the slice."
+}

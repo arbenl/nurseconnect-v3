@@ -1,0 +1,22 @@
+{
+  "name": "Ops Reviewer",
+  "enabled": true,
+  "mode": "review",
+  "canModifyProduct": false,
+  "ownedScope": [
+    "docs/runbooks",
+    "docs/superpowers",
+    "scripts/launch-*",
+    "scripts/*monitor*",
+    ".github/workflows",
+    "AGENTS.md"
+  ],
+  "checks": [
+    "launch runbook accuracy",
+    "operator workflow consistency",
+    "monitoring and alerting coverage",
+    "release evidence quality",
+    "branch lifecycle and Notion sync fit"
+  ],
+  "notes": "Read-only pre-PR reviewer focused on launch operations and program-state consistency."
+}

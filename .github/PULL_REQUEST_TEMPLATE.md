@@ -2,6 +2,14 @@
 - 
 
 ## Evidence
+### Verify Slice
+- [ ] Run root used for reviewer plan and gate logs: `tmp/multi-agent/verify-slice/<run-id>/`
+- [ ] Reviewer plan: `tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md`
+- [ ] Selected reviewers:
+- [ ] `MUST_FIX` count:
+- [ ] `pnpm verify-slice -- --static` result:
+- [ ] `pnpm verify-slice -- --required-gates` result:
+
 ### Logs
 - [ ] Logs path: `artifacts/<TASK_ID>/validation.log`
 - [ ] Optional signature/output: `artifacts/<TASK_ID>/signature.json`
@@ -20,4 +28,5 @@
 ## Checklist
 - [ ] I verified product flow behavior is unchanged.
 - [ ] I included local run output for required checks in the evidence block.
+- [ ] I fixed or technically rejected all `MUST_FIX` reviewer findings.
 - [ ] I have read and agree to the merge gate policy.

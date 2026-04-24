@@ -1,0 +1,23 @@
+{
+  "name": "Performance Reviewer",
+  "enabled": true,
+  "mode": "review",
+  "canModifyProduct": false,
+  "ownedScope": [
+    "apps/web/src/app/api",
+    "apps/web/src/server",
+    "packages/database",
+    "packages/domain-admin-ops",
+    "packages/domain-dispatch",
+    "packages/domain-request",
+    "packages/domain-nurse"
+  ],
+  "checks": [
+    "query shape and N+1 risk",
+    "dispatch and queue hot paths",
+    "unbounded polling or loops",
+    "cache invalidation",
+    "render or bundle cost"
+  ],
+  "notes": "Conditional read-only reviewer. Run when backend, database, dispatch, queue, polling, or hot UI paths changed."
+}
