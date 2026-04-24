@@ -50,6 +50,10 @@ implementation slices so future work starts from a current program plan.
 
 ## Next Three Slices
 
+This recommendation was executed through M12 and is superseded by
+`docs/superpowers/specs/2026-04-24-program-roadmap-lock-design.md`, which locks
+the post-M14 sequence before CRM or other product surfaces are implemented.
+
 1. M10: First-Hour Production Synthetic Monitoring
 2. M11: Auth and Session Degradation Monitoring
 3. M12: Launch Operator Console Hardening

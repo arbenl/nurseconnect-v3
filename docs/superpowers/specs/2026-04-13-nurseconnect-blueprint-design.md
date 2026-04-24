@@ -84,7 +84,7 @@ It is not a generic gig marketplace. The governing rules are:
 - Public status page.
 - Geographic expansion before local density is proven.
 
-## Current Repo Alignment Snapshot After M8
+## Current Repo Alignment Snapshot During M15 Roadmap Lock
 
 The repo now has:
 
@@ -99,12 +99,20 @@ The repo now has:
 - launch readiness runbooks, rehearsal seed, automated API rehearsal, full
   browser rehearsal, composite health, admin ops status, and failed
   payment/payout alert hook
+- first-hour production synthetic monitoring over the health and ops endpoints
+- auth/session degradation monitoring
+- a hardened launch operator console
+- controlled launch execution readiness docs
+- rehearsal browser hardening
+- SonarCloud PR quality-gate parity as a required PR merge signal
 
 The repo still needs:
 
-- first-hour production synthetic monitoring over the M8 endpoints
-- auth/session degradation monitoring
-- operator-console hardening based on the launch monitoring signals
+- M16 CRM boundary design before any CRM implementation
+- M17 controlled launch dry run and decision ledger before opening controlled
+  intake
+- M18/M19 CRM implementation only after M16 boundary approval and launch dry-run
+  evidence
 
 ## Success Gates
 
