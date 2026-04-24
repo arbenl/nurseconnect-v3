@@ -28,6 +28,7 @@ const requiredScripts = [
   "launch:readiness:json",
   "launch:seed",
   "launch:rehearsal",
+  "launch:monitor",
 ];
 
 const requiredFiles = [
@@ -38,6 +39,7 @@ const requiredFiles = [
   "docs/superpowers/plans/2026-04-20-launch-readiness-review.md",
   "scripts/launch-rehearsal-seed.mjs",
   "scripts/launch-rehearsal.sh",
+  "scripts/launch-monitor.mjs",
   "apps/web/tests/e2e-api/launch-rehearsal.api.e2e.ts",
   "apps/web/tests/e2e-api/authz.api.e2e.ts",
   "apps/web/tests/e2e-api/partner.api.e2e.ts",
@@ -96,6 +98,7 @@ for (const command of [
   "pnpm launch:readiness:json",
   "pnpm launch:seed",
   "pnpm launch:rehearsal",
+  "pnpm launch:monitor",
   "pnpm gate:release",
 ]) {
   addCheck(`launch runbook command: ${command}`, runbook.includes(command), command);

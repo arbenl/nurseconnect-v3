@@ -39,6 +39,16 @@
   * When set, it should receive non-PHI alerts for failed payment
     authorizations and failed payouts.
 
+#### Optional launch monitor configuration
+
+* `LAUNCH_MONITOR_URL` — optional base URL used by `pnpm launch:monitor` when
+  `--url` is omitted. In production use the canonical app origin.
+* `LAUNCH_MONITOR_ADMIN_COOKIE` — optional short-lived admin `Cookie` header
+  used by `pnpm launch:monitor` to poll `GET /api/admin/ops/status`.
+
+  * Leave empty when only public `/api/health` monitoring is needed.
+  * Do not commit this value. Use a terminal-local export for launch day.
+
 #### DB connection strategy (Connection Pooling)
 
 * `DATABASE_URL` — should be the **direct** (unpooled) database URL. This is critical for Drizzle migrations (`pnpm db:migrate`) to succeed without hanging.
@@ -68,6 +78,20 @@ From your browser or curl:
   intake opens.
 * `GET /api/health/db` should return `{ ok: true, db: "ok" }` for legacy
   monitor compatibility.
+
+For the first-hour synthetic monitor:
+
+```bash
+pnpm launch:monitor -- --url https://<production-url> --once
+pnpm launch:monitor -- --url https://<production-url>
+```
+
+To include authenticated admin ops status:
+
+```bash
+LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
+  pnpm launch:monitor -- --url https://<production-url>
+```
 
 ---
 

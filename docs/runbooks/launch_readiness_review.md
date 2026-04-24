@@ -130,6 +130,7 @@ pnpm env:check
 pnpm launch:readiness
 pnpm launch:readiness:json
 pnpm launch:rehearsal
+pnpm launch:monitor
 pnpm gate:release
 ```
 
@@ -143,6 +144,8 @@ Expected result:
 - `pnpm launch:rehearsal` runs readiness plus the automated launch rehearsal
   API flow for health, admin, service area, patient/nurse lifecycle, payment
   trace, partner intake, and exception triage.
+- `pnpm launch:monitor` polls launch health and optional admin ops status for
+  first-hour production monitoring.
 - `pnpm gate:release` runs type-check, lint, web build, unit/architecture tests,
   API tests, E2E API gate, and UI smoke gate.
 
@@ -196,6 +199,8 @@ Go only when all items are true:
 - [ ] `pnpm gate:release` passes on clean `main`.
 - [ ] `pnpm launch:readiness` passes on clean `main`.
 - [ ] `pnpm launch:rehearsal` passes on clean `main` against local/test.
+- [ ] `pnpm launch:monitor -- --url <production-url> --once` returns green
+      before production intake opens.
 - [ ] Accepted exclusions are explicitly reviewed and signed.
 - [ ] Production environment variables are configured.
 - [ ] Production migrations have been applied.
@@ -221,6 +226,8 @@ Escalate or no-go when any launch threshold is breached:
 - Any stale enroute request exists: escalate to the operator.
 - Exception queue is 5 or more: operator review is required before expanding
   intake.
+- `pnpm launch:monitor` exits nonzero: pause intake and inspect the printed
+  failure before proceeding.
 - Any recent failed payment authorization or payout exists: finance and
   operator review is required.
 
