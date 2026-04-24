@@ -15,7 +15,7 @@ This runbook defines the required workflow for NurseConnect slices.
 9. Fix every `MUST_FIX` finding, or document a technical rejection before PR.
 10. Run `pnpm verify-slice -- --run-root <run_root> --required-gates`.
 11. Open a PR.
-12. Let CI, Sonar if present, Copilot, and human review run.
+12. Let CI, the required `Sonar Quality Gate`, Copilot, and human review run.
 13. Fix PR findings until all review threads are resolved.
 14. Merge only when all required checks are green, including PR Finalizer.
 15. Sync local `main`.

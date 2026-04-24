@@ -163,6 +163,9 @@ Expected result:
   credentials or cookies.
 - `pnpm gate:release` runs type-check, lint, web build, unit/architecture tests,
   API tests, E2E API gate, and UI smoke gate.
+- PR CI must include a blocking `Sonar Quality Gate` check. The best-effort
+  PR-facing Sonar summary should be reviewed when present, but a green scheduled
+  `Sonar Baseline` alone is not sufficient for release readiness.
 
 ## Rehearsal Seed
 
@@ -212,6 +215,8 @@ Use this rehearsal after deployment to the target environment.
 Go only when all items are true:
 
 - [ ] `pnpm gate:release` passes on clean `main`.
+- [ ] Latest release PR included a green `Sonar Quality Gate` check and PR
+      summary.
 - [ ] `pnpm launch:readiness` passes on clean `main`.
 - [ ] `pnpm launch:rehearsal` passes on clean `main` against local/test.
 - [ ] `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once`
@@ -258,6 +263,7 @@ tracked repo runbook. The launch decision must be one of:
 Minimum hard gates for GO:
 
 - production deploy reachable at the canonical URL
+- latest release PR had a green blocking `Sonar Quality Gate`
 - `/api/health` returns `ok: true`
 - active service area count greater than 0
 - verified and available nurse supply greater than 0
@@ -275,6 +281,8 @@ Escalate or no-go when any launch threshold is breached:
 
 - `GET /api/health` does not return `ok: true`: stop launch or pause intake
   immediately.
+- `Sonar Quality Gate` is missing, skipped, or red on the release PR: do not
+  merge or launch until the gate is green.
 - Active service areas equals 0: do not launch or pause intake.
 - Verified and available nurse supply equals 0: do not accept new requests.
 - Unassigned requests are 3 or more for more than 5 minutes: escalate to the
