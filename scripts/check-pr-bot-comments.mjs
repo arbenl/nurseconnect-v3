@@ -3,12 +3,56 @@
 import { execFileSync } from "node:child_process";
 
 function runGhJson(args, options = {}) {
-  const output = execFileSync("gh", args, {
-    encoding: "utf8",
-    stdio: ["pipe", "pipe", "pipe"],
-    ...options,
-  });
-  return JSON.parse(output);
+  const {
+    retries = Math.max(1, Number(process.env.PR_BOT_COMMENTS_GH_RETRIES ?? 3) || 3),
+    retryDelayMs = Math.max(
+      0,
+      Number(process.env.PR_BOT_COMMENTS_GH_RETRY_DELAY_MS ?? 1_000) || 1_000,
+    ),
+    ...execOptions
+  } = options;
+  let lastError;
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      const output = execFileSync("gh", args, {
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "pipe"],
+        ...execOptions,
+      });
+      return JSON.parse(output);
+    } catch (error) {
+      lastError = error;
+      if (!isTransientGhError(error) || attempt >= retries) {
+        throw error;
+      }
+
+      console.error(
+        `[pr-bot-comments] Transient GitHub API error, retrying ${attempt + 1}/${retries}.`,
+      );
+      sleepSync(retryDelayMs);
+    }
+  }
+
+  throw lastError;
+}
+
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function isTransientGhError(error) {
+  const text = [
+    error?.message,
+    error?.stderr?.toString?.(),
+    error?.stdout?.toString?.(),
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return /REFUSED_STREAM|ECONNRESET|ETIMEDOUT|EAI_AGAIN|HTTP 50[234]|status code 50[234]/i.test(
+    text,
+  );
 }
 
 function runGhText(args, options = {}) {

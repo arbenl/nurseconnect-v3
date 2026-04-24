@@ -1,5 +1,6 @@
 import type {
   AdminActiveRequestQueueItem,
+  AdminOpsStatusCounts,
   AdminReassignmentActivityItem,
 } from "@nurseconnect/contracts";
 import { describe, expect, it } from "vitest";
@@ -115,6 +116,27 @@ const recentActivity: AdminReassignmentActivityItem[] = [
   },
 ];
 
+const opsStatus: AdminOpsStatusCounts = {
+  generatedAt: "2026-03-01T10:35:00.000Z",
+  serviceAreas: {
+    active: 1,
+  },
+  nurseSupply: {
+    verifiedAndAvailable: 3,
+  },
+  requests: {
+    unassigned: 2,
+    staleAssigned: 1,
+    staleEnroute: 1,
+    exceptionQueue: 2,
+  },
+  payments: {
+    authorizationsWithoutPayout: 1,
+    recentFailedAuthorizations: 1,
+    recentFailedPayouts: 0,
+  },
+};
+
 describe("summarizeOpsDashboard", () => {
   it("builds the existing request counts and slices the hottest five requests", () => {
     const summary = summarizeOpsDashboard({
@@ -154,6 +176,14 @@ describe("summarizeOpsDashboard", () => {
         },
       ],
       recentActivity,
+      opsStatus,
+      paymentFollowUpItems: [
+        {
+          kind: "authorization_failed",
+          requestId: "99999999-9999-9999-9999-999999999999",
+          createdAt: "2026-03-01T10:34:00.000Z",
+        },
+      ],
       generatedAt: "2026-03-01T10:35:00.000Z",
     });
 
@@ -176,5 +206,20 @@ describe("summarizeOpsDashboard", () => {
     expect(summary.recentHotRequests[2]?.partnerLabel).toBe("City Clinic");
     expect(summary.recentActivity).toEqual(recentActivity);
     expect(summary.pendingCredentialItems).toHaveLength(1);
+    expect(summary.opsStatus).toEqual({
+      ...opsStatus,
+      requests: {
+        ...opsStatus.requests,
+        unassigned: 2,
+        staleEnroute: 0,
+      },
+    });
+    expect(summary.paymentFollowUpItems).toEqual([
+      {
+        kind: "authorization_failed",
+        requestId: "99999999-9999-9999-9999-999999999999",
+        createdAt: "2026-03-01T10:34:00.000Z",
+      },
+    ]);
   });
 });

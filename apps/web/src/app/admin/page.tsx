@@ -21,23 +21,58 @@ function metricTone(
   return "border-emerald-200 bg-emerald-50 text-emerald-700";
 }
 
+function binaryTone(isReady: boolean) {
+  return isReady
+    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+    : "border-red-200 bg-red-50 text-red-700";
+}
+
+function signalLabel(value: number, singular: string, plural = `${singular}s`) {
+  return `${value} ${value === 1 ? singular : plural}`;
+}
+
+function paymentSignalLabel(kind: string) {
+  switch (kind) {
+    case "authorization_without_payout":
+      return "Auth without payout";
+    case "authorization_failed":
+      return "Authorization failed";
+    case "payout_failed":
+      return "Payout failed";
+    default:
+      return "Payment follow-up";
+  }
+}
+
 export default async function AdminDashboardPage() {
   const { user } = await requirePortalAccessOrRedirect({
     portal: "admin",
     currentPath: "/admin",
   });
   const dashboard = await getAdminOpsDashboard();
+  const opsStatus = dashboard.opsStatus;
+  const staleDispatchCount =
+    opsStatus.requests.staleAssigned + opsStatus.requests.staleEnroute;
+  const paymentAttentionCount =
+    opsStatus.payments.authorizationsWithoutPayout +
+    opsStatus.payments.recentFailedAuthorizations +
+    opsStatus.payments.recentFailedPayouts;
 
   const topActions = [
     {
       href: "/admin/requests",
       label: "Active Requests",
-      detail: `${dashboard.requestCounts.total} active • ${dashboard.requestCounts.unassigned} unassigned • ${dashboard.requestCounts.critical} critical`,
+      detail: `${dashboard.requestCounts.total} active • ${opsStatus.requests.unassigned} unassigned • ${dashboard.requestCounts.critical} critical`,
+    },
+    {
+      href: "/admin/requests/exceptions",
+      label: "Exception Queue",
+      detail: `${opsStatus.requests.exceptionQueue} exception requests • ${staleDispatchCount} stale dispatch signals`,
     },
     {
       href: "/admin/nurses",
       label: "Credential Queue",
-      detail: `${dashboard.credentialCounts.needsAttention} needs review • ${dashboard.credentialCounts.verified} verified • ${dashboard.credentialCounts.available} available now`,
+      detail: `${dashboard.credentialCounts.needsAttention} needs review • ${opsStatus.nurseSupply.verifiedAndAvailable} verified available`,
     },
     {
       href: "/admin/activity",
@@ -132,6 +167,176 @@ export default async function AdminDashboardPage() {
           </div>
         </AdminSectionCard>
       </div>
+
+      <AdminSectionCard
+        title="Launch operator signals"
+        description="Machine-readable launch health fields surfaced for first-hour decision making."
+      >
+        <div className="grid gap-3 lg:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="font-medium text-slate-950">Launch prerequisites</div>
+              <Badge
+                variant="outline"
+                className={binaryTone(
+                  opsStatus.serviceAreas.active > 0 &&
+                    opsStatus.nurseSupply.verifiedAndAvailable > 0,
+                )}
+              >
+                {opsStatus.serviceAreas.active > 0 &&
+                opsStatus.nurseSupply.verifiedAndAvailable > 0
+                  ? "ready"
+                  : "blocked"}
+              </Badge>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge
+                variant="outline"
+                className={binaryTone(opsStatus.serviceAreas.active > 0)}
+              >
+                {signalLabel(opsStatus.serviceAreas.active, "active area")}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={binaryTone(opsStatus.nurseSupply.verifiedAndAvailable > 0)}
+              >
+                {opsStatus.nurseSupply.verifiedAndAvailable} verified available
+              </Badge>
+            </div>
+            <p className="mt-3 text-sm text-slate-600">
+              Controlled launch intake should stay paused if either service area
+              coverage or verified available nurse supply is zero.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="font-medium text-slate-950">Dispatch attention</div>
+              <Badge
+                variant="outline"
+                className={metricTone(
+                  opsStatus.requests.unassigned + staleDispatchCount,
+                  { warn: 1, danger: 3 },
+                )}
+              >
+                {opsStatus.requests.unassigned + staleDispatchCount} signals
+              </Badge>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge
+                variant="outline"
+                className={metricTone(opsStatus.requests.unassigned, {
+                  warn: 1,
+                  danger: 3,
+                })}
+              >
+                {opsStatus.requests.unassigned} unassigned
+              </Badge>
+              <Badge
+                variant="outline"
+                className={metricTone(opsStatus.requests.staleAssigned, {
+                  warn: 1,
+                  danger: 2,
+                })}
+              >
+                {opsStatus.requests.staleAssigned} stale assigned
+              </Badge>
+              <Badge
+                variant="outline"
+                className={metricTone(opsStatus.requests.staleEnroute, {
+                  warn: 1,
+                  danger: 1,
+                })}
+              >
+                {opsStatus.requests.staleEnroute} stale enroute
+              </Badge>
+              <Badge
+                variant="outline"
+                className={metricTone(opsStatus.requests.exceptionQueue, {
+                  warn: 1,
+                  danger: 3,
+                })}
+              >
+                {signalLabel(opsStatus.requests.exceptionQueue, "exception")}
+              </Badge>
+            </div>
+            <p className="mt-3 text-sm text-slate-600">
+              Stale assigned and enroute counts use the same 20-minute policy as
+              triage severity.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="font-medium text-slate-950">Payment follow-up</div>
+              <Badge
+                variant="outline"
+                className={metricTone(paymentAttentionCount, {
+                  warn: 1,
+                  danger: 2,
+                })}
+              >
+                {paymentAttentionCount} signals
+              </Badge>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge
+                variant="outline"
+                className={metricTone(
+                  opsStatus.payments.authorizationsWithoutPayout,
+                  { warn: 1, danger: 3 },
+                )}
+              >
+                {opsStatus.payments.authorizationsWithoutPayout} auth no payout
+              </Badge>
+              <Badge
+                variant="outline"
+                className={metricTone(
+                  opsStatus.payments.recentFailedAuthorizations,
+                  { warn: 1, danger: 1 },
+                )}
+              >
+                {opsStatus.payments.recentFailedAuthorizations} auth failed
+              </Badge>
+              <Badge
+                variant="outline"
+                className={metricTone(opsStatus.payments.recentFailedPayouts, {
+                  warn: 1,
+                  danger: 1,
+                })}
+              >
+                {opsStatus.payments.recentFailedPayouts} payout failed
+              </Badge>
+            </div>
+            <p className="mt-3 text-sm text-slate-600">
+              These are trace gaps and recent failed audit events for operator
+              follow-up, not automated payment execution.
+            </p>
+            <div className="mt-4 space-y-2">
+              {dashboard.paymentFollowUpItems.length === 0 ? (
+                <div className="rounded-md border border-dashed border-slate-200 bg-white px-3 py-2 text-sm text-slate-500">
+                  No payment follow-up items.
+                </div>
+              ) : (
+                dashboard.paymentFollowUpItems.map((item) => (
+                  <Link
+                    key={`${item.kind}:${item.requestId}:${item.createdAt}`}
+                    href={`/admin/requests/${item.requestId}`}
+                    className="block rounded-md border border-slate-200 bg-white px-3 py-2 text-sm transition hover:border-sky-300 hover:bg-sky-50"
+                  >
+                    <div className="font-medium text-slate-950">
+                      {paymentSignalLabel(item.kind)} · {item.requestId.slice(0, 8)}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {new Date(item.createdAt).toLocaleString()}
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </AdminSectionCard>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <AdminSectionCard
