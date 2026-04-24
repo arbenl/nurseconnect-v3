@@ -1,6 +1,15 @@
 name: Sonar Baseline
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/sonar.yml"
+      - "sonar-project.properties"
+      - "scripts/sonar-*.mjs"
+      - "scripts/sonar-*.sh"
+      - "package.json"
+      - "pnpm-lock.yaml"
   schedule:
     - cron: "35 3 * * 1"
   workflow_dispatch:
