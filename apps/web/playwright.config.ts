@@ -5,6 +5,12 @@ import path from "path";
 // Load .env.local if present
 dotenv.config({ path: path.resolve(__dirname, ".env.local") });
 
+const launchSlowMoMs = Number(process.env.PLAYWRIGHT_SLOW_MO_MS ?? "0");
+const launchOptions =
+    Number.isFinite(launchSlowMoMs) && launchSlowMoMs > 0
+        ? { slowMo: launchSlowMoMs }
+        : undefined;
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -24,6 +30,7 @@ export default defineConfig({
         trace: "retain-on-failure",
         screenshot: "only-on-failure",
         video: "retain-on-failure",
+        launchOptions,
         extraHTTPHeaders: {
             "Origin": "http://localhost:3010",
         },

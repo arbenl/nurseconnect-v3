@@ -3,7 +3,7 @@
 import { createRequire } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import dotenv from "dotenv";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -41,7 +41,7 @@ const seedUsers = [
   },
 ];
 
-function loadLocalEnv() {
+export function loadLocalEnv() {
   const candidates = [
     resolve(repoRoot, ".env"),
     resolve(repoRoot, ".env.local"),
@@ -60,7 +60,7 @@ function loadLocalEnv() {
   }
 }
 
-function getDatabaseName(databaseUrl) {
+export function getDatabaseName(databaseUrl) {
   try {
     return new URL(databaseUrl).pathname.replace(/^\//, "");
   } catch {
@@ -68,7 +68,7 @@ function getDatabaseName(databaseUrl) {
   }
 }
 
-function assertSafeDatabase(databaseUrl) {
+export function assertSafeDatabase(databaseUrl) {
   const dbName = getDatabaseName(databaseUrl);
   if (!dbName) {
     throw new Error("Could not parse database name from DATABASE_URL.");
@@ -90,12 +90,12 @@ function assertSafeDatabase(databaseUrl) {
   );
 }
 
-async function queryOne(client, text, values = []) {
+export async function queryOne(client, text, values = []) {
   const result = await client.query(text, values);
   return result.rows[0] ?? null;
 }
 
-async function ensureServiceArea(client) {
+export async function ensureServiceArea(client) {
   const existing = await queryOne(
     client,
     "SELECT id FROM service_areas WHERE label = $1 LIMIT 1",
@@ -127,10 +127,19 @@ async function ensureServiceArea(client) {
   return { id: inserted.id, created: true };
 }
 
-async function signUpViaApp(appUrl, user) {
-  const response = await fetch(`${appUrl}/api/auth/sign-up/email`, {
+function appOrigin(appUrl) {
+  return new URL(appUrl).origin;
+}
+
+export async function signUpViaApp(appUrl, user, fetchImpl = fetch) {
+  const normalizedAppUrl = appUrl.replace(/\/$/, "");
+  const origin = appOrigin(normalizedAppUrl);
+  const response = await fetchImpl(`${normalizedAppUrl}/api/auth/sign-up/email`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      origin,
+    },
     body: JSON.stringify({
       email: user.email,
       password: PASSWORD,
@@ -149,15 +158,22 @@ async function signUpViaApp(appUrl, user) {
 
   const cookie = response.headers.get("set-cookie");
   if (cookie) {
-    await fetch(`${appUrl}/api/me`, {
-      headers: { cookie },
+    const sessionResponse = await fetchImpl(`${normalizedAppUrl}/api/me`, {
+      headers: {
+        cookie,
+        origin,
+      },
     });
+    if (!sessionResponse.ok) {
+      const body = await sessionResponse.text();
+      throw new Error(`Session bootstrap failed for ${user.email}: ${sessionResponse.status} ${body}`);
+    }
   }
 
   return { created: true };
 }
 
-async function ensureDomainUser(client, user, authCreated) {
+export async function ensureDomainUser(client, user, authCreated) {
   const existing = await queryOne(
     client,
     "SELECT id FROM users WHERE email = $1 LIMIT 1",
@@ -226,7 +242,7 @@ async function ensureDomainUser(client, user, authCreated) {
   return { id: inserted.id, created: true, authCreated };
 }
 
-async function ensureNurse(client, nurseUserId, adminUserId, serviceAreaId) {
+export async function ensureNurse(client, nurseUserId, adminUserId, serviceAreaId) {
   const existing = await queryOne(
     client,
     "SELECT id FROM nurses WHERE user_id = $1 LIMIT 1",
@@ -272,7 +288,7 @@ async function ensureNurse(client, nurseUserId, adminUserId, serviceAreaId) {
   );
 }
 
-async function ensurePartner(client, partnerUserId) {
+export async function ensurePartner(client, partnerUserId) {
   const existing = await queryOne(
     client,
     "SELECT id FROM referral_partners WHERE user_id = $1 LIMIT 1",
@@ -298,7 +314,7 @@ async function ensurePartner(client, partnerUserId) {
   );
 }
 
-function printSummary({ appUrl, dbName, serviceArea, users }) {
+export function printSummary({ appUrl, dbName, serviceArea, users }) {
   console.log("Launch rehearsal seed complete");
   console.log("");
   console.log(`Database: ${dbName}`);
@@ -321,7 +337,7 @@ function printSummary({ appUrl, dbName, serviceArea, users }) {
   console.log("Next: follow docs/runbooks/launch_readiness_review.md from Manual Launch Rehearsal step 7.");
 }
 
-async function main() {
+export async function main() {
   loadLocalEnv();
 
   const databaseUrl = process.env.DATABASE_URL;
@@ -369,8 +385,12 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error("Launch rehearsal seed failed:");
-  console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+const entrypointPath = process.argv[1];
+
+if (entrypointPath && import.meta.url === pathToFileURL(entrypointPath).href) {
+  main().catch((error) => {
+    console.error("Launch rehearsal seed failed:");
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  });
+}

@@ -56,6 +56,7 @@
     "launch:seed": "node scripts/launch-rehearsal-seed.mjs",
     "launch:rehearsal": "bash scripts/launch-rehearsal.sh",
     "launch:browser-rehearsal": "bash scripts/launch-browser-rehearsal.sh",
+    "launch:browser-rehearsal:headed": "bash scripts/launch-browser-rehearsal-headed.sh",
     "launch:monitor": "node scripts/launch-monitor.mjs",
     "launch:auth-monitor": "node scripts/launch-auth-monitor.mjs",
     "sonar:start": "docker compose --profile sonar up -d sonarqube sonar-db",
