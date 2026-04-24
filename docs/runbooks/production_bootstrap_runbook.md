@@ -29,6 +29,16 @@
   * **Case-insensitive**; whitespace is trimmed.
   * Leaving empty is safe-by-default: **no one is auto-promoted**.
 
+#### Optional production alerting
+
+* `OPS_ALERT_WEBHOOK_URL` — optional webhook endpoint for high-signal
+  production operations alerts.
+
+  * Leaving empty is supported; the app will rely on structured logs and
+    OTel/log drains only.
+  * When set, it should receive non-PHI alerts for failed payment
+    authorizations and failed payouts.
+
 #### DB connection strategy (Connection Pooling)
 
 * `DATABASE_URL` — should be the **direct** (unpooled) database URL. This is critical for Drizzle migrations (`pnpm db:migrate`) to succeed without hanging.
@@ -53,7 +63,11 @@ For production, configure the required variables in the Vercel project settings,
 
 From your browser or curl:
 
-* `GET /api/health/db` should return `{ ok: true, db: "ok" }`.
+* `GET /api/health` should return `ok: true`, `db: "ok"`, at least one active
+  service area, and verified/available nurse supply above 0 before launch
+  intake opens.
+* `GET /api/health/db` should return `{ ok: true, db: "ok" }` for legacy
+  monitor compatibility.
 
 ---
 
@@ -75,6 +89,10 @@ From your browser or curl:
 * Open `/api/me` in the browser and confirm JSON contains `user.role: "admin"`.
 * Or call the admin RBAC sentinel:
   * `GET /api/admin/ping` should return `200` with `{ ok: true, user: { role: "admin" } }`.
+* Then call the admin operations status endpoint:
+  * `GET /api/admin/ops/status` should return operational counts for service
+    areas, nurse supply, active requests, exception queue, and payment/payout
+    status.
 
 ---
 

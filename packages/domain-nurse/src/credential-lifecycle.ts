@@ -1,4 +1,4 @@
-import { count, db, desc, eq, or, schema } from "@nurseconnect/database";
+import { and, count, db, desc, eq, or, schema } from "@nurseconnect/database";
 
 import { recordAdminAction } from "@nurseconnect/platform-telemetry/admin-audit";
 
@@ -172,6 +172,15 @@ export async function getNurseCredentialCounts() {
   }
 
   return counts;
+}
+
+export async function getVerifiedAndAvailableNurseCount(): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(nurses)
+    .where(and(eq(nurses.status, "verified"), eq(nurses.isAvailable, true)));
+
+  return Number(row?.value ?? 0);
 }
 
 export async function getNurseCredentialById(nurseId: string) {

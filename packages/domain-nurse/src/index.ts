@@ -11,6 +11,7 @@ export {
 export {
   getNurseCredentialById,
   getNurseCredentialCounts,
+  getVerifiedAndAvailableNurseCount,
   listNurseCredentials,
   type NurseCredentialStatus,
   rejectNurseCredential,
