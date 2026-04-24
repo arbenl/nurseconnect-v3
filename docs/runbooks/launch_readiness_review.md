@@ -163,9 +163,9 @@ Expected result:
   credentials or cookies.
 - `pnpm gate:release` runs type-check, lint, web build, unit/architecture tests,
   API tests, E2E API gate, and UI smoke gate.
-- PR CI must include a blocking `Sonar Quality Gate` check and a PR-facing
-  Sonar summary before merge. A green scheduled `Sonar Baseline` alone is not
-  sufficient for release readiness.
+- PR CI must include a blocking `Sonar Quality Gate` check. The best-effort
+  PR-facing Sonar summary should be reviewed when present, but a green scheduled
+  `Sonar Baseline` alone is not sufficient for release readiness.
 
 ## Rehearsal Seed
 

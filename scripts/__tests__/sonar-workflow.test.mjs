@@ -21,10 +21,13 @@ describe("Sonar workflow parity", () => {
     expect(sonarJob).toContain("name: Sonar Quality Gate");
     expect(sonarJob).toContain("if: always() && github.event_name == 'pull_request'");
     expect(sonarJob).toContain("needs: [quality, sonar-coverage]");
+    expect(sonarJob).toContain("needs['sonar-coverage'].result");
+    expect(sonarJob).not.toContain("needs.sonar-coverage.result");
     expect(sonarJob).toContain("uses: SonarSource/sonarqube-scan-action@v6");
     expect(sonarJob).toContain("-Dsonar.qualitygate.wait=true");
     expect(sonarJob).toContain("- enforcement: enforce");
     expect(sonarJob).toContain('if [[ "$qg_status" != "OK" ]]');
+    expect(sonarJob).not.toContain("sonar-scan.log");
     expect(sonarJob).not.toContain("pnpm");
     expect(sonarJob).not.toContain("GITHUB_TOKEN");
     expect(sonarJob).not.toContain("pull-requests: write");
@@ -45,6 +48,8 @@ describe("Sonar workflow parity", () => {
     expect(summaryJob).toContain("name: Sonar PR Summary");
     expect(summaryJob).toContain("pull-requests: write");
     expect(summaryJob).toContain("actions/download-artifact@v4");
+    expect(summaryJob).toContain("path: ${{ github.workspace }}");
+    expect(summaryJob).not.toContain("path: ${{ env.EVIDENCE_DIR }}");
     expect(summaryJob).not.toContain("actions/checkout");
     expect(summaryJob).not.toContain("SONAR_TOKEN");
     expect(summaryJob).not.toContain("pnpm");

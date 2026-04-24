@@ -143,7 +143,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download Sonar coverage
-        if: needs.sonar-coverage.result == 'success'
+        if: needs['sonar-coverage'].result == 'success'
         uses: actions/download-artifact@v4
         with:
           name: sonar-coverage-${{ github.run_id }}
@@ -156,16 +156,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "${{ needs.sonar-coverage.result }}" != "success" ]]; then
+          if [[ "${{ needs['sonar-coverage'].result }}" != "success" ]]; then
             mkdir -p "${EVIDENCE_DIR}/notes"
             {
               echo "# Sonar Quality Gate Failed"
               echo
               echo "- reason: Sonar coverage job did not pass."
-              echo "- coverage_result: ${{ needs.sonar-coverage.result }}"
+              echo "- coverage_result: ${{ needs['sonar-coverage'].result }}"
               echo "- run_id: ${GITHUB_RUN_ID}"
             } > "${EVIDENCE_DIR}/notes/sonar-summary.md"
-            echo "::error::Sonar coverage job did not pass: ${{ needs.sonar-coverage.result }}"
+            echo "::error::Sonar coverage job did not pass: ${{ needs['sonar-coverage'].result }}"
             exit 2
           fi
 
@@ -280,7 +280,6 @@ jobs:
         with:
           name: sonar-quality-gate-${{ github.run_id }}
           path: |
-            ${{ env.EVIDENCE_DIR }}/logs/sonar-scan.log
             ${{ env.EVIDENCE_DIR }}/logs/sonar-qualitygate.json
             ${{ env.EVIDENCE_DIR }}/notes/sonar-summary.md
             ${{ env.EVIDENCE_DIR }}/notes/sonar-pr-comment.md
@@ -305,7 +304,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: sonar-quality-gate-${{ github.run_id }}
-          path: ${{ env.EVIDENCE_DIR }}
+          path: ${{ github.workspace }}
 
       - name: Publish Sonar PR summary
         continue-on-error: true
