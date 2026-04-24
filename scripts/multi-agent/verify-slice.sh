@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 BASE_REF="origin/main"
-RUN_ID="verify-slice-$(date -u +%Y%m%dT%H%M%SZ)-$(node -e 'process.stdout.write(require("node:crypto").randomBytes(3).toString("hex"))')"
+RUN_ID=""
 RUN_ROOT=""
 ALLOW_MAIN=0
 RUN_STATIC=0
@@ -157,6 +157,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+command -v node >/dev/null 2>&1 || fail 'node is required'
+command -v pnpm >/dev/null 2>&1 || fail 'pnpm is required'
+node -e 'const major = Number(process.versions.node.split(".")[0]); if (!Number.isFinite(major) || major < 20) process.exit(1);' \
+  || fail 'node >=20 is required'
+
+if [[ -z "$RUN_ID" ]]; then
+  RUN_ID="verify-slice-$(date -u +%Y%m%dT%H%M%SZ)-$(node -e 'process.stdout.write(require("node:crypto").randomBytes(3).toString("hex"))')"
+fi
+
 if [[ -z "$RUN_ROOT" ]]; then
   RUN_ROOT="$ROOT_DIR/tmp/multi-agent/verify-slice/$RUN_ID"
 elif [[ "$RUN_ROOT" != /* ]]; then
@@ -164,11 +173,6 @@ elif [[ "$RUN_ROOT" != /* ]]; then
 fi
 
 mkdir -p "$RUN_ROOT/prompts" "$RUN_ROOT/evidence/gates"
-
-command -v node >/dev/null 2>&1 || fail 'node is required'
-command -v pnpm >/dev/null 2>&1 || fail 'pnpm is required'
-node -e 'const major = Number(process.versions.node.split(".")[0]); if (!Number.isFinite(major) || major < 20) process.exit(1);' \
-  || fail 'node >=20 is required'
 
 branch="$(git -C "$ROOT_DIR" rev-parse --abbrev-ref HEAD)"
 if [[ "$ALLOW_MAIN" -ne 1 && ( "$branch" == "main" || "$branch" == "master" ) ]]; then
@@ -405,7 +409,7 @@ write_orchestration_prompt
 
 if [[ "$RUN_STATIC" -eq 1 ]]; then
   run_gate "env-check" "pnpm env:check"
-  run_gate "git-diff-check-committed" "git diff --check '$BASE_COMMIT'...HEAD"
+  run_gate "git-diff-check-committed" "git diff --check $BASE_COMMIT...HEAD"
   run_gate "git-diff-check-staged" "git diff --cached --check"
   run_gate "git-diff-check-worktree" "git diff --check"
   run_untracked_diff_check

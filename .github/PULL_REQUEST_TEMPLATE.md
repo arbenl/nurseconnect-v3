@@ -7,8 +7,8 @@
 - [ ] Reviewer plan: `tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md`
 - [ ] Selected reviewers:
 - [ ] `MUST_FIX` count:
-- [ ] `pnpm verify-slice -- --static` result:
-- [ ] `pnpm verify-slice -- --required-gates` result:
+- [ ] `pnpm verify-slice -- --run-root <run-root> --static` result:
+- [ ] `pnpm verify-slice -- --run-root <run-root> --required-gates` result:
 
 ### Logs
 - [ ] Logs path: `artifacts/<TASK_ID>/validation.log`

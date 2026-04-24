@@ -2,10 +2,11 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-const repoRoot = new URL("../../..", import.meta.url).pathname;
+const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const scriptPath = join(repoRoot, "scripts/multi-agent/verify-slice.sh");
 
 describe("verify-slice workflow", () => {
@@ -52,7 +53,7 @@ describe("verify-slice workflow", () => {
     const script = readFileSync(scriptPath, "utf8");
 
     expect(script).toContain("git-diff-check-committed");
-    expect(script).toContain("git diff --check '$BASE_COMMIT'...HEAD");
+    expect(script).toContain("git diff --check $BASE_COMMIT...HEAD");
     expect(script).toContain("git-diff-check-staged");
     expect(script).toContain("git diff --cached --check");
     expect(script).toContain("git-diff-check-worktree");
