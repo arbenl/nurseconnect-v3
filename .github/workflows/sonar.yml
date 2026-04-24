@@ -1,0 +1,109 @@
+name: Sonar Baseline
+
+on:
+  schedule:
+    - cron: "35 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sonar:
+    name: Sonar Baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NODE_ENV: test
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || secrets.SONAR_PROJECT_KEY || 'arbenl_nurseconnect-v3' }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || secrets.SONAR_ORGANIZATION || 'arbenl' }}
+      SONAR_SCANNER_SKIP_JRE_PROVISIONING: "true"
+      EVIDENCE_DIR: tmp/sonar-evidence/${{ github.run_id }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.15.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Sonar configuration
+        id: sonar_config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required=(SONAR_TOKEN SONAR_HOST_URL SONAR_PROJECT_KEY)
+          if [[ "${SONAR_HOST_URL:-}" == *"sonarcloud.io"* ]]; then
+            required+=(SONAR_ORGANIZATION)
+          fi
+
+          missing=()
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              missing+=("${name}")
+            fi
+          done
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "::warning::Skipping Sonar baseline due to missing configuration: ${missing[*]}"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            mkdir -p "${EVIDENCE_DIR}/notes"
+            {
+              echo "# Sonar Baseline Skipped"
+              echo
+              echo "- reason: Missing Sonar configuration in GitHub Actions context."
+              echo "- missing: ${missing[*]}"
+              echo "- run_id: ${GITHUB_RUN_ID}"
+            } > "${EVIDENCE_DIR}/notes/sonar-summary.md"
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Run Sonar baseline
+        if: steps.sonar_config.outputs.enabled == 'true'
+        env:
+          SONAR_ENFORCEMENT: warn
+          SONAR_RUN_COVERAGE: true
+        run: bash scripts/sonar-gate.sh
+
+      - name: Upload Sonar evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-baseline-${{ github.run_id }}
+          path: |
+            ${{ env.EVIDENCE_DIR }}/logs/sonar-scan.log
+            ${{ env.EVIDENCE_DIR }}/logs/sonar-qualitygate.json
+            ${{ env.EVIDENCE_DIR }}/notes/sonar-summary.md
+          if-no-files-found: warn
+          retention-days: 14
