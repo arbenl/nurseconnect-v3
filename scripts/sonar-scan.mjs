@@ -30,6 +30,10 @@ async function waitForSonarUp({ statusUrl, timeoutMs }) {
 
     await new Promise(resolve => setTimeout(resolve, sleepMs));
   }
+
+  throw new Error(
+    `Timed out waiting for SonarQube to report UP at ${statusUrl} after ${timeoutMs}ms.`
+  );
 }
 
 function run(cmd, args, opts = {}) {
@@ -50,7 +54,21 @@ function run(cmd, args, opts = {}) {
     process.exit(result.status);
   }
 
-  return result.status ?? 0;
+  if (result.status === null) {
+    const exitCode = 1;
+    if (result.signal) {
+      console.error(`Command "${cmd}" terminated by signal ${result.signal}.`);
+    } else {
+      console.error(`Command "${cmd}" terminated without an exit status.`);
+    }
+
+    if (allowFailure) {
+      return exitCode;
+    }
+    process.exit(exitCode);
+  }
+
+  return result.status;
 }
 
 function readPullRequestContextFromEventPath() {

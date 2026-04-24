@@ -87,11 +87,13 @@ const token = process.env.SONAR_TOKEN || "";
 const url = new URL(qgUrl);
 const client = url.protocol === "https:" ? https : http;
 const authorization = `Basic ${Buffer.from(`${token}:`).toString("base64")}`;
+const timeoutMs = Number(process.env.SONAR_QG_TIMEOUT_MS || 10000);
 
 const req = client.request(
   url,
   {
     method: "GET",
+    timeout: timeoutMs,
     headers: {
       Accept: "application/json",
       Authorization: authorization,
@@ -115,6 +117,10 @@ const req = client.request(
     });
   }
 );
+
+req.on("timeout", () => {
+  req.destroy(new Error(`Sonar quality gate request timed out after ${timeoutMs}ms`));
+});
 
 req.on("error", error => {
   process.stderr.write(`${error.message}\n`);
