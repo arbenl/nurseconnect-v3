@@ -127,6 +127,16 @@ Date: __________________________
 | Workflow Standardization | Done | PR #59, merge commit `c7f8263349cd83eb90a355bac542b3b4508b89b9` |
 | M11 Auth and Session Degradation Monitoring | Done | PR #60, merge commit `a356ea367e87698e7d0a8af8065b3a5678508161` |
 | M12 Launch Operator Console Hardening | Done | PR #61, merge commit `b242ec2e2b42ceff8d69399f5041f9b22f937139` |
+| SonarCloud Baseline and Local Sonar Support | Done | PR #63, merge commit `5b1b2256c864ce81340e23df25c07a1816b16501` |
+| M13 Controlled Launch Execution Readiness Review | Done | PR #62, merge commit `6739c9d95ea983bc819817289feb8706fb5723ca` |
+| M14 Rehearsal Browser Hardening | Done | PR #64, merge commit `79457dbbc90e52d663ce54136917039f0767ee4b` |
+| SonarCloud PR Quality-Gate Parity | Done | PR #65, merge commit `475f20e0b0f0dcddf438ee01206d2755e6ca13f7` |
+
+## Planned Program Sequence
+
+| Milestone | Status | Evidence |
+| --- | --- | --- |
+| M15 Program Roadmap Lock | This slice | `docs/superpowers/specs/2026-04-24-program-roadmap-lock-design.md` |
 
 ## Required Validation Commands
 

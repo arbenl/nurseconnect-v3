@@ -83,6 +83,10 @@ launch operational risk or improve the first commercial launch loop.
 
 ## Recommended Next Three Slices
 
+This recommendation was executed through M12 and is superseded by
+`docs/superpowers/specs/2026-04-24-program-roadmap-lock-design.md`, which locks
+the post-M14 sequence before CRM or other product surfaces are implemented.
+
 ### M10: First-Hour Production Synthetic Monitoring
 
 Purpose: turn the M8 health and ops endpoints into a repeatable first-hour
