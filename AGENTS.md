@@ -35,3 +35,23 @@ Do not assume MCP tooling or repo policies from other repositories apply here un
 - Keep repo-scoped tooling changes local to this repository.
 - Prefer adding or updating files under this repository rather than changing user-global Codex configuration.
 - If a new NurseConnect-specific MCP server is needed later, add it to this repo's `.codex/config.toml` instead of repointing another repo's server.
+
+## Slice Workflow
+
+Use the NurseConnect slice workflow for product, platform, ops, and launch work:
+
+1. Start from clean, synced `main`.
+2. Define the slice and create a fresh `codex/<slice-name>` branch.
+3. Implement only that slice.
+4. Run focused deterministic local checks while developing.
+5. Run `pnpm verify-slice` and keep the printed `run_root`.
+6. Run `pnpm verify-slice -- --run-root <run_root> --static`.
+7. Run the pre-PR reviewer pool from the generated `tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md`.
+8. Fix all `MUST_FIX` findings, or document a technical rejection before PR.
+9. Run `pnpm verify-slice -- --run-root <run_root> --required-gates`.
+10. Open a PR with verify-slice evidence paths.
+11. Fix CI, Sonar if present, Copilot, and other PR review findings.
+12. Merge only after all required checks pass, including PR Finalizer.
+13. Sync local `main`, update Notion when the slice changes program state, and delete the local and remote branch.
+
+For tiny docs-only slices, a lightweight reviewer pool is acceptable only when the PR body explicitly explains the reduced review scope. Do not silently skip `verify-slice`.

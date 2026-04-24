@@ -1,0 +1,23 @@
+{
+  "name": "Architecture Reviewer",
+  "enabled": true,
+  "mode": "review",
+  "canModifyProduct": false,
+  "ownedScope": [
+    "apps",
+    "packages",
+    "scripts",
+    "config",
+    "package.json",
+    "turbo.json"
+  ],
+  "checks": [
+    "package boundary consistency",
+    "domain ownership drift",
+    "apps/web leakage",
+    "route and access-control authority",
+    "scope creep",
+    "maintainability risk"
+  ],
+  "notes": "Read-only pre-PR reviewer focused on NurseConnect architecture regressions introduced by the slice."
+}

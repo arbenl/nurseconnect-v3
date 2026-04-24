@@ -1,0 +1,24 @@
+{
+  "name": "Security Reviewer",
+  "enabled": true,
+  "mode": "review",
+  "canModifyProduct": false,
+  "ownedScope": [
+    "apps/web/src/middleware.ts",
+    "apps/web/src/lib/auth",
+    "apps/web/src/lib/proxy-logic.ts",
+    "apps/web/src/server/auth",
+    "apps/web/src/app/api",
+    "packages/contracts",
+    "packages/database"
+  ],
+  "checks": [
+    "auth and session boundaries",
+    "role and admin API enforcement",
+    "patient, nurse, referral partner, and admin data isolation",
+    "PHI/privacy exposure",
+    "secret handling",
+    "payment, payout, and webhook safety"
+  ],
+  "notes": "Read-only pre-PR reviewer. Findings must be actionable and scoped to the slice diff."
+}
