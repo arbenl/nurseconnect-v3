@@ -1,6 +1,7 @@
+import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
-import { resetDb, seedNurse } from "../e2e-utils/db";
+import { getDbClient, resetDb, seedNurse } from "../e2e-utils/db";
 import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 async function seedPatient(page: Page, email: string) {
@@ -24,6 +25,114 @@ async function seedVerifiedNurse(page: Page, email: string) {
 
 async function seedAdmin(page: Page, email: string) {
   await createTestUser(page.request, email, "Admin User", "admin");
+}
+
+async function seedLaunchOperatorSignals(page: Page) {
+  const now = new Date();
+  const old = new Date(now.getTime() - 25 * 60_000);
+  const patient = await createTestUser(
+    page.request,
+    `m12-patient-${Date.now()}@test.local`,
+    "M12 Patient",
+    "patient",
+  );
+  const nurse = await createTestUser(
+    page.request,
+    `m12-nurse-${Date.now()}@test.local`,
+    "M12 Nurse",
+    "nurse",
+  );
+  await seedNurse({
+    userId: nurse.userId,
+    status: "verified",
+    licenseNumber: "RN-M12-001",
+    licenseJurisdiction: "XK",
+    specialization: "Home Care",
+    isAvailable: true,
+    licenseValidUntil: new Date(now.getTime() + 86_400_000).toISOString(),
+  });
+
+  const ids = {
+    unassigned: randomUUID(),
+    staleAssigned: randomUUID(),
+    staleEnroute: randomUUID(),
+    exception: randomUUID(),
+    paymentGap: randomUUID(),
+  };
+  const client = getDbClient();
+  await client.connect();
+
+  try {
+    await client.query(
+      `INSERT INTO service_requests (
+          id,
+          patient_user_id,
+          assigned_nurse_user_id,
+          status,
+          address,
+          lat,
+          lng,
+          request_type,
+          referral_source,
+          assigned_at,
+          enroute_at,
+          needs_review_at,
+          created_at,
+          updated_at
+        )
+        VALUES
+          ($1, $6, NULL, 'open', 'M12 Open', '42.662900', '21.165500', 'same_day', 'consumer', NULL, NULL, NULL, $9, $9),
+          ($2, $6, $7, 'assigned', 'M12 Assigned', '42.662900', '21.165500', 'same_day', 'consumer', $8, NULL, NULL, $8, $8),
+          ($3, $6, $7, 'enroute', 'M12 Enroute', '42.662900', '21.165500', 'same_day', 'consumer', $8, $8, NULL, $8, $8),
+          ($4, $6, NULL, 'needs_review', 'M12 Exception', '42.662900', '21.165500', 'same_day', 'consumer', NULL, NULL, $9, $9, $9),
+          ($5, $6, $7, 'completed', 'M12 Payment', '42.662900', '21.165500', 'same_day', 'consumer', $8, $8, NULL, $8, $9)`,
+      [
+        ids.unassigned,
+        ids.staleAssigned,
+        ids.staleEnroute,
+        ids.exception,
+        ids.paymentGap,
+        patient.userId,
+        nurse.userId,
+        old,
+        now,
+      ],
+    );
+    await client.query(
+      `INSERT INTO payment_authorizations (
+          request_id,
+          patient_user_id,
+          status,
+          amount_cents,
+          currency,
+          provider,
+          provider_reference,
+          authorized_at,
+          created_at,
+          updated_at
+        )
+        VALUES ($1, $2, 'authorized', 5000, 'EUR', 'manual', 'm12-gap', $3, $3, $3)`,
+      [ids.paymentGap, patient.userId, now],
+    );
+    await client.query(
+      `INSERT INTO admin_audit_logs (
+          actor_user_id,
+          action,
+          target_entity_type,
+          target_entity_id,
+          details,
+          created_at
+        )
+        VALUES
+          (NULL, 'payment.authorization.failed', 'request', $1, '{}'::jsonb, $3),
+          (NULL, 'payout.failed', 'request', $2, '{}'::jsonb, $3)`,
+      [ids.paymentGap, ids.staleAssigned, now],
+    );
+  } finally {
+    await client.end();
+  }
+
+  return ids;
 }
 
 test.describe("Dashboard UX", () => {
@@ -127,6 +236,7 @@ test.describe("Dashboard UX", () => {
   }) => {
     const adminEmail = `admin-dashboard-${Date.now()}@test.local`;
     await seedAdmin(page, adminEmail);
+    const signalIds = await seedLaunchOperatorSignals(page);
 
     await loginTestUser(page.request, adminEmail);
     await page.goto("/admin");
@@ -134,6 +244,37 @@ test.describe("Dashboard UX", () => {
     await expect(page.getByTestId("admin-shell")).toBeVisible();
     expect(await page.getByTestId("admin-section-card").count()).toBeGreaterThanOrEqual(6);
     await expect(page.getByRole("heading", { name: "Operations Console" })).toBeVisible();
+    const launchSignals = page.getByTestId("admin-section-card").filter({
+      has: page.getByRole("heading", { name: "Launch operator signals" }),
+    });
+    await expect(launchSignals).toBeVisible();
+    await expect(launchSignals.getByText("Launch prerequisites")).toBeVisible();
+    await expect(launchSignals.getByText("Dispatch attention")).toBeVisible();
+    await expect(launchSignals.getByText("Payment follow-up")).toBeVisible();
+    await expect(launchSignals.getByText("3 active areas", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("1 verified available", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("1 unassigned", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("1 stale assigned", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("1 stale enroute", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("1 exceptions", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("1 auth no payout", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("1 auth failed", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("1 payout failed", { exact: true })).toBeVisible();
+    await expect(
+      launchSignals.getByRole("link", {
+        name: new RegExp(`Auth without payout.*${signalIds.paymentGap.slice(0, 8)}`),
+      }),
+    ).toBeVisible();
+    await expect(
+      launchSignals.getByRole("link", {
+        name: new RegExp(`Authorization failed.*${signalIds.paymentGap.slice(0, 8)}`),
+      }),
+    ).toBeVisible();
+    await expect(
+      launchSignals.getByRole("link", {
+        name: new RegExp(`Payout failed.*${signalIds.staleAssigned.slice(0, 8)}`),
+      }),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Immediate attention" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Credential review queue" })).toBeVisible();
     await expect(page.locator('[style*="#0a0a0a"]')).toHaveCount(0);

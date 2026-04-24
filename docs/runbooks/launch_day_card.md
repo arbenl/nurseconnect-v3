@@ -74,8 +74,10 @@
     ```
 
     Never paste the password or cookie into notes, PRs, logs, or Notion.
-27. Refresh Admin -> Active Queue, Admin -> Exception Queue, and Admin ->
-    Service Areas every 5 minutes during the first hour.
+27. Refresh Admin -> Dashboard every 5 minutes during the first hour and review
+    the Launch operator signals section. Drill into Active Queue, Exception
+    Queue, Service Areas, and the Payment follow-up request links when any
+    badge turns non-zero or blocked.
 28. Watch the first real request from intake through assignment, nurse accept,
     enroute, completion, payment trace, and payout trace.
 29. Escalate immediately if active service areas equals 0, verified and
