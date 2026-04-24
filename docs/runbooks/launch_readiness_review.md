@@ -9,7 +9,9 @@ checks.
 
 ## Current Verdict
 
-Status: conditionally ready for a controlled launch readiness rehearsal.
+Status: ready for a final controlled launch execution decision, subject to the
+production hard gates in
+`docs/runbooks/controlled_launch_execution_readiness.md`.
 
 NurseConnect has the core launch controls needed for a managed, referral-led
 in-home nursing dispatch product:
@@ -22,8 +24,8 @@ in-home nursing dispatch product:
 - admin queues, activity, audit trail, and request detail operations
 - deterministic CI and release gate commands
 
-Final launch remains blocked until the operational preconditions below are
-true in the target production environment.
+Final launch intake remains closed until the operational preconditions below are
+true in the target production environment and the operator records a GO decision.
 
 ## Required Production Preconditions
 
@@ -120,6 +122,11 @@ Date: __________________________
 | M6 Automated Launch Rehearsal | Done | PR #54, merge commit `60e270a50442a88587af058bc3552e4f9fcf6e96` |
 | M7 Full Milestone Browser Rehearsal | Done | PR #55, merge commit `0117fabdd2cb810a6c51ce9497e31425f9dc71aa` |
 | M8 Production Monitoring and Alerting | Done | PR #56, merge commit `38d947fe32a5c428f8ef85cabcf83b1709c3af68` |
+| M9 Roadmap Reconciliation and Next-Slice Program Plan | Done | PR #57, merge commit `d36671de95653544a74c3613fcd270db6ee16848` |
+| M10 First-Hour Production Synthetic Monitoring | Done | PR #58, merge commit `b9116751c3c5321f2d666f25539cc48bad9f8ee1` |
+| Workflow Standardization | Done | PR #59, merge commit `c7f8263349cd83eb90a355bac542b3b4508b89b9` |
+| M11 Auth and Session Degradation Monitoring | Done | PR #60, merge commit `a356ea367e87698e7d0a8af8065b3a5678508161` |
+| M12 Launch Operator Console Hardening | Done | PR #61, merge commit `b242ec2e2b42ceff8d69399f5041f9b22f937139` |
 
 ## Required Validation Commands
 
@@ -145,8 +152,9 @@ Expected result:
 - `pnpm launch:rehearsal` runs readiness plus the automated launch rehearsal
   API flow for health, admin, service area, patient/nurse lifecycle, payment
   trace, partner intake, and exception triage.
-- `pnpm launch:monitor` polls launch health and optional admin ops status for
-  first-hour production monitoring.
+- `pnpm launch:monitor` polls launch health and, when supplied
+  `LAUNCH_MONITOR_ADMIN_COOKIE`, admin ops status for first-hour production
+  monitoring. Authenticated ops polling is required for the production GO path.
 - `pnpm launch:auth-monitor` validates synthetic admin sign-in, `/api/me`
   session bootstrap, admin RBAC reachability, and sign-out without printing
   credentials or cookies.
@@ -203,13 +211,18 @@ Go only when all items are true:
 - [ ] `pnpm gate:release` passes on clean `main`.
 - [ ] `pnpm launch:readiness` passes on clean `main`.
 - [ ] `pnpm launch:rehearsal` passes on clean `main` against local/test.
-- [ ] `pnpm launch:monitor -- --url <production-url> --once` returns green
+- [ ] `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url
+      <production-url> --once` returns green and does not skip admin ops status
       before production intake opens.
 - [ ] `LAUNCH_AUTH_MONITOR_EMAIL` and `LAUNCH_AUTH_MONITOR_PASSWORD` are set in
       the operator terminal, and `pnpm launch:auth-monitor -- --url
       <production-url>` returns green for the dedicated synthetic admin
       credential.
 - [ ] Accepted exclusions are explicitly reviewed and signed.
+- [ ] Controlled launch execution decision ledger template from
+      `docs/runbooks/controlled_launch_execution_readiness.md` is completed in
+      Notion or a private launch evidence artifact, not in the tracked repo
+      runbook.
 - [ ] Production environment variables are configured.
 - [ ] Production migrations have been applied.
 - [ ] Primary admin bootstrap is verified.
@@ -222,6 +235,39 @@ Go only when all items are true:
       payment trace, payout trace, and exception handling are rehearsed.
 - [ ] Known exclusions are accepted by the operator.
 - [ ] Rollback path is understood before launch.
+
+## Controlled Launch Execution Decision
+
+Use `docs/runbooks/controlled_launch_execution_readiness.md` as the final
+operator decision template. Copy the completed decision into Notion or a
+private launch evidence artifact; do not write production evidence into the
+tracked repo runbook. The launch decision must be one of:
+
+- **GO**: every hard launch gate is green, any soft gate has an accepted
+  mitigation, the authenticated first-hour monitor is ready to start before
+  intake opens, and the launch operator can watch Admin -> Dashboard -> Launch
+  operator signals.
+- **HOLD**: no hard gate is red, but a soft gate needs a bounded mitigation
+  before intake opens. HOLD requires an owner, mitigation, and re-check time.
+- **NO-GO**: any hard gate is red, production state cannot be verified, or a
+  secret/token/PHI exposure occurs. Intake must remain closed.
+
+Minimum hard gates for GO:
+
+- production deploy reachable at the canonical URL
+- `/api/health` returns `ok: true`
+- active service area count greater than 0
+- verified and available nurse supply greater than 0
+- primary admin and synthetic admin auth checks pass
+- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url
+  <production-url> --once` passes for production and does not skip admin ops
+  status
+- authenticated `/api/admin/ops/status` is reachable
+- unassigned requests below 3
+- stale enroute requests equals 0
+- recent failed payment authorizations equals 0
+- recent failed payouts equals 0
+- rollback owner and pause-intake owner are named
 
 Escalate or no-go when any launch threshold is breached:
 

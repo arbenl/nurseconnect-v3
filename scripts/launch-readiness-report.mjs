@@ -2,7 +2,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
@@ -15,10 +15,7 @@ function readText(path) {
   return readFileSync(path, "utf8");
 }
 
-const packageJson = readJson(resolve(repoRoot, "package.json"));
-const jsonFlag = process.argv.includes("--json");
-
-const requiredScripts = [
+export const requiredScripts = [
   "env:check",
   "gate:release",
   "gate:e2e-api",
@@ -32,7 +29,8 @@ const requiredScripts = [
   "launch:auth-monitor",
 ];
 
-const requiredFiles = [
+export const requiredFiles = [
+  "docs/runbooks/controlled_launch_execution_readiness.md",
   "docs/runbooks/production_bootstrap_runbook.md",
   "docs/runbooks/launch_readiness_review.md",
   "docs/runbooks/launch_day_card.md",
@@ -54,7 +52,7 @@ const requiredFiles = [
   "apps/web/tests/e2e-ui/smoke.spec.ts",
 ];
 
-const runbookRequirements = [
+export const runbookRequirements = [
   "Required Production Preconditions",
   "Environment Tier Distinction",
   "Scope Truth",
@@ -64,38 +62,25 @@ const runbookRequirements = [
   "Rehearsal Seed",
   "Manual Launch Rehearsal",
   "Go/No-Go Checklist",
+  "Controlled Launch Execution Decision",
   "Rollback Guidance",
 ];
 
-const checks = [];
+export const controlledRunbookRequirements = [
+  "Purpose",
+  "Decision Inputs",
+  "Hard Launch Gates",
+  "Soft Launch Gates",
+  "Decision Outcomes",
+  "Operator Decision Ledger",
+  "Post-Decision Handoff",
+];
 
-function addCheck(name, passed, detail) {
+function addCheck(checks, name, passed, detail) {
   checks.push({ name, passed, detail });
 }
 
-for (const scriptName of requiredScripts) {
-  addCheck(
-    `package script: ${scriptName}`,
-    typeof packageJson.scripts?.[scriptName] === "string",
-    packageJson.scripts?.[scriptName] || "missing",
-  );
-}
-
-for (const file of requiredFiles) {
-  addCheck(`required file: ${file}`, existsSync(resolve(repoRoot, file)), file);
-}
-
-const runbookPath = resolve(repoRoot, "docs/runbooks/launch_readiness_review.md");
-const runbook = existsSync(runbookPath) ? readText(runbookPath) : "";
-for (const section of runbookRequirements) {
-  addCheck(
-    `launch runbook section: ${section}`,
-    runbook.includes(`## ${section}`) || runbook.includes(`### ${section}`),
-    section,
-  );
-}
-
-for (const command of [
+export const requiredRunbookCommands = [
   "pnpm env:check",
   "pnpm launch:readiness",
   "pnpm launch:readiness:json",
@@ -104,21 +89,90 @@ for (const command of [
   "pnpm launch:monitor",
   "pnpm launch:auth-monitor",
   "pnpm gate:release",
-]) {
-  addCheck(`launch runbook command: ${command}`, runbook.includes(command), command);
+];
+
+function hasMarkdownSection(text, section) {
+  return text.includes(`## ${section}`) || text.includes(`### ${section}`);
 }
 
-const failures = checks.filter((check) => !check.passed);
+export function buildChecks(root = repoRoot) {
+  const checks = [];
+  const packageJson = readJson(resolve(root, "package.json"));
 
-if (jsonFlag) {
+  for (const scriptName of requiredScripts) {
+    addCheck(
+      checks,
+      `package script: ${scriptName}`,
+      typeof packageJson.scripts?.[scriptName] === "string",
+      packageJson.scripts?.[scriptName] || "missing",
+    );
+  }
+
+  for (const file of requiredFiles) {
+    addCheck(checks, `required file: ${file}`, existsSync(resolve(root, file)), file);
+  }
+
+  const runbookPath = resolve(root, "docs/runbooks/launch_readiness_review.md");
+  const runbook = existsSync(runbookPath) ? readText(runbookPath) : "";
+  for (const section of runbookRequirements) {
+    addCheck(
+      checks,
+      `launch runbook section: ${section}`,
+      hasMarkdownSection(runbook, section),
+      section,
+    );
+  }
+
+  const controlledRunbookPath = resolve(
+    root,
+    "docs/runbooks/controlled_launch_execution_readiness.md",
+  );
+  const controlledRunbook = existsSync(controlledRunbookPath)
+    ? readText(controlledRunbookPath)
+    : "";
+  for (const section of controlledRunbookRequirements) {
+    addCheck(
+      checks,
+      `controlled launch runbook section: ${section}`,
+      hasMarkdownSection(controlledRunbook, section),
+      section,
+    );
+  }
+
+  for (const command of requiredRunbookCommands) {
+    addCheck(
+      checks,
+      `launch runbook command: ${command}`,
+      runbook.includes(command),
+      command,
+    );
+  }
+
+  return checks;
+}
+
+export function buildReport(root = repoRoot) {
+  const checks = buildChecks(root);
+  const failures = checks.filter((check) => !check.passed);
+
+  return {
+    passed: failures.length === 0,
+    total: checks.length,
+    failed: failures.length,
+    failures: failures.map((check) => check.name),
+    checks,
+  };
+}
+
+function printJsonReport(report) {
   console.log(
     JSON.stringify(
       {
-        passed: failures.length === 0,
-        total: checks.length,
-        failed: failures.length,
-        failures: failures.map((check) => check.name),
-        checks: checks.map((check) => ({
+        passed: report.passed,
+        total: report.total,
+        failed: report.failed,
+        failures: report.failures,
+        checks: report.checks.map((check) => ({
           name: check.name,
           passed: check.passed,
           detail: check.detail,
@@ -128,23 +182,34 @@ if (jsonFlag) {
       2,
     ),
   );
-  process.exit(failures.length > 0 ? 1 : 0);
 }
 
-const maxNameLength = Math.max(...checks.map((check) => check.name.length));
+function printHumanReport(report) {
+  const maxNameLength = Math.max(...report.checks.map((check) => check.name.length));
 
-console.log("NurseConnect launch readiness report");
-console.log("");
-for (const check of checks) {
-  const status = check.passed ? "PASS" : "FAIL";
-  console.log(`${status} ${check.name.padEnd(maxNameLength)} ${check.detail}`);
+  console.log("NurseConnect launch readiness report");
+  console.log("");
+  for (const check of report.checks) {
+    const status = check.passed ? "PASS" : "FAIL";
+    console.log(`${status} ${check.name.padEnd(maxNameLength)} ${check.detail}`);
+  }
+
+  if (!report.passed) {
+    console.error("");
+    console.error(`Launch readiness failed: ${report.failed} check(s) failed.`);
+    return;
+  }
+
+  console.log("");
+  console.log("Launch readiness checks passed.");
 }
 
-if (failures.length > 0) {
-  console.error("");
-  console.error(`Launch readiness failed: ${failures.length} check(s) failed.`);
-  process.exit(1);
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const report = buildReport(repoRoot);
+  if (process.argv.includes("--json")) {
+    printJsonReport(report);
+  } else {
+    printHumanReport(report);
+  }
+  process.exit(report.passed ? 0 : 1);
 }
-
-console.log("");
-console.log("Launch readiness checks passed.");

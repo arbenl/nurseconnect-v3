@@ -158,6 +158,18 @@ Notes:
 
 * Better‑Auth session is verified server-side via `auth.api.getSession({ headers })`; authorization checks compare against the **domain DB user role**.
 * Users not allowlisted in `FIRST_ADMIN_EMAILS` remain `patient` by default; the admin bootstrap has **no** “first user becomes admin” fallback.
+* Before opening controlled launch intake, use
+  `docs/runbooks/controlled_launch_execution_readiness.md` as the decision
+  template and record the completed GO, HOLD, or NO-GO decision in Notion or a
+  private launch evidence artifact. Do not write production evidence into the
+  tracked repo runbook.
+* GO requires green production `/api/health`, verified admin reachability,
+  verified and available nurse supply, active service-area coverage, green
+  one-shot `pnpm launch:monitor` with `LAUNCH_MONITOR_ADMIN_COOKIE` proving
+  admin ops status was checked and not skipped, green auth monitor, and named
+  rollback and pause-intake owners.
+* HOLD and NO-GO both mean intake remains closed until the failed gate is
+  mitigated and re-checked.
 
 ---
 

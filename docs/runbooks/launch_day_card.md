@@ -7,7 +7,13 @@
 3. `pnpm env:check`
 4. `pnpm launch:readiness`
 5. `pnpm launch:rehearsal`
-6. `pnpm launch:monitor -- --url https://<production-url> --once`
+6. Run the one-shot launch monitor with authenticated ops status:
+
+   ```bash
+   LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
+     pnpm launch:monitor -- --url https://<production-url> --once
+   ```
+
 7. Run the synthetic auth monitor with the dedicated synthetic admin:
 
    ```bash
@@ -44,28 +50,34 @@
 
 ## Go/No-Go
 
-22. If all steps are green, proceed with controlled launch.
-23. If any step fails, record the failure and do not launch.
+22. Open `docs/runbooks/controlled_launch_execution_readiness.md` and copy the
+    operator decision ledger template into Notion or a private launch evidence
+    artifact. Do not fill production evidence into the tracked repo runbook.
+23. Record one decision:
+    - **GO**: all hard gates are green, any soft gate has an accepted
+      mitigation, and authenticated first-hour monitoring is ready to start.
+    - **HOLD**: no hard gate is red, but intake stays closed while an owner
+      completes a bounded mitigation and re-check.
+    - **NO-GO**: any hard gate is red, production state cannot be verified, or
+      a secret/token/PHI exposure occurred.
+24. Proceed with controlled launch only on GO, and start the authenticated
+    first-hour monitor before opening intake.
+25. On HOLD or NO-GO, record the failed gate and do not open intake.
 
 ## Post-Deploy First-Hour Monitoring
 
-24. Run:
-
-    ```bash
-    pnpm launch:monitor -- --url https://<production-url>
-    ```
-
-    This polls `GET /api/health` every 5 minutes for the first hour. If it
-    fails, pause intake immediately.
-25. To include authenticated admin ops status, export a short-lived admin
-    session cookie before running the monitor:
+26. Run the authenticated first-hour monitor:
 
     ```bash
     LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
       pnpm launch:monitor -- --url https://<production-url>
     ```
 
-26. In a second terminal, run the auth/session monitor every 10 minutes:
+    This polls `GET /api/health` and authenticated `GET /api/admin/ops/status`
+    every 5 minutes for the first hour. If it fails, pause intake immediately.
+    Public health-only monitoring is not sufficient for GO.
+
+27. In a second terminal, run the auth/session monitor every 10 minutes:
 
     ```bash
     LAUNCH_AUTH_MONITOR_EMAIL='<synthetic admin email>' \
@@ -74,13 +86,13 @@
     ```
 
     Never paste the password or cookie into notes, PRs, logs, or Notion.
-27. Refresh Admin -> Dashboard every 5 minutes during the first hour and review
+28. Refresh Admin -> Dashboard every 5 minutes during the first hour and review
     the Launch operator signals section. Drill into Active Queue, Exception
     Queue, Service Areas, and the Payment follow-up request links when any
     badge turns non-zero or blocked.
-28. Watch the first real request from intake through assignment, nurse accept,
+29. Watch the first real request from intake through assignment, nurse accept,
     enroute, completion, payment trace, and payout trace.
-29. Escalate immediately if active service areas equals 0, verified and
+30. Escalate immediately if active service areas equals 0, verified and
     available nurse supply equals 0, unassigned requests reach 3 or more for
     more than 5 minutes, any enroute request becomes stale, exception queue
     reaches 5 or more, any payment authorization or payout failure appears, or
