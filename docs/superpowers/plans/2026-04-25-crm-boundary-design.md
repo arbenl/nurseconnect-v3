@@ -1,13 +1,17 @@
 # M16: CRM Boundary Design Plan
 
 Date: 2026-04-25
-Status: In progress
+Status: Done - merged via PR #68
 Scope: Product boundary design only
 
 Branch: `codex/crm-boundary-design`
 
 Design:
 [M16 CRM Boundary Design](../specs/2026-04-25-crm-boundary-design.md)
+
+Review scope: verify-slice reviewer pool for a design-only slice with no
+runtime changes; selected reviewers covered security, architecture, QA, and
+ops.
 
 ## Goal
 
@@ -28,18 +32,14 @@ schema, API routes, UI, package exports, or runtime behavior.
 - [x] Run `pnpm verify-slice -- --static`.
 - [x] Run reviewer pool or document lightweight docs-only review scope.
 - [x] Run `pnpm verify-slice -- --required-gates`.
-- [ ] Complete standard slice workflow (PR -> CI -> merge -> Notion sync ->
+- [x] Complete standard slice workflow (PR -> CI -> merge -> Notion sync ->
       branch cleanup) from [AGENTS.md](../../../AGENTS.md).
 
 ## Scope
 
-- CRM actors and operator use cases.
-- CRM source-of-truth and package ownership.
-- Relationship summary data allowed in read-only CRM views.
-- PII/PHI/payment/audit redaction rules.
-- Audit actions required before mutable CRM work.
-- M18 first implementation slice definition.
-- M19 notes and follow-ups boundary.
+See [M16 CRM Boundary Design](../specs/2026-04-25-crm-boundary-design.md) for
+full scope. This plan records the docs-only execution slice and verification
+workflow.
 
 ## Out of scope
 
