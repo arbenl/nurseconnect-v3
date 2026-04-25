@@ -15,6 +15,10 @@ import { readFileSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import {
+  resolveFallbackProviderModel,
+  resolveRequestedProviderModel,
+} from "./agent-runner-models.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -404,21 +408,7 @@ const llmProvider = String(
   process.env.STEER_LLM_PROVIDER || process.env.AGENT_LLM_PROVIDER || "codex"
 ).toLowerCase();
 
-function resolveModel(provider) {
-  const sharedModel = process.env.STEER_MODEL || process.env.AGENT_MODEL;
-  if (sharedModel) {
-    return sharedModel;
-  }
-  if (provider === "codex" || provider === "openai") {
-    return process.env.CODEX_MODEL || process.env.GEMINI_MODEL;
-  }
-  if (provider === "gemini" || provider === "google") {
-    return process.env.GEMINI_MODEL || process.env.CODEX_MODEL;
-  }
-  return process.env.CODEX_MODEL || process.env.GEMINI_MODEL;
-}
-
-const model = resolveModel(llmProvider);
+const model = resolveRequestedProviderModel(llmProvider);
 const codexReasoningEffort = process.env.STEER_CODEX_REASONING_EFFORT || "low";
 const codexTimeoutMsRaw = Number.parseInt(process.env.STEER_AGENT_TIMEOUT_MS || "180000", 10);
 const codexTimeoutMs = Number.isFinite(codexTimeoutMsRaw) && codexTimeoutMsRaw > 0 ? codexTimeoutMsRaw : 180_000;
@@ -455,10 +445,11 @@ function runOnce() {
   if (llmProvider === "codex" || llmProvider === "openai") {
     if (!commandExists("codex")) {
       if (allowProviderFallback && commandExists("npx")) {
+        const fallbackModel = resolveFallbackProviderModel("gemini");
         console.warn(
-          "codex CLI not found in PATH; falling back to Gemini CLI via npx. Set STEER_ALLOW_PROVIDER_FALLBACK=0 to disable."
+          `codex CLI not found in PATH; falling back to Gemini CLI via npx${fallbackModel ? ` model=${fallbackModel}` : ""}. Set STEER_ALLOW_PROVIDER_FALLBACK=0 to disable.`
         );
-        return runWithGeminiCli();
+        return runWithGeminiCli(fallbackModel);
       }
       console.error(
         'codex CLI is not available in PATH. Install Codex CLI or set STEER_LLM_PROVIDER=gemini.'
@@ -472,7 +463,7 @@ function runOnce() {
       console.error('npx is not available in PATH; Gemini provider requires npx.');
       process.exit(2);
     }
-    return runWithGeminiCli();
+    return runWithGeminiCli(model);
   }
 
   console.error(
@@ -523,7 +514,7 @@ function runWithCodexCli() {
   };
 }
 
-function runWithGeminiCli() {
+function runWithGeminiCli(geminiModel) {
   const args = [
     "-y",
     "@google/gemini-cli@latest",
@@ -531,8 +522,8 @@ function runWithGeminiCli() {
     fullPrompt,
     "--debug=false",
   ];
-  if (model) {
-    args.push("--model", model);
+  if (geminiModel) {
+    args.push("--model", geminiModel);
   }
 
   return spawnSync("npx", args, {
