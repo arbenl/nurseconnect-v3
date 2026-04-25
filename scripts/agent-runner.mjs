@@ -514,7 +514,7 @@ function runWithCodexCli() {
   };
 }
 
-function runWithGeminiCli(geminiModel = model) {
+function runWithGeminiCli(geminiModel) {
   const args = [
     "-y",
     "@google/gemini-cli@latest",
