@@ -1,6 +1,7 @@
 # M15: Program Roadmap Lock Plan
 
 Branch: `codex/program-roadmap-lock`
+Design: [M15 Program Roadmap Lock Design](../specs/2026-04-24-program-roadmap-lock-design.md)
 
 ## Goal
 
@@ -18,11 +19,8 @@ product surface.
 - [x] Run `pnpm verify-slice -- --static`.
 - [x] Run reviewer pool or document lightweight docs-only review scope.
 - [x] Run `pnpm verify-slice -- --required-gates`.
-- [ ] Open PR.
-- [ ] Fix CI, Sonar, Copilot, and reviewer findings.
-- [ ] Merge only after all required checks, including `Sonar Quality Gate` and
-      PR Finalizer, are green.
-- [ ] Sync local `main`, update Notion, and delete local/remote branch.
+- [x] Complete standard slice workflow (PR -> CI -> merge -> Notion sync ->
+      branch cleanup) from [AGENTS.md](../../../AGENTS.md).
 
 ## Scope
 
@@ -30,7 +28,7 @@ product surface.
 - Launch evidence docs.
 - CRM boundary placement.
 
-## Out Of Scope
+## Out of scope
 
 - CRM database schema.
 - CRM UI.
