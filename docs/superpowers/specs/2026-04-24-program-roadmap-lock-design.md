@@ -42,7 +42,7 @@ product scope, but they must still be recorded in the Program page after merge.
 | Milestone | Name | Type | Status | Launch blocker? | Exit criteria |
 | --- | --- | --- | --- | --- | --- |
 | M15 | Program Roadmap Lock | Documentation/program control | Done - PR #66 | No | Repo docs lock the next sequence; Notion is synced after merge with PR and merge-commit evidence. |
-| M16 | CRM Boundary Design | Product design | Planned | No | CRM actors, data ownership, PII/PHI guardrails, audit actions, and first implementation slice are defined. |
+| M16 | [CRM Boundary Design](2026-04-25-crm-boundary-design.md) | Product design | Current slice | No | CRM actors, data ownership, PII/PHI guardrails, audit actions, and first implementation slice are defined. |
 | M17 | Controlled Launch Dry Run and Decision Ledger | Launch execution | Planned | Yes for launch execution | Full launch decision package is rehearsed from clean main with current monitors, browser rehearsal, and operator ledger. |
 | M18 | CRM Read-Only Operator View | Product implementation | Planned after M16 approval and launch dry-run evidence | No by default; deferrable outside launch path | Admin can view minimum-necessary relationship summaries derived from existing operational records without new mutable CRM records. |
 | M19 | CRM Notes and Follow-Ups | Product implementation | Planned after M18 evidence | No by default; deferrable outside launch path | Admin-only non-clinical notes/follow-ups exist with audit trail, access controls, and PHI-minimizing guidance. |
@@ -55,7 +55,9 @@ CRM belongs to the post-launch commercial operating loop unless the operator
 explicitly narrows it to a read-only relationship dashboard. Controlled launch
 dry-run evidence may proceed before any CRM implementation.
 
-The first CRM slice must be M16 design, not implementation.
+The first CRM slice is
+[M16 CRM Boundary Design](2026-04-25-crm-boundary-design.md), not
+implementation.
 
 ### CRM v1 Definition
 
