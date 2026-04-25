@@ -1,7 +1,10 @@
 import type { AdminOpsStatusCounts } from "@nurseconnect/contracts";
 import { db, sql } from "@nurseconnect/database";
-import { getVerifiedAndAvailableNurseCount } from "@nurseconnect/domain-nurse";
 
+import {
+  LAUNCH_MINIMUM_VERIFIED_AVAILABLE_NURSES,
+  summarizeLaunchNurseSupply,
+} from "./launch-supply-threshold";
 import { DEFAULT_TRIAGE_SEVERITY_POLICY } from "./triage-severity";
 
 const RECENT_FAILURE_WINDOW_HOURS = 24;
@@ -23,6 +26,13 @@ type PaymentStatusCountRow = {
   recentFailedPayouts: number | string;
 };
 
+type LaunchNurseSupplyRow = {
+  verifiedAndAvailable: number | string;
+  launchServiceAreaCount: number | string;
+  launchLowestServiceAreaSupply: number | string | null;
+  launchServiceAreasBelowMinimum: number | string;
+};
+
 export type GetAdminOpsStatusOptions = {
   now?: Date;
   recentFailureWindowHours?: number;
@@ -39,6 +49,66 @@ function normalizeRecentWindowHours(value: number | undefined) {
   return Math.max(1, Math.min(168, Math.trunc(value)));
 }
 
+export async function getLaunchNurseSupplySummary(now = new Date()) {
+  const rows = await db.execute<LaunchNurseSupplyRow>(sql`
+    WITH active_service_areas AS (
+      SELECT id
+      FROM service_areas
+      WHERE status = 'active'::service_area_status
+    ),
+    eligible_nurse_locations AS (
+      SELECT DISTINCT nl.nurse_user_id, nl.service_area_id
+      FROM nurse_locations nl
+      JOIN active_service_areas asa ON asa.id = nl.service_area_id
+      JOIN nurses n ON n.user_id = nl.nurse_user_id
+      JOIN users u ON u.id = n.user_id
+      WHERE u.role = 'nurse'
+        AND n.status = 'verified'::nurse_status
+        AND n.is_available = TRUE
+        AND (
+          n.license_valid_until IS NULL
+          OR n.license_valid_until > ${now}
+        )
+    ),
+    service_area_supply AS (
+      SELECT
+        asa.id,
+        COUNT(DISTINCT enl.nurse_user_id) AS eligible_count
+      FROM active_service_areas asa
+      LEFT JOIN eligible_nurse_locations enl ON enl.service_area_id = asa.id
+      GROUP BY asa.id
+    )
+    SELECT
+      (
+        SELECT COUNT(DISTINCT nurse_user_id)
+        FROM eligible_nurse_locations
+      ) AS "verifiedAndAvailable",
+      (
+        SELECT COUNT(*)
+        FROM service_area_supply
+      ) AS "launchServiceAreaCount",
+      (
+        SELECT COALESCE(MIN(eligible_count), 0)
+        FROM service_area_supply
+      ) AS "launchLowestServiceAreaSupply",
+      (
+        SELECT COUNT(*)
+        FROM service_area_supply
+        WHERE eligible_count < ${LAUNCH_MINIMUM_VERIFIED_AVAILABLE_NURSES}
+      ) AS "launchServiceAreasBelowMinimum"
+  `);
+  const row = rows.rows[0];
+
+  return summarizeLaunchNurseSupply({
+    verifiedAndAvailable: toCount(row?.verifiedAndAvailable),
+    launchServiceAreaCount: toCount(row?.launchServiceAreaCount),
+    launchLowestServiceAreaSupply: toCount(row?.launchLowestServiceAreaSupply),
+    launchServiceAreasBelowMinimum: toCount(
+      row?.launchServiceAreasBelowMinimum,
+    ),
+  });
+}
+
 export async function getAdminOpsStatus(
   options: GetAdminOpsStatusOptions = {},
 ): Promise<AdminOpsStatusCounts> {
@@ -52,14 +122,14 @@ export async function getAdminOpsStatus(
       normalizeRecentWindowHours(options.recentFailureWindowHours) * 60 * 60_000,
   );
 
-  const [serviceAreaRows, verifiedAndAvailable, requestRows, paymentRows] =
+  const [serviceAreaRows, nurseSupply, requestRows, paymentRows] =
     await Promise.all([
       db.execute<ServiceAreaCountRow>(sql`
         SELECT COUNT(*) AS active
         FROM service_areas
         WHERE status = 'active'::service_area_status
       `),
-      getVerifiedAndAvailableNurseCount(),
+      getLaunchNurseSupplySummary(now),
       db.execute<RequestStatusCountRow>(sql`
         WITH latest_request_events AS (
           SELECT request_id, MAX(created_at) AS last_event_at
@@ -130,9 +200,7 @@ export async function getAdminOpsStatus(
     serviceAreas: {
       active: toCount(serviceAreaCounts?.active),
     },
-    nurseSupply: {
-      verifiedAndAvailable,
-    },
+    nurseSupply,
     requests: {
       unassigned: toCount(requestCounts?.unassigned),
       staleAssigned: toCount(requestCounts?.staleAssigned),

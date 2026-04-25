@@ -13,6 +13,7 @@ const { Client } = requireFromDatabase("pg");
 
 const DEFAULT_APP_URL = "http://localhost:3010";
 const PASSWORD = "password123";
+const LAUNCH_REHEARSAL_NURSE_COUNT = 10;
 
 const seedUsers = [
   {
@@ -21,12 +22,15 @@ const seedUsers = [
     name: "Launch Admin",
     role: "admin",
   },
-  {
-    key: "nurse",
-    email: "launch.nurse@test.local",
-    name: "Launch Nurse",
+  ...Array.from({ length: LAUNCH_REHEARSAL_NURSE_COUNT }, (_, index) => ({
+    key: `nurse-${index + 1}`,
+    email:
+      index === 0
+        ? "launch.nurse@test.local"
+        : `launch.nurse.${index + 1}@test.local`,
+    name: index === 0 ? "Launch Nurse" : `Launch Nurse ${index + 1}`,
     role: "nurse",
-  },
+  })),
   {
     key: "patient",
     email: "launch.patient@test.local",
@@ -389,10 +393,12 @@ export async function main() {
     }
 
     const admin = userResults.find((user) => user.key === "admin");
-    const nurse = userResults.find((user) => user.key === "nurse");
+    const nurses = userResults.filter((user) => user.key.startsWith("nurse-"));
     const partner = userResults.find((user) => user.key === "partner");
 
-    await ensureNurse(client, nurse.id, admin.id, serviceArea.id);
+    for (const nurse of nurses) {
+      await ensureNurse(client, nurse.id, admin.id, serviceArea.id);
+    }
     await ensurePartner(client, partner.id);
 
     printSummary({

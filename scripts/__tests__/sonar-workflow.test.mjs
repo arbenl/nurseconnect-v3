@@ -48,8 +48,8 @@ describe("Sonar workflow parity", () => {
     expect(summaryJob).toContain("name: Sonar PR Summary");
     expect(summaryJob).toContain("pull-requests: write");
     expect(summaryJob).toContain("actions/download-artifact@v4");
-    expect(summaryJob).toContain("path: ${{ github.workspace }}");
-    expect(summaryJob).not.toContain("path: ${{ env.EVIDENCE_DIR }}");
+    expect(summaryJob).toContain("path: ${{ env.EVIDENCE_DIR }}");
+    expect(summaryJob).not.toContain("path: ${{ github.workspace }}");
     expect(summaryJob).not.toContain("actions/checkout");
     expect(summaryJob).not.toContain("SONAR_TOKEN");
     expect(summaryJob).not.toContain("pnpm");

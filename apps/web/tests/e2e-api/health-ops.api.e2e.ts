@@ -82,7 +82,15 @@ test.describe("Health and Ops Status API", () => {
     expect(body).toMatchObject({
       db: "ok",
       serviceAreas: { active: expect.any(Number) },
-      nurseSupply: { verifiedAndAvailable: expect.any(Number) },
+      nurseSupply: {
+        verifiedAndAvailable: expect.any(Number),
+        launchMinimum: 10,
+        launchShortfall: expect.any(Number),
+        launchReady: expect.any(Boolean),
+        launchServiceAreaCount: expect.any(Number),
+        launchLowestServiceAreaSupply: expect.any(Number),
+        launchServiceAreasBelowMinimum: expect.any(Number),
+      },
       requests: {
         unassigned: expect.any(Number),
         staleAssigned: expect.any(Number),

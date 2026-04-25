@@ -19,7 +19,7 @@ Collect these inputs before making the launch decision:
 - `pnpm gate:release` result from clean, synced `main`.
 - `pnpm launch:readiness` result from clean, synced `main`.
 - `pnpm launch:rehearsal` result from local/test.
-- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once`
+- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once --require-admin-ops`
   result.
 - `pnpm launch:auth-monitor -- --url <production-url>` result using the
   dedicated synthetic admin.
@@ -43,7 +43,9 @@ All hard gates must be green for GO:
 - Production deploy is reachable at the canonical URL.
 - `GET /api/health` returns `ok: true`.
 - Active service area count is greater than 0.
-- Verified and available nurse supply is greater than 0.
+- Authenticated `/api/admin/ops/status` reports
+  `nurseSupply.launchReady: true`, with at least 10 verified, available,
+  dispatch-eligible nurses in every active launch service area.
 - Primary admin can sign in, call `/api/me`, and call `/api/admin/ping`.
 - Synthetic admin auth monitor passes.
 - First-hour monitor one-shot passes.
@@ -90,7 +92,7 @@ Required actions:
 
    ```bash
    LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
-     pnpm launch:monitor -- --url https://<production-url>
+     pnpm launch:monitor -- --url https://<production-url> --require-admin-ops
    ```
 
    The monitor output must show admin ops status as checked, not skipped.
@@ -148,7 +150,7 @@ production evidence.
 - `pnpm gate:release` result:
 - `pnpm launch:readiness` result:
 - `pnpm launch:rehearsal` result:
-- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url https://<production-url> --once`
+- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url https://<production-url> --once --require-admin-ops`
   result:
 - Authenticated first-hour monitor output location:
 - `pnpm launch:auth-monitor` result:

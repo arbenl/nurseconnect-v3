@@ -39,7 +39,9 @@ true in the target production environment and the operator records a GO decision
 - `BETTER_AUTH_SECRET` is configured and retained across deploys.
 - `FIRST_ADMIN_EMAILS` contains the initial operator emails.
 - At least one active service area exists before accepting real requests.
-- At least one verified, available nurse exists inside the launch service area.
+- Authenticated admin ops status reports `nurseSupply.launchReady: true`,
+  with at least 10 verified, available, dispatch-eligible nurses in every
+  active launch service area.
 - The production app deploy is reachable at the intended hostname.
 - The production database has been migrated to the current head migration.
 
@@ -65,7 +67,8 @@ environment and admin bootstrap procedure.
 - `DATABASE_URL` must be the direct, non-pooled production URL used for
   migrations.
 - `DATABASE_POOL_URL` should be the pooled runtime connection when available.
-- At least one active service area and one verified, available nurse must exist
+- At least one active service area must exist before accepting real requests.
+- Authenticated admin ops status must report `nurseSupply.launchReady: true`
   before accepting real requests.
 - Production readiness requires the manual launch rehearsal, not only green CI.
 
@@ -152,7 +155,7 @@ Run these from a clean, synced `main` before launch rehearsal:
 | `pnpm launch:readiness:json` | Returns the same readiness result in structured form for CI or PR automation. |
 | `pnpm launch:rehearsal` | Runs readiness plus the automated launch rehearsal API flow for health, admin, service area, patient/nurse lifecycle, payment trace, partner intake, and exception triage. |
 | `pnpm launch:browser-rehearsal:headed` | Runs the full milestone browser rehearsal in visible Chrome with slow interactions for operator observation. |
-| `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once` | Polls launch health and authenticated admin ops status for first-hour production monitoring. Authenticated ops polling is required for the production GO path. |
+| `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once --require-admin-ops` | Polls launch health and authenticated admin ops status for first-hour production monitoring. Authenticated ops polling is required for the production GO path. |
 | `pnpm launch:auth-monitor -- --url <production-url>` | Validates synthetic admin sign-in, `/api/me` session bootstrap, admin RBAC reachability, and sign-out without printing credentials or cookies. |
 | `pnpm gate:release` | Runs type-check, lint, web build, unit/architecture tests, API tests, E2E API gate, and UI smoke gate. |
 | PR CI `Sonar Quality Gate` | Must be green and blocking. The best-effort PR-facing Sonar summary should be reviewed when present, but a green scheduled `Sonar Baseline` alone is not sufficient for release readiness. |
@@ -169,7 +172,7 @@ The seed script creates or reuses:
 
 - one active Pristina service area
 - one admin user
-- one verified, available nurse with a location inside the service area
+- ten verified, available nurses with locations inside the service area
 - one patient user
 - one active referral partner profile
 
@@ -214,7 +217,7 @@ Go only when all items are true:
       summary.
 - [ ] `pnpm launch:readiness` passes on clean `main`.
 - [ ] `pnpm launch:rehearsal` passes on clean `main` against local/test.
-- [ ] `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once`
+- [ ] `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once --require-admin-ops`
       returns green and does not skip admin ops status before production intake
       opens.
 - [ ] `LAUNCH_AUTH_MONITOR_EMAIL` and `LAUNCH_AUTH_MONITOR_PASSWORD` are set in
@@ -231,7 +234,7 @@ Go only when all items are true:
 - [ ] Primary admin bootstrap is verified.
 - [ ] `GET /api/health` returns `ok: true`.
 - [ ] At least one active launch service area exists.
-- [ ] Verified and available nurse supply exists inside the launch service area.
+- [ ] Admin ops status reports `nurseSupply.launchReady: true`.
 - [ ] `GET /api/admin/ops/status` is reachable by an authenticated admin and
       confirms launch thresholds are green.
 - [ ] Patient request, partner request, nurse assignment, visit completion,
@@ -261,9 +264,9 @@ Minimum hard gates for GO:
 - latest release PR had a green blocking `Sonar Quality Gate`
 - `/api/health` returns `ok: true`
 - active service area count greater than 0
-- verified and available nurse supply greater than 0
+- authenticated admin ops status reports `nurseSupply.launchReady: true`
 - primary admin and synthetic admin auth checks pass
-- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once`
+- `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once --require-admin-ops`
   passes for production and does not skip admin ops status
 - authenticated `/api/admin/ops/status` is reachable
 - unassigned requests below 3
@@ -279,7 +282,8 @@ Escalate or no-go when any launch threshold is breached:
 - `Sonar Quality Gate` is missing, skipped, or red on the release PR: do not
   merge or launch until the gate is green.
 - Active service areas equals 0: do not launch or pause intake.
-- Verified and available nurse supply equals 0: do not accept new requests.
+- `nurseSupply.launchReady` is false or
+  `launchServiceAreasBelowMinimum > 0`: do not accept new requests.
 - Unassigned requests are 3 or more for more than 5 minutes: escalate to the
   operator.
 - Any stale enroute request exists: escalate to the operator.

@@ -123,6 +123,12 @@ const opsStatus: AdminOpsStatusCounts = {
   },
   nurseSupply: {
     verifiedAndAvailable: 3,
+    launchMinimum: 10,
+    launchShortfall: 7,
+    launchReady: false,
+    launchServiceAreaCount: 1,
+    launchLowestServiceAreaSupply: 3,
+    launchServiceAreasBelowMinimum: 1,
   },
   requests: {
     unassigned: 2,

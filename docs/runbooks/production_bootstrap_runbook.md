@@ -86,9 +86,9 @@ For production, configure the required variables in the Vercel project settings,
 
 From your browser or curl:
 
-* `GET /api/health` should return `ok: true`, `db: "ok"`, at least one active
-  service area, and verified/available nurse supply above 0 before launch
-  intake opens.
+* `GET /api/health` should return `ok: true` and `db: "ok"`.
+* Authenticated `GET /api/admin/ops/status` should report at least one active
+  service area and `nurseSupply.launchReady: true` before launch intake opens.
 * `GET /api/health/db` should return `{ ok: true, db: "ok" }` for legacy
   monitor compatibility.
 
@@ -106,7 +106,7 @@ To include authenticated admin ops status:
 
 ```bash
 LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
-  pnpm launch:monitor -- --url https://<production-url>
+  pnpm launch:monitor -- --url https://<production-url> --require-admin-ops
 ```
 
 ---
@@ -164,10 +164,10 @@ Notes:
   private launch evidence artifact. Do not write production evidence into the
   tracked repo runbook.
 * GO requires green production `/api/health`, verified admin reachability,
-  verified and available nurse supply, active service-area coverage, green
-  one-shot `pnpm launch:monitor` with `LAUNCH_MONITOR_ADMIN_COOKIE` proving
-  admin ops status was checked and not skipped, green auth monitor, and named
-  rollback and pause-intake owners.
+  active service-area coverage, `nurseSupply.launchReady: true`, green
+  one-shot `pnpm launch:monitor` with `LAUNCH_MONITOR_ADMIN_COOKIE` and
+  `--require-admin-ops` proving admin ops status was checked, green auth
+  monitor, and named rollback and pause-intake owners.
 * HOLD and NO-GO both mean intake remains closed until the failed gate is
   mitigated and re-checked.
 

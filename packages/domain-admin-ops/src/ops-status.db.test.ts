@@ -6,6 +6,7 @@ import { DEFAULT_TRIAGE_SEVERITY_POLICY } from "./triage-severity";
 
 const {
   adminAuditLogs,
+  nurseLocations,
   nursePayouts,
   nurses,
   paymentAuthorizations,
@@ -91,6 +92,13 @@ describe.sequential("admin ops status", () => {
       centerLng: "21.165500",
       radiusMeters: 15000,
       status: "paused",
+    });
+    await db.insert(nurseLocations).values({
+      nurseUserId: nurse!.id,
+      lat: "42.662900",
+      lng: "21.165500",
+      serviceAreaId: activeArea!.id,
+      lastUpdated: now,
     });
 
     const staleMinutes =
@@ -255,7 +263,15 @@ describe.sequential("admin ops status", () => {
     await expect(getAdminOpsStatus({ now })).resolves.toMatchObject({
       generatedAt: now.toISOString(),
       serviceAreas: { active: 1 },
-      nurseSupply: { verifiedAndAvailable: 1 },
+      nurseSupply: {
+        verifiedAndAvailable: 1,
+        launchMinimum: 10,
+        launchShortfall: 9,
+        launchReady: false,
+        launchServiceAreaCount: 1,
+        launchLowestServiceAreaSupply: 1,
+        launchServiceAreasBelowMinimum: 1,
+      },
       requests: {
         unassigned: 1,
         staleAssigned: 1,
@@ -268,5 +284,178 @@ describe.sequential("admin ops status", () => {
         recentFailedPayouts: 1,
       },
     });
+  });
+
+  it("counts only dispatch-eligible nurses in active launch service areas", async () => {
+    const [activeArea] = await db
+      .insert(serviceAreas)
+      .values({
+        label: "Ops Launch Area",
+        centerLat: "42.662900",
+        centerLng: "21.165500",
+        radiusMeters: 15000,
+        status: "active",
+      })
+      .returning();
+    const [pausedArea] = await db
+      .insert(serviceAreas)
+      .values({
+        label: "Paused Area",
+        centerLat: "42.662900",
+        centerLng: "21.165500",
+        radiusMeters: 15000,
+        status: "paused",
+      })
+      .returning();
+
+    const eligibleUsers = await db
+      .insert(users)
+      .values(
+        Array.from({ length: 10 }, (_, index) => ({
+          email: `ops-launch-eligible-${index}@test.local`,
+          role: "nurse" as const,
+        })),
+      )
+      .returning();
+    const [expiredUser, noLocationUser, outOfAreaUser, nonNurseUser] = await db
+      .insert(users)
+      .values([
+        { email: "ops-launch-expired@test.local", role: "nurse" },
+        { email: "ops-launch-no-location@test.local", role: "nurse" },
+        { email: "ops-launch-out-of-area@test.local", role: "nurse" },
+        { email: "ops-launch-non-nurse@test.local", role: "patient" },
+      ])
+      .returning();
+    const allNurseUsers = [
+      ...eligibleUsers,
+      expiredUser!,
+      noLocationUser!,
+      outOfAreaUser!,
+      nonNurseUser!,
+    ];
+
+    await db.insert(nurses).values(
+      allNurseUsers.map((user, index) => ({
+        userId: user.id,
+        status: "verified" as const,
+        licenseNumber: `RN-OPS-LAUNCH-${index}`,
+        licenseJurisdiction: "XK",
+        specialization: "General",
+        licenseValidUntil:
+          user.id === expiredUser!.id
+            ? new Date("2020-01-01T00:00:00.000Z")
+            : new Date("2027-12-31T00:00:00.000Z"),
+        isAvailable: true,
+      })),
+    );
+    await db.insert(nurseLocations).values([
+      ...eligibleUsers.map((user) => ({
+        nurseUserId: user.id,
+        lat: "42.662900",
+        lng: "21.165500",
+        serviceAreaId: activeArea!.id,
+        lastUpdated: now,
+      })),
+      {
+        nurseUserId: expiredUser!.id,
+        lat: "42.662900",
+        lng: "21.165500",
+        serviceAreaId: activeArea!.id,
+        lastUpdated: now,
+      },
+      {
+        nurseUserId: outOfAreaUser!.id,
+        lat: "42.662900",
+        lng: "21.165500",
+        serviceAreaId: pausedArea!.id,
+        lastUpdated: now,
+      },
+      {
+        nurseUserId: nonNurseUser!.id,
+        lat: "42.662900",
+        lng: "21.165500",
+        serviceAreaId: activeArea!.id,
+        lastUpdated: now,
+      },
+    ]);
+
+    await expect(getAdminOpsStatus({ now })).resolves.toMatchObject({
+      serviceAreas: { active: 1 },
+      nurseSupply: {
+        verifiedAndAvailable: 10,
+        launchMinimum: 10,
+        launchShortfall: 0,
+        launchReady: true,
+        launchServiceAreaCount: 1,
+        launchLowestServiceAreaSupply: 10,
+        launchServiceAreasBelowMinimum: 0,
+      },
+    });
+  });
+
+  it("blocks launch when any active service area is below the density threshold", async () => {
+    const [readyArea, emptyArea] = await db
+      .insert(serviceAreas)
+      .values([
+        {
+          label: "Ready Launch Area",
+          centerLat: "42.662900",
+          centerLng: "21.165500",
+          radiusMeters: 15000,
+          status: "active",
+        },
+        {
+          label: "Empty Launch Area",
+          centerLat: "42.700000",
+          centerLng: "21.200000",
+          radiusMeters: 15000,
+          status: "active",
+        },
+      ])
+      .returning();
+    const eligibleUsers = await db
+      .insert(users)
+      .values(
+        Array.from({ length: 10 }, (_, index) => ({
+          email: `ops-launch-one-area-${index}@test.local`,
+          role: "nurse" as const,
+        })),
+      )
+      .returning();
+
+    await db.insert(nurses).values(
+      eligibleUsers.map((user, index) => ({
+        userId: user.id,
+        status: "verified" as const,
+        licenseNumber: `RN-OPS-ONE-AREA-${index}`,
+        licenseJurisdiction: "XK",
+        specialization: "General",
+        licenseValidUntil: new Date("2027-12-31T00:00:00.000Z"),
+        isAvailable: true,
+      })),
+    );
+    await db.insert(nurseLocations).values(
+      eligibleUsers.map((user) => ({
+        nurseUserId: user.id,
+        lat: "42.662900",
+        lng: "21.165500",
+        serviceAreaId: readyArea!.id,
+        lastUpdated: now,
+      })),
+    );
+
+    await expect(getAdminOpsStatus({ now })).resolves.toMatchObject({
+      serviceAreas: { active: 2 },
+      nurseSupply: {
+        verifiedAndAvailable: 10,
+        launchMinimum: 10,
+        launchShortfall: 10,
+        launchReady: false,
+        launchServiceAreaCount: 2,
+        launchLowestServiceAreaSupply: 0,
+        launchServiceAreasBelowMinimum: 1,
+      },
+    });
+    expect(emptyArea).toBeDefined();
   });
 });

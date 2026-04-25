@@ -51,6 +51,8 @@ export default async function AdminDashboardPage() {
   });
   const dashboard = await getAdminOpsDashboard();
   const opsStatus = dashboard.opsStatus;
+  const launchPrerequisitesReady =
+    opsStatus.serviceAreas.active > 0 && opsStatus.nurseSupply.launchReady;
   const staleDispatchCount =
     opsStatus.requests.staleAssigned + opsStatus.requests.staleEnroute;
   const paymentAttentionCount =
@@ -72,7 +74,7 @@ export default async function AdminDashboardPage() {
     {
       href: "/admin/nurses",
       label: "Credential Queue",
-      detail: `${dashboard.credentialCounts.needsAttention} needs review • ${opsStatus.nurseSupply.verifiedAndAvailable} verified available`,
+      detail: `${dashboard.credentialCounts.needsAttention} needs review • ${opsStatus.nurseSupply.verifiedAndAvailable} launch eligible`,
     },
     {
       href: "/admin/activity",
@@ -142,8 +144,23 @@ export default async function AdminDashboardPage() {
         >
           <div className="text-3xl font-semibold text-slate-950">{dashboard.credentialCounts.verified}</div>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
-              {dashboard.credentialCounts.available} available now
+            <Badge
+              variant="outline"
+              className={binaryTone(opsStatus.nurseSupply.launchReady)}
+            >
+              {opsStatus.nurseSupply.verifiedAndAvailable} launch eligible
+            </Badge>
+            <Badge
+              variant="outline"
+              className={binaryTone(opsStatus.nurseSupply.launchReady)}
+            >
+              min {opsStatus.nurseSupply.launchMinimum}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={binaryTone(opsStatus.nurseSupply.launchReady)}
+            >
+              {opsStatus.nurseSupply.launchServiceAreasBelowMinimum} areas short
             </Badge>
             <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
               {dashboard.credentialCounts.suspended + dashboard.credentialCounts.expired} blocked
@@ -178,15 +195,9 @@ export default async function AdminDashboardPage() {
               <div className="font-medium text-slate-950">Launch prerequisites</div>
               <Badge
                 variant="outline"
-                className={binaryTone(
-                  opsStatus.serviceAreas.active > 0 &&
-                    opsStatus.nurseSupply.verifiedAndAvailable > 0,
-                )}
+                className={binaryTone(launchPrerequisitesReady)}
               >
-                {opsStatus.serviceAreas.active > 0 &&
-                opsStatus.nurseSupply.verifiedAndAvailable > 0
-                  ? "ready"
-                  : "blocked"}
+                {launchPrerequisitesReady ? "ready" : "blocked"}
               </Badge>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -198,14 +209,23 @@ export default async function AdminDashboardPage() {
               </Badge>
               <Badge
                 variant="outline"
-                className={binaryTone(opsStatus.nurseSupply.verifiedAndAvailable > 0)}
+                className={binaryTone(opsStatus.nurseSupply.launchReady)}
               >
-                {opsStatus.nurseSupply.verifiedAndAvailable} verified available
+                {opsStatus.nurseSupply.launchLowestServiceAreaSupply} lowest area
+              </Badge>
+              <Badge
+                variant="outline"
+                className={binaryTone(opsStatus.nurseSupply.launchReady)}
+              >
+                {opsStatus.nurseSupply.launchShortfall === 0
+                  ? "threshold met"
+                  : `${opsStatus.nurseSupply.launchShortfall} short`}
               </Badge>
             </div>
             <p className="mt-3 text-sm text-slate-600">
               Controlled launch intake should stay paused if either service area
-              coverage or verified available nurse supply is zero.
+              coverage is missing or any active launch area is below the nurse
+              supply threshold.
             </p>
           </div>
 
