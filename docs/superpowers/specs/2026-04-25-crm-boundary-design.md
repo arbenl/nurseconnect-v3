@@ -1,9 +1,11 @@
 # M16: CRM Boundary Design
 
 Date: 2026-04-25
-Status: Ready for review
+Status: Done - merged via PR #68
 Scope: CRM actors, data ownership, privacy guardrails, audit actions, and first
 implementation slice
+Reviewer: verify-slice reviewer pool covering security, architecture, QA, and
+ops; Copilot reviewed the PR and generated no comments
 
 ## Purpose
 
@@ -22,10 +24,9 @@ package exports.
 NurseConnect CRM starts as an admin-only relationship projection, not as a new
 source-of-truth system.
 
-M18 should implement the first read-only CRM operator view inside
-`@nurseconnect/domain-admin-ops`, following the existing admin projection
-pattern. A new `@nurseconnect/domain-crm` package is deferred until CRM owns
-mutable business records, starting with M19 notes and follow-ups.
+M18 will deliver the first read-only CRM operator projection. A separate
+`@nurseconnect/domain-crm` package is deferred until CRM owns mutable business
+records, starting with M19 notes and follow-ups.
 
 This keeps M18 small and avoids adding a package before the domain has its own
 lifecycle or invariants.
@@ -56,62 +57,33 @@ Disallowed goals:
 Patients are CRM subjects, not CRM users. Patient-facing surfaces remain the
 dashboard and request/visit views.
 
+Patients cannot initiate CRM access.
+
 ### Referral Partner
 
 Referral partners are CRM subjects and external demand actors. Their own portal
 remains scoped to partner-submitted requests.
+
+Referral partners cannot view cross-partner CRM data.
 
 ### Nurse
 
 Nurses are CRM subjects only where operator relationship context is needed.
 Credential and availability source-of-truth remains in the nurse domain.
 
+Nurses are not CRM users at M18.
+
 ## Source-of-Truth Ownership
 
-| Area | Existing owner | CRM rule |
-| --- | --- | --- |
-| Users, roles, profile fields | `@nurseconnect/domain-identity` and `users` | CRM may read minimum-necessary identity fields. CRM must not own user records or role changes. |
-| Patient request history | `@nurseconnect/domain-request` and `@nurseconnect/domain-visit` | CRM may summarize request counts, latest request states, and safe timeline hints. CRM must not own patient lifecycle state. |
-| Referral partners | `@nurseconnect/domain-referral` | CRM may show partner organization, status, and referral demand summaries. CRM must not mutate partner profiles. |
-| Nurses and credentials | `@nurseconnect/domain-nurse` | CRM may show credential status, jurisdiction, expiration date, and availability summary. CRM must not reveal license numbers or mutate credential state. |
-| Dispatch and service areas | `@nurseconnect/domain-dispatch` and service-area admin code | CRM may show dispatch relationship context and service-area labels or coarse hints. CRM must not assign or reassign requests. |
-| Payments and payouts | `@nurseconnect/domain-payments` | CRM may show status/count/gap flags. CRM must not expose provider references, notes, failure reasons, or execute payment operations. |
-| Admin audit and ops | `@nurseconnect/platform-telemetry` and `@nurseconnect/domain-admin-ops` | CRM reads and writes must be auditable, but CRM must not expose raw audit details as relationship content. |
-
-## CRM v1 Includes
-
-CRM v1 may include:
-
-- admin-only patient, referral partner, and later nurse relationship summaries
-- entity IDs used for navigation
-- role and operational status
-- created and updated timestamps
-- referral partner organization and status
-- request counts and latest request summaries
-- request status, type, source, broad care type, and assignment state
-- redacted location hints
-- exception queue and payment follow-up flags
-- nurse credential status, jurisdiction, expiration date, and availability state
-- non-clinical follow-up state after M19
-
-## CRM v1 Excludes
-
-CRM v1 excludes:
-
-- clinical records
-- diagnoses
-- assessment text
-- free-text clinical documentation
-- insurance reimbursement workflows
-- settlement execution
-- payment card or bank data
-- credentials and secrets
-- session cookies or auth tokens
-- raw auth account/session data
-- raw audit/security metadata
-- raw payment provider metadata
-- duplicated copies of users, nurses, referral partners, requests, service
-  areas, payment traces, or audit logs
+| Area | Existing owner | CRM may | CRM must not |
+| --- | --- | --- | --- |
+| Users, roles, profile fields | [`@nurseconnect/domain-identity`](../../../packages/domain-identity) and `users` | Read minimum-necessary identity fields, role, operational status, created/updated timestamps, and entity IDs used for navigation. | Own user records, edit profile fields, change roles, expose session cookies, auth tokens, raw auth account rows, or raw session data. |
+| Patient request history | [`@nurseconnect/domain-request`](../../../packages/domain-request) and [`@nurseconnect/domain-visit`](../../../packages/domain-visit) | Summarize request counts, latest request states, request type/source, broad care type, assignment state, and safe timeline hints. | Own patient lifecycle state, duplicate request/visit records, expose diagnoses, assessment text, free-text clinical documentation, raw request-event `meta`, or clinical records. |
+| Referral partners | [`@nurseconnect/domain-referral`](../../../packages/domain-referral) | Show partner organization, partner status, referral demand summaries, and partner-scoped relationship context. | Mutate partner profiles, show cross-partner data, or bypass existing partner visibility rules. |
+| Nurses and credentials | [`@nurseconnect/domain-nurse`](../../../packages/domain-nurse) | Show credential status, jurisdiction, expiration date, availability summary, and later nurse relationship summaries after a dedicated CRM slice. | Reveal license numbers, mutate credential state, or treat nurses as CRM users at M18. |
+| Dispatch and service areas | [`@nurseconnect/domain-dispatch`](../../../packages/domain-dispatch) and service-area admin code | Show dispatch relationship context, service-area labels, and coarse location hints. | Assign or reassign requests, reveal exact latitude/longitude, or own service-area data. |
+| Payments and payouts | [`@nurseconnect/domain-payments`](../../../packages/domain-payments) | Show status/count/gap flags and payment follow-up indicators. | Execute payment operations, settlement, reimbursement, or payout actions; expose card or bank data, provider references, notes, failure reasons, or raw provider metadata. |
+| Admin audit and ops | [`@nurseconnect/platform-telemetry`](../../../packages/platform-telemetry) and [`@nurseconnect/domain-admin-ops`](../../../packages/domain-admin-ops) | Audit CRM reads and writes and show coarse exception/payment follow-up flags. | Expose raw audit/security metadata or raw audit details as relationship content. |
 
 ## Redaction Rules
 
@@ -128,8 +100,9 @@ M18 read-only CRM projections must redact or omit:
 - timeline actor IDs unless needed for an admin-owned audit drill-in
 - contact fields unless the specific CRM use case requires them
 
-If a later slice adds contact-field reveal, export, copy, or drill-in actions,
-those actions must be separately audited before implementation.
+Redaction failures must fail closed. A missing field, unexpected field shape, or
+redaction error returns `null`, omits the field, or blocks the projection; it
+must not return the raw value.
 
 ## Audit Requirements
 
@@ -146,6 +119,19 @@ M18 tests must prove that detail reads record this audit event with actor user
 ID, target user ID, target role, and safe context. The audit payload must not
 store raw PHI, contact field values, full addresses, request-event metadata,
 payment provider metadata, payment notes, or audit details.
+
+Audit payloads must follow this safe shape:
+
+```ts
+{
+  actor_id: string;
+  target_id: string;
+  target_role: "patient" | "referral_partner" | "nurse";
+  action: "crm.relationship_detail.viewed";
+  timestamp: string;
+  context_label: string;
+}
+```
 
 M19 mutable CRM must add explicit audit actions before implementation:
 
@@ -169,7 +155,7 @@ clinical text, secrets, session data, card data, or unredacted free text.
 
 ## M18 First Implementation Slice
 
-M18 should build a read-only CRM operator view:
+M18 must build a read-only CRM operator view:
 
 - `/admin/crm`: searchable read-only contact list for patients and referral
   partners
@@ -177,7 +163,7 @@ M18 should build a read-only CRM operator view:
   partner organization/status when applicable, request counts, latest requests,
   exception/payment flags, and redacted location/request context
 
-M18 should not include:
+M18 must not include:
 
 - nurse CRM directory or nurse CRM detail pages
 - notes
@@ -193,8 +179,10 @@ M18 should not include:
 
 Expected implementation ownership:
 
-- `packages/contracts/src/crm.ts` for response schemas
-- `packages/domain-admin-ops/src/crm-directory.ts` for read projections
+- planned `packages/contracts/src/crm.ts` for response schemas
+- planned `packages/domain-admin-ops/src/crm-directory.ts` in
+  [`@nurseconnect/domain-admin-ops`](../../../packages/domain-admin-ops) for
+  read projections
 - `apps/web/src/app/admin/crm` for admin UI
 - `apps/web/src/app/api/admin/crm` only if the UI needs client-side search
 - `apps/web/src/app/admin/layout.tsx` for the CRM nav item
@@ -210,6 +198,18 @@ Required M18 tests:
 - UI smoke for admin navigation, search, and detail drill-in
 - access tests proving patient, nurse, and referral partner actors cannot reach
   `/admin/crm`
+
+M18 tests pass only when:
+
+- contract tests prove DTOs omit disallowed raw fields
+- DB-backed projection tests prove license numbers, full addresses, exact
+  coordinates, raw payment provider references, payment notes, payment failure
+  reasons, request-event metadata, and audit details are absent from all CRM
+  projections
+- audit tests prove every detail read writes
+  `crm.relationship_detail.viewed` with actor user ID, target user ID, target
+  role, timestamp, and safe context
+- authorization tests prove only admin actors can access CRM routes
 
 Nurse CRM summaries remain part of the broader CRM v1 definition, but they are
 out of scope for M18. The existing credential queue and nurse detail pages
@@ -234,20 +234,35 @@ credentials, secrets, payment card data, or unnecessary PHI.
 CRM is not a v1.0.0 launch prerequisite.
 
 M17 Controlled Launch Dry Run and Decision Ledger remains the next
-launch-blocking milestone after M16. M18 and M19 can proceed only after M16 is
-approved and M17 evidence confirms controlled launch readiness.
+launch-blocking milestone after M16. Do not create the M18 implementation branch
+until M17 evidence exists and confirms controlled launch readiness.
+
+See the locked sequence in
+[M15 Program Roadmap Lock](2026-04-24-program-roadmap-lock-design.md).
+
+## Known Deferrals
+
+- Contact-field reveal, export, copy, and drill-in actions require separate
+  audit actions before implementation.
+- `@nurseconnect/domain-crm` remains deferred until M19 introduces mutable
+  CRM-owned notes and follow-ups.
+- Nurse CRM directory and nurse CRM detail pages remain deferred until a later
+  CRM slice defines nurse relationship requirements, audit behavior, and tests.
 
 ## Acceptance Criteria
 
-- Define CRM as an admin-only relationship projection, not a new source of
+- CRM is defined as an admin-only relationship projection, not a new source of
   truth.
-- Assign M18 read-only projections to `@nurseconnect/domain-admin-ops`.
-- Defer `@nurseconnect/domain-crm` until M19 mutable notes/follow-ups create
-  true CRM-owned invariants.
-- Identify the allowed CRM actors and disallowed uses.
-- Map source-of-truth ownership for users, patients, partners, nurses,
+- M18 read-only projections are assigned to
+  [`@nurseconnect/domain-admin-ops`](../../../packages/domain-admin-ops).
+- `@nurseconnect/domain-crm` is deferred until M19 mutable notes/follow-ups
+  create true CRM-owned invariants.
+- Allowed CRM actors and disallowed uses are explicit.
+- Source-of-truth ownership is mapped for users, patients, partners, nurses,
   requests, visits, payments, audit, and ops.
-- Define PII, PHI, payment, audit, credential, and session redaction rules.
-- Define required CRM audit actions for M19 and future reveal/export actions.
-- Define the M18 first implementation slice and its required tests.
-- Preserve M17 as the next launch-blocking milestone before CRM implementation.
+- PII, PHI, payment, audit, credential, and session redaction rules are
+  explicit and fail closed.
+- Required CRM audit actions are defined for M18, M19, and future reveal/export
+  actions.
+- The M18 first implementation slice and required pass criteria are explicit.
+- M17 remains the next launch-blocking milestone before CRM implementation.
