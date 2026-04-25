@@ -139,7 +139,7 @@ The table below lists only the next slice to execute.
 
 | Milestone | Status | Evidence |
 | --- | --- | --- |
-| M16 CRM Boundary Design | Next slice | [M15 Program Roadmap Lock Design](../superpowers/specs/2026-04-24-program-roadmap-lock-design.md) |
+| M16 CRM Boundary Design | Current design slice | [M16 CRM Boundary Design](../superpowers/specs/2026-04-25-crm-boundary-design.md) |
 
 ## Required Validation Commands
 
