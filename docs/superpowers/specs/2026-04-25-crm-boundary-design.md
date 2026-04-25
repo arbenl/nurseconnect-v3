@@ -5,7 +5,7 @@ Status: Done - merged via PR #68
 Scope: CRM actors, data ownership, privacy guardrails, audit actions, and first
 implementation slice
 Reviewer: verify-slice reviewer pool covering security, architecture, QA, and
-ops; Copilot reviewed the PR and generated no comments
+ops
 
 ## Purpose
 
@@ -124,12 +124,12 @@ Audit payloads must follow this safe shape:
 
 ```ts
 {
-  actor_id: string;
-  target_id: string;
-  target_role: "patient" | "referral_partner" | "nurse";
+  actorUserId: string;
+  targetEntityId: string;
+  targetEntityType: "patient" | "referral_partner" | "nurse";
   action: "crm.relationship_detail.viewed";
   timestamp: string;
-  context_label: string;
+  contextLabel: string;
 }
 ```
 
