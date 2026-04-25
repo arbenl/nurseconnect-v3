@@ -1,7 +1,8 @@
 # M9: Roadmap Reconciliation and Next-Slice Program Plan
 
 Date: 2026-04-24
-Status: Approved for documentation slice
+Status: Done - superseded by
+[2026-04-24 Program Roadmap Lock Design](2026-04-24-program-roadmap-lock-design.md)
 Scope: Program, roadmap, launch definition, tracker, and next-slice sequencing
 
 ## Purpose
@@ -44,11 +45,11 @@ The canonical hierarchy is:
 
 The repo-side canonical docs are:
 
-- `docs/superpowers/specs/2026-04-13-nurseconnect-blueprint-design.md`
-- `docs/superpowers/specs/2026-04-17-referral-partner-mvp-design.md`
-- `docs/superpowers/plans/2026-04-17-referral-partner-mvp.md`
-- `docs/runbooks/launch_readiness_review.md`
-- `docs/superpowers/specs/2026-04-21-production-monitoring-alerting-design.md`
+- [NurseConnect Blueprint Design](2026-04-13-nurseconnect-blueprint-design.md)
+- [Referral Partner MVP Design](2026-04-17-referral-partner-mvp-design.md)
+- [Referral Partner MVP Plan](../plans/2026-04-17-referral-partner-mvp.md)
+- [Launch Readiness Review Runbook](../../runbooks/launch_readiness_review.md)
+- [Production Monitoring and Alerting Design](2026-04-21-production-monitoring-alerting-design.md)
 
 ## Reconciled Milestone State
 
@@ -81,13 +82,21 @@ referral-led in-home nursing dispatch product:
 M8 closed the production visibility gap. The next work should either reduce
 launch operational risk or improve the first commercial launch loop.
 
-## Recommended Next Three Slices
+## M10-M12 Recommendations (Executed)
+
+Status: Done.
 
 This recommendation was executed through M12 and is superseded by
-`docs/superpowers/specs/2026-04-24-program-roadmap-lock-design.md`, which locks
-the post-M14 sequence before CRM or other product surfaces are implemented.
+[2026-04-24 Program Roadmap Lock Design](2026-04-24-program-roadmap-lock-design.md),
+which locks the post-M14 sequence before CRM or other product surfaces are
+implemented.
+
+<details>
+<summary>Executed recommendation detail</summary>
 
 ### M10: First-Hour Production Synthetic Monitoring
+
+Status: Done - PR #58.
 
 Purpose: turn the M8 health and ops endpoints into a repeatable first-hour
 monitoring workflow.
@@ -106,6 +115,8 @@ highest-risk launch window.
 
 ### M11: Auth and Session Degradation Monitoring
 
+Status: Done - PR #60.
+
 Purpose: detect auth/session failure modes that M8 explicitly deferred.
 
 Expected scope:
@@ -120,6 +131,8 @@ without blocking the first launch monitor.
 
 ### M12: Launch Operator Console Hardening
 
+Status: Done - PR #61.
+
 Purpose: reduce manual operator work during the first controlled launch.
 
 Expected scope:
@@ -131,6 +144,8 @@ Expected scope:
 Why third: it should be shaped by what M10/M11 reveal about actual launch
 monitoring needs.
 
+</details>
+
 ## Explicit Non-Goals
 
 - No runtime product changes in M9.
@@ -141,9 +156,9 @@ monitoring needs.
 
 ## Acceptance Criteria
 
-- Repo docs identify M1 as done with PR #48 and PR #49 evidence.
-- The canonical blueprint file exists in the repo.
-- Repo launch evidence includes M5 through M8 as completed.
-- Notion Program, Blueprint/Roadmap/Definition/Tracker are reconciled after M8.
-- The next three slices are named and ordered.
-- Local branch remains docs-only and safe to merge after normal PR checks.
+- Mark M1 done with PR #48 and PR #49 evidence in repo docs.
+- Add the canonical blueprint file to the repo.
+- Record M5 through M8 as completed in repo launch evidence.
+- Reconcile Notion Program, Blueprint/Roadmap/Definition/Tracker after M8.
+- Name and order the next three slices.
+- Keep the local branch docs-only and safe to merge after normal PR checks.

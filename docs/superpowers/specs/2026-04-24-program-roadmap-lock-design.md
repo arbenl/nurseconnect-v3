@@ -1,7 +1,7 @@
 # M15: Program Roadmap Lock Design
 
 Date: 2026-04-24
-Status: Approved for documentation slice
+Status: Done - merged via PR #66
 Scope: Program roadmap, milestone ordering, CRM boundary placement
 
 ## Purpose
@@ -41,7 +41,7 @@ product scope, but they must still be recorded in the Program page after merge.
 
 | Milestone | Name | Type | Status | Launch blocker? | Exit criteria |
 | --- | --- | --- | --- | --- | --- |
-| M15 | Program Roadmap Lock | Documentation/program control | This slice | No | Repo docs lock the next sequence; Notion is synced after merge with PR and merge-commit evidence. |
+| M15 | Program Roadmap Lock | Documentation/program control | Done - PR #66 | No | Repo docs lock the next sequence; Notion is synced after merge with PR and merge-commit evidence. |
 | M16 | CRM Boundary Design | Product design | Planned | No | CRM actors, data ownership, PII/PHI guardrails, audit actions, and first implementation slice are defined. |
 | M17 | Controlled Launch Dry Run and Decision Ledger | Launch execution | Planned | Yes for launch execution | Full launch decision package is rehearsed from clean main with current monitors, browser rehearsal, and operator ledger. |
 | M18 | CRM Read-Only Operator View | Product implementation | Planned after M16 approval and launch dry-run evidence | No by default; deferrable outside launch path | Admin can view minimum-necessary relationship summaries derived from existing operational records without new mutable CRM records. |
@@ -49,16 +49,19 @@ product scope, but they must still be recorded in the Program page after merge.
 
 ## CRM Placement
 
-CRM is not a v1.0.0 launch prerequisite. It belongs to the post-launch
-commercial operating loop unless the operator explicitly narrows it to a
-read-only relationship dashboard. Controlled launch dry-run evidence may proceed
-before any CRM implementation.
+> **CRM is not a v1.0.0 launch prerequisite.**
+
+CRM belongs to the post-launch commercial operating loop unless the operator
+explicitly narrows it to a read-only relationship dashboard. Controlled launch
+dry-run evidence may proceed before any CRM implementation.
 
 The first CRM slice must be M16 design, not implementation.
 
 ### CRM v1 Definition
 
-For NurseConnect, CRM means operator relationship context around:
+#### CRM Includes
+
+For NurseConnect, CRM includes operator relationship context around:
 
 - referral partners and their submitted demand
 - patients and request history
@@ -70,7 +73,9 @@ CRM projections must be admin-only, minimum-necessary, and redacted. Raw payment
 metadata, raw audit/security metadata, session data, credentials, and secrets
 must not be surfaced as CRM relationship content.
 
-CRM does not mean:
+#### CRM Excludes
+
+CRM excludes:
 
 - clinical records
 - diagnosis notes
@@ -83,17 +88,19 @@ CRM does not mean:
 CRM notes must include operator guidance that prohibits diagnoses, clinical
 assessment text, credentials, secrets, payment card data, and unnecessary PHI.
 
-## Expected Repo Impact After M16 Approval
+## Repo Boundaries for CRM Implementation
 
 CRM implementation may touch:
 
-- `packages/database` for notes/follow-ups only after source-of-truth boundaries
-  are approved.
-- `packages/contracts` for admin CRM DTOs.
-- `packages/domain-admin-ops` or a new `packages/domain-crm` for read-only
-  projections; M16 must decide ownership before implementation.
-- `packages/platform-telemetry` for CRM audit actions.
-- `apps/web` for admin CRM pages and API routes.
+- [packages/database](../../../packages/database) for notes/follow-ups only
+  after source-of-truth boundaries are approved.
+- [packages/contracts](../../../packages/contracts) for admin CRM DTOs.
+- [packages/domain-admin-ops](../../../packages/domain-admin-ops) or a new
+  `packages/domain-crm` for read-only projections; M16 must decide ownership
+  before implementation.
+- [packages/platform-telemetry](../../../packages/platform-telemetry) for CRM
+  audit actions.
+- [apps/web](../../../apps/web) for admin CRM pages and API routes.
 
 CRM implementation must not duplicate existing source-of-truth data from users,
 nurses, referral partners, service requests, service areas, payment traces, or
@@ -101,10 +108,10 @@ admin audit logs.
 
 ## Acceptance Criteria
 
-- Repo docs identify M0-M14 as complete and Sonar parity as merged
-  infrastructure parity.
-- The next numbered sequence is explicit and ordered.
-- CRM is placed as M16 design before any CRM build slice.
-- Launch docs no longer imply M10-M12 are still pending.
-- Notion Program and roadmap are updated after merge with PR and merge-commit
+- Lock M0-M14 as complete and Sonar parity as merged infrastructure parity in
+  repo docs.
+- Make the next numbered sequence explicit and ordered.
+- Place CRM at M16 design, not M16 implementation.
+- Remove launch-doc wording that implies M10-M12 are still pending.
+- Update Notion Program and roadmap after merge with PR and merge-commit
   evidence.

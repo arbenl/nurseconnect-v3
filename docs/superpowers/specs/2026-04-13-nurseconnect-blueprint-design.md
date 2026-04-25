@@ -11,19 +11,19 @@ governs product direction for the v1.0.0 launch program.
 The Notion mirror is `2026-04-13 NurseConnect Blueprint Design` under the
 NurseConnect Program page.
 
-## Thesis
+## Product Thesis
 
 NurseConnect is a managed care-dispatch marketplace for low-acuity in-home
 nursing.
 
-It is not a generic gig marketplace. The governing rules are:
+It is not a generic gig marketplace. NurseConnect operates under four governing
+rules:
 
 - NurseConnect owns the customer relationship and dispatches care.
 - Demand is referral-led first, with consumer demand secondary.
 - Supply is licensed, verified nurse capacity only.
 - Launch is scheduled-first, with same-day simple visits only when nearby
   verified supply exists.
-- Expansion is city by city, with density before coverage.
 
 ## Core Business Model
 
@@ -84,35 +84,11 @@ It is not a generic gig marketplace. The governing rules are:
 - Public status page.
 - Geographic expansion before local density is proven.
 
-## Current Repo Alignment Snapshot During M15 Roadmap Lock
+## Current Repo Alignment
 
-The repo now has:
-
-- enforced nurse credential review and verified-supply gating
-- canonical auth/portal boundary control
-- scheduled vs same-day request intake fields
-- referral partner actor, portal, intake, and partner-scoped visibility
-- explicit triage and exception workflows
-- private-pay authorization and payout traceability
-- service-area controls, intake gating, dispatch scoping, and nurse location
-  tagging
-- launch readiness runbooks, rehearsal seed, automated API rehearsal, full
-  browser rehearsal, composite health, admin ops status, and failed
-  payment/payout alert hook
-- first-hour production synthetic monitoring over the health and ops endpoints
-- auth/session degradation monitoring
-- a hardened launch operator console
-- controlled launch execution readiness docs
-- rehearsal browser hardening
-- SonarCloud PR quality-gate parity as a required PR merge signal
-
-The repo still needs:
-
-- M16 CRM boundary design before any CRM implementation
-- M17 controlled launch dry run and decision ledger before opening controlled
-  intake
-- M18/M19 CRM implementation only after M16 boundary approval and launch dry-run
-  evidence
+Operational state snapshots live outside this durable blueprint. The M15 repo
+alignment snapshot is captured in
+[2026-04-24 Current Repo Alignment Snapshot](2026-04-24-current-repo-alignment-snapshot.md).
 
 ## Success Gates
 
@@ -125,3 +101,6 @@ The repo still needs:
 - Composite health stays green during first-hour launch monitoring.
 - Admin ops status shows active service area and verified available nurse
   supply before intake opens.
+- Launch operators complete a controlled GO/HOLD/NO-GO decision ledger before
+  production intake opens.
+- CRM work starts with boundary design before any CRM implementation changes.

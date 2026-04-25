@@ -11,7 +11,9 @@ checks.
 
 Status: ready for a final controlled launch execution decision, subject to the
 production hard gates in
-`docs/runbooks/controlled_launch_execution_readiness.md`.
+[Controlled Launch Execution Readiness](controlled_launch_execution_readiness.md).
+
+Last assessed: 2026-04-25 after M15 Program Roadmap Lock merge.
 
 NurseConnect has the core launch controls needed for a managed, referral-led
 in-home nursing dispatch product:
@@ -41,8 +43,8 @@ true in the target production environment and the operator records a GO decision
 - The production app deploy is reachable at the intended hostname.
 - The production database has been migrated to the current head migration.
 
-Use `docs/runbooks/production_bootstrap_runbook.md` for the environment and
-admin bootstrap procedure.
+Use the [Production Bootstrap Runbook](production_bootstrap_runbook.md) for the
+environment and admin bootstrap procedure.
 
 ## Environment Tier Distinction
 
@@ -95,20 +97,16 @@ admin bootstrap procedure.
 
 These are known limitations accepted for the controlled launch:
 
-- [ ] No automated payment capture or settlement; private-pay operations remain
-      manual.
-- [ ] No automated payout execution; nurse payouts remain manually operated.
-- [ ] No insurance reimbursement workflows.
-- [ ] No polygon geofencing; service areas are circle-radius based.
-- [ ] No multi-city expansion automation.
-- [ ] No white-label partner portals.
-- [ ] No automated nurse capacity planning.
-- [ ] No real-time push notifications; launch notification reads are
-      polling/read-model based.
-
-Operator signature: __________________________
-
-Date: __________________________
+- No automated payment capture or settlement; private-pay operations remain
+  manual.
+- No automated payout execution; nurse payouts remain manually operated.
+- No insurance reimbursement workflows.
+- No polygon geofencing; service areas are circle-radius based.
+- No multi-city expansion automation.
+- No white-label partner portals.
+- No automated nurse capacity planning.
+- No real-time push notifications; launch notification reads are
+  polling/read-model based.
 
 ## Merged Launch Evidence
 
@@ -131,55 +129,33 @@ Date: __________________________
 | M13 Controlled Launch Execution Readiness Review | Done | PR #62, merge commit `6739c9d95ea983bc819817289feb8706fb5723ca` |
 | M14 Rehearsal Browser Hardening | Done | PR #64, merge commit `79457dbbc90e52d663ce54136917039f0767ee4b` |
 | SonarCloud PR Quality-Gate Parity | Done | PR #65, merge commit `475f20e0b0f0dcddf438ee01206d2755e6ca13f7` |
+| M15 Program Roadmap Lock | Done | PR #66, merge commit `a4b336fc15625bcb4df275cd37ac67c944b5bd94` |
 
 ## Next Program Slice
 
 The full post-M14 program sequence (M15-M19) is locked in
-`docs/superpowers/specs/2026-04-24-program-roadmap-lock-design.md`.
+[M15 Program Roadmap Lock Design](../superpowers/specs/2026-04-24-program-roadmap-lock-design.md).
 The table below lists only the next slice to execute.
 
 | Milestone | Status | Evidence |
 | --- | --- | --- |
-| M15 Program Roadmap Lock | This slice | `docs/superpowers/specs/2026-04-24-program-roadmap-lock-design.md` |
+| M16 CRM Boundary Design | Next slice | [M15 Program Roadmap Lock Design](../superpowers/specs/2026-04-24-program-roadmap-lock-design.md) |
 
 ## Required Validation Commands
 
 Run these from a clean, synced `main` before launch rehearsal:
 
-```bash
-pnpm env:check
-pnpm launch:readiness
-pnpm launch:readiness:json
-pnpm launch:rehearsal
-pnpm launch:browser-rehearsal:headed
-pnpm launch:monitor
-pnpm launch:auth-monitor
-pnpm gate:release
-```
-
-Expected result:
-
-- `pnpm env:check` validates environment parsing.
-- `pnpm launch:readiness` confirms launch-critical docs, scripts, and test
-  coverage entry points are present.
-- `pnpm launch:readiness:json` returns the same readiness result in structured
-  form for CI or PR automation.
-- `pnpm launch:rehearsal` runs readiness plus the automated launch rehearsal
-  API flow for health, admin, service area, patient/nurse lifecycle, payment
-  trace, partner intake, and exception triage.
-- `pnpm launch:browser-rehearsal:headed` runs the full milestone browser
-  rehearsal in visible Chrome with slow interactions for operator observation.
-- `pnpm launch:monitor` polls launch health and, when supplied
-  `LAUNCH_MONITOR_ADMIN_COOKIE`, admin ops status for first-hour production
-  monitoring. Authenticated ops polling is required for the production GO path.
-- `pnpm launch:auth-monitor` validates synthetic admin sign-in, `/api/me`
-  session bootstrap, admin RBAC reachability, and sign-out without printing
-  credentials or cookies.
-- `pnpm gate:release` runs type-check, lint, web build, unit/architecture tests,
-  API tests, E2E API gate, and UI smoke gate.
-- PR CI must include a blocking `Sonar Quality Gate` check. The best-effort
-  PR-facing Sonar summary should be reviewed when present, but a green scheduled
-  `Sonar Baseline` alone is not sufficient for release readiness.
+| Command | Expected result |
+| --- | --- |
+| `pnpm env:check` | Validates environment parsing. |
+| `pnpm launch:readiness` | Confirms launch-critical docs, scripts, and test coverage entry points are present. |
+| `pnpm launch:readiness:json` | Returns the same readiness result in structured form for CI or PR automation. |
+| `pnpm launch:rehearsal` | Runs readiness plus the automated launch rehearsal API flow for health, admin, service area, patient/nurse lifecycle, payment trace, partner intake, and exception triage. |
+| `pnpm launch:browser-rehearsal:headed` | Runs the full milestone browser rehearsal in visible Chrome with slow interactions for operator observation. |
+| `LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' pnpm launch:monitor -- --url <production-url> --once` | Polls launch health and authenticated admin ops status for first-hour production monitoring. Authenticated ops polling is required for the production GO path. |
+| `pnpm launch:auth-monitor -- --url <production-url>` | Validates synthetic admin sign-in, `/api/me` session bootstrap, admin RBAC reachability, and sign-out without printing credentials or cookies. |
+| `pnpm gate:release` | Runs type-check, lint, web build, unit/architecture tests, API tests, E2E API gate, and UI smoke gate. |
+| PR CI `Sonar Quality Gate` | Must be green and blocking. The best-effort PR-facing Sonar summary should be reviewed when present, but a green scheduled `Sonar Baseline` alone is not sufficient for release readiness. |
 
 ## Rehearsal Seed
 
@@ -203,6 +179,11 @@ The script refuses non-test/non-rehearsal databases unless
 ## Manual Launch Rehearsal
 
 Use this rehearsal after deployment to the target environment.
+
+**Scope:** staging always; production only as a synthetic, no-PHI rehearsal
+after deployment and before controlled intake opens. Do not submit real
+patient, referral partner, or nurse operational data until the formal launch
+decision is GO.
 
 1. Confirm `GET /api/health/db` returns `{ ok: true, db: "ok" }`.
 2. Run `pnpm launch:rehearsal` against local/test before manual production
@@ -242,9 +223,9 @@ Go only when all items are true:
       the dedicated synthetic admin credential.
 - [ ] Accepted exclusions are explicitly reviewed and signed.
 - [ ] Controlled launch execution decision ledger template from
-      `docs/runbooks/controlled_launch_execution_readiness.md` is completed in
-      Notion or a private launch evidence artifact, not in the tracked repo
-      runbook.
+      [Controlled Launch Execution Readiness](controlled_launch_execution_readiness.md)
+      is completed in Notion or a private launch evidence artifact, not in the
+      tracked repo runbook.
 - [ ] Production environment variables are configured.
 - [ ] Production migrations have been applied.
 - [ ] Primary admin bootstrap is verified.
@@ -260,10 +241,10 @@ Go only when all items are true:
 
 ## Controlled Launch Execution Decision
 
-Use `docs/runbooks/controlled_launch_execution_readiness.md` as the final
-operator decision template. Copy the completed decision into Notion or a
-private launch evidence artifact; do not write production evidence into the
-tracked repo runbook. The launch decision must be one of:
+Use [Controlled Launch Execution Readiness](controlled_launch_execution_readiness.md)
+as the final operator decision template. Copy the completed decision into
+Notion or a private launch evidence artifact; do not write production evidence
+into the tracked repo runbook. The launch decision must be one of:
 
 - **GO**: every hard launch gate is green, any soft gate has an accepted
   mitigation, the authenticated first-hour monitor is ready to start before
@@ -337,3 +318,22 @@ For data or migration issues:
 This runbook is intentionally conservative. v1.0.0 is a controlled launch, not
 a broad marketplace launch. The release should optimize for operational
 truthfulness, traceability, and narrow geography over feature breadth.
+
+## Formal Sign-Off
+
+Accepted exclusions reviewed at sign-off:
+
+| Accepted exclusion | Operator initials |
+| --- | --- |
+| No automated payment capture or settlement; private-pay operations remain manual. | |
+| No automated payout execution; nurse payouts remain manually operated. | |
+| No insurance reimbursement workflows. | |
+| No polygon geofencing; service areas are circle-radius based. | |
+| No multi-city expansion automation. | |
+| No white-label partner portals. | |
+| No automated nurse capacity planning. | |
+| No real-time push notifications; launch notification reads are polling/read-model based. | |
+
+Operator signature: __________________________
+
+Date: __________________________
