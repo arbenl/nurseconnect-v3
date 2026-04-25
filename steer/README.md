@@ -73,10 +73,13 @@ and exits non-zero on any failure.
 
 - Default: `STEER_LLM_PROVIDER=codex` (implicit default)
 - Alternative provider: `STEER_LLM_PROVIDER=gemini`
-- Model override: `STEER_MODEL=<model-id>` (or `AGENT_MODEL`, `CODEX_MODEL`, `GEMINI_MODEL`)
-- Codex tuning: `STEER_CODEX_REASONING_EFFORT=low|medium|high` and `STEER_AGENT_TIMEOUT_MS=<milliseconds>`
+- Default Codex/OpenAI model: `gpt-5.5`
+- Shared model override: `STEER_MODEL=<model-id>` (or `AGENT_MODEL`)
+- Provider-specific model overrides: `CODEX_MODEL=<openai-model-id>` for Codex/OpenAI and `GEMINI_MODEL=<gemini-model-id>` for Gemini.
+- Codex tuning: `STEER_CODEX_REASONING_EFFORT=low|medium|high|xhigh` and `STEER_AGENT_TIMEOUT_MS=<milliseconds>`
 - Codex execution workspace: `STEER_CODEX_WORKDIR=<path>` (defaults to `/tmp` to avoid repo-local instruction coupling)
 - Provider fallback safety: if `codex` is selected but the CLI is missing, runner falls back to Gemini via `npx` unless `STEER_ALLOW_PROVIDER_FALLBACK=0`.
+- Fallback model safety: the Gemini fallback uses `STEER_MODEL`/`AGENT_MODEL` or `GEMINI_MODEL`; it does not inherit the Codex/OpenAI default model.
 - Path safety: task prompts are resolved relative to repo root, so `agent-runner` can be invoked from subdirectories.
 
 ### Strict schema mode
