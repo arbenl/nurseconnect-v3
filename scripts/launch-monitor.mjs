@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
+import { pathToFileURL } from "node:url";
+
 const DEFAULT_INTERVAL_MS = 5 * 60 * 1000;
 const DEFAULT_ITERATIONS = 12;
 const DEFAULT_TIMEOUT_MS = 10_000;
+const DEFAULT_LAUNCH_MINIMUM_VERIFIED_AVAILABLE_NURSES = 10;
 
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const options = {
     baseUrl: process.env.LAUNCH_MONITOR_URL || process.env.APP_URL || "http://localhost:3010",
     intervalMs: DEFAULT_INTERVAL_MS,
@@ -12,6 +15,7 @@ function parseArgs(argv) {
     timeoutMs: DEFAULT_TIMEOUT_MS,
     json: false,
     adminCookie: process.env.LAUNCH_MONITOR_ADMIN_COOKIE || "",
+    requireAdminOps: parseBooleanEnv(process.env.LAUNCH_MONITOR_REQUIRE_ADMIN_OPS),
     help: false,
   };
 
@@ -50,6 +54,8 @@ function parseArgs(argv) {
       i += 1;
     } else if (arg.startsWith("--admin-cookie=")) {
       options.adminCookie = arg.slice("--admin-cookie=".length);
+    } else if (arg === "--require-admin-ops") {
+      options.requireAdminOps = true;
     } else {
       throw new Error(`Unknown option: ${arg}`);
     }
@@ -57,6 +63,13 @@ function parseArgs(argv) {
 
   options.baseUrl = normalizeBaseUrl(options.baseUrl);
   return options;
+}
+
+function parseBooleanEnv(value) {
+  if (!value) {
+    return false;
+  }
+  return ["1", "true", "yes"].includes(value.trim().toLowerCase());
 }
 
 function requireValue(flag, value) {
@@ -97,11 +110,13 @@ Options:
   --timeout-ms <n>        HTTP timeout per request. Default: ${DEFAULT_TIMEOUT_MS}.
   --json                  Print final structured JSON instead of human-readable logs.
   --admin-cookie <value>  Optional Cookie header for /api/admin/ops/status.
+  --require-admin-ops     Fail when admin ops status is skipped.
 
 Environment:
   LAUNCH_MONITOR_URL
   APP_URL
   LAUNCH_MONITOR_ADMIN_COOKIE
+  LAUNCH_MONITOR_REQUIRE_ADMIN_OPS
 `);
 }
 
@@ -142,7 +157,7 @@ async function fetchJson(url, { timeoutMs, headers = {} }) {
   }
 }
 
-function evaluateHealth(result) {
+export function evaluateHealth(result) {
   const failures = [];
   const warnings = [];
   const body = result.body;
@@ -170,7 +185,12 @@ function evaluateHealth(result) {
   return { failures, warnings };
 }
 
-function evaluateOpsStatus(result) {
+function readNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function evaluateOpsStatus(result) {
   const failures = [];
   const warnings = [];
   const body = result.body;
@@ -185,11 +205,50 @@ function evaluateOpsStatus(result) {
   if (body.db !== "ok") {
     failures.push("ops status db is not ok");
   }
-  if (Number(body.serviceAreas?.active ?? 0) <= 0) {
+  const activeServiceAreas = readNumber(body.serviceAreas?.active);
+  if (activeServiceAreas === null) {
+    failures.push("ops status active service areas is missing or invalid");
+  } else if (activeServiceAreas <= 0) {
     failures.push("ops status active service areas is 0");
   }
-  if (Number(body.nurseSupply?.verifiedAndAvailable ?? 0) <= 0) {
-    failures.push("ops status verified and available nurse supply is 0");
+  const verifiedAndAvailable = readNumber(body.nurseSupply?.verifiedAndAvailable);
+  const launchMinimum = readNumber(
+    body.nurseSupply?.launchMinimum ??
+      DEFAULT_LAUNCH_MINIMUM_VERIFIED_AVAILABLE_NURSES,
+  );
+  const launchShortfall = readNumber(body.nurseSupply?.launchShortfall);
+  const serviceAreasBelowMinimum = readNumber(
+    body.nurseSupply?.launchServiceAreasBelowMinimum,
+  );
+
+  if (verifiedAndAvailable === null) {
+    failures.push("ops status verified and available nurse supply is missing or invalid");
+  }
+  if (launchMinimum === null || launchMinimum <= 0) {
+    failures.push("ops status launch minimum is missing or invalid");
+  }
+  if (launchShortfall === null) {
+    failures.push("ops status launch shortfall is missing or invalid");
+  }
+  if (serviceAreasBelowMinimum === null) {
+    failures.push("ops status service-area threshold count is missing or invalid");
+  }
+  if (body.nurseSupply?.launchReady !== true) {
+    failures.push("ops status nurse launch supply is not ready");
+  }
+  if (serviceAreasBelowMinimum !== null && serviceAreasBelowMinimum > 0) {
+    failures.push(
+      `ops status has active service areas below launch minimum (${serviceAreasBelowMinimum})`,
+    );
+  }
+  if (
+    verifiedAndAvailable !== null &&
+    launchMinimum !== null &&
+    verifiedAndAvailable < launchMinimum
+  ) {
+    failures.push(
+      `ops status verified and available nurse supply is below launch minimum (${verifiedAndAvailable}/${launchMinimum})`,
+    );
   }
   if (Number(body.requests?.unassigned ?? 0) >= 3) {
     failures.push("unassigned requests is 3 or more");
@@ -216,7 +275,7 @@ function evaluateOpsStatus(result) {
   return { failures, warnings };
 }
 
-async function collectSample(options, index) {
+export async function collectSample(options, index) {
   const startedAt = new Date().toISOString();
   const health = await fetchJson(endpoint(options.baseUrl, "/api/health"), {
     timeoutMs: options.timeoutMs,
@@ -233,6 +292,10 @@ async function collectSample(options, index) {
       },
     });
     opsEvaluation = evaluateOpsStatus(opsStatus);
+  } else if (options.requireAdminOps) {
+    opsEvaluation.failures.push(
+      "admin ops status required but no admin cookie was provided",
+    );
   }
 
   const failures = [
@@ -294,6 +357,9 @@ function printOpsSummary(result) {
       `db=${String(body.db)}`,
       `activeAreas=${String(body.serviceAreas?.active ?? "n/a")}`,
       `verifiedAvailable=${String(body.nurseSupply?.verifiedAndAvailable ?? "n/a")}`,
+      `launchMinimum=${String(body.nurseSupply?.launchMinimum ?? "n/a")}`,
+      `launchShortfall=${String(body.nurseSupply?.launchShortfall ?? "n/a")}`,
+      `launchReady=${String(body.nurseSupply?.launchReady ?? "n/a")}`,
       `unassigned=${String(body.requests?.unassigned ?? "n/a")}`,
       `staleAssigned=${String(body.requests?.staleAssigned ?? "n/a")}`,
       `staleEnroute=${String(body.requests?.staleEnroute ?? "n/a")}`,
@@ -375,6 +441,7 @@ async function main() {
     intervalMs: options.intervalMs,
     timeoutMs: options.timeoutMs,
     opsStatusPolled: Boolean(options.adminCookie.trim()),
+    requireAdminOps: options.requireAdminOps,
     failures,
     warnings,
     samples,
@@ -391,7 +458,9 @@ async function main() {
   process.exit(result.ok ? 0 : 1);
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.stack || error.message : String(error));
-  process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.stack || error.message : String(error));
+    process.exit(1);
+  });
+}

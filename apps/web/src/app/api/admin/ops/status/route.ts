@@ -1,6 +1,9 @@
 import type { AdminOpsStatusResponse } from "@nurseconnect/contracts";
 import { db, sql } from "@nurseconnect/database";
-import { getAdminOpsStatus } from "@nurseconnect/domain-admin-ops";
+import {
+  LAUNCH_MINIMUM_VERIFIED_AVAILABLE_NURSES,
+  getAdminOpsStatus,
+} from "@nurseconnect/domain-admin-ops";
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
@@ -17,7 +20,15 @@ function emptyOpsStatus(generatedAt: string): AdminOpsStatusResponse {
     generatedAt,
     db: "error",
     serviceAreas: { active: 0 },
-    nurseSupply: { verifiedAndAvailable: 0 },
+    nurseSupply: {
+      verifiedAndAvailable: 0,
+      launchMinimum: LAUNCH_MINIMUM_VERIFIED_AVAILABLE_NURSES,
+      launchShortfall: LAUNCH_MINIMUM_VERIFIED_AVAILABLE_NURSES,
+      launchReady: false,
+      launchServiceAreaCount: 0,
+      launchLowestServiceAreaSupply: 0,
+      launchServiceAreasBelowMinimum: 0,
+    },
     requests: {
       unassigned: 0,
       staleAssigned: 0,

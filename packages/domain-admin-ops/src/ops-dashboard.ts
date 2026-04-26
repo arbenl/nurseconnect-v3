@@ -122,19 +122,21 @@ export async function getAdminOpsDashboard() {
   );
   const [
     { getAdminActiveRequestQueue },
-    { getNurseCredentialCounts, getVerifiedAndAvailableNurseCount, listNurseCredentials },
+    { getNurseCredentialCounts, listNurseCredentials },
     { getAdminReassignmentActivityFeed },
+    { getLaunchNurseSupplySummary },
   ] =
     await Promise.all([
       import("./active-request-queue"),
       import("@nurseconnect/domain-nurse"),
       import("./reassignment-activity-feed"),
+      import("./ops-status"),
     ]);
 
   const [
     queue,
     credentialCounts,
-    verifiedAndAvailable,
+    nurseSupply,
     pendingCredentialItems,
     activity,
     dashboardStatusRows,
@@ -142,7 +144,7 @@ export async function getAdminOpsDashboard() {
   ] = await Promise.all([
     getAdminActiveRequestQueue({ limit: 200 }),
     getNurseCredentialCounts(),
-    getVerifiedAndAvailableNurseCount(),
+    getLaunchNurseSupplySummary(new Date(generatedAt)),
     listNurseCredentials({ statuses: Array.from(attentionStatuses), limit: 5 }),
     getAdminReassignmentActivityFeed(6),
     getDashboardOpsStatusRows(recentSince),
@@ -154,9 +156,7 @@ export async function getAdminOpsDashboard() {
     serviceAreas: {
       active: toCount(dashboardStatus?.activeServiceAreas),
     },
-    nurseSupply: {
-      verifiedAndAvailable,
-    },
+    nurseSupply,
     requests: {
       unassigned: 0,
       staleAssigned: 0,

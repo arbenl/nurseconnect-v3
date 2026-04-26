@@ -6,6 +6,12 @@ export type AdminOpsStatusResponse = {
   };
   nurseSupply: {
     verifiedAndAvailable: number;
+    launchMinimum: number;
+    launchShortfall: number;
+    launchReady: boolean;
+    launchServiceAreaCount: number;
+    launchLowestServiceAreaSupply: number;
+    launchServiceAreasBelowMinimum: number;
   };
   requests: {
     unassigned: number;

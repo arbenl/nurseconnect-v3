@@ -55,3 +55,34 @@ Use the NurseConnect slice workflow for product, platform, ops, and launch work:
 13. Sync local `main`, update Notion when the slice changes program state, and delete the local and remote branch.
 
 For tiny docs-only slices, a lightweight reviewer pool is acceptable only when the PR body explicitly explains the reduced review scope. Do not silently skip `verify-slice`.
+
+<!-- FAST-TOOLS PROMPT v1 | codex-mastery | watermark:do-not-alter -->
+
+## CRITICAL: Use ripgrep, not grep
+
+NEVER use grep for project-wide searches (slow, ignores .gitignore). ALWAYS use rg.
+
+- `rg "pattern"` — search content
+- `rg --files | rg "name"` — find files
+- `rg -t python "def"` — language filters
+
+## File finding
+
+- Prefer `fd` (or `fdfind` on Debian/Ubuntu). Respects .gitignore.
+
+## JSON
+
+- Use `jq` for parsing and transformations.
+
+## Install Guidance
+
+- macOS: `brew install ripgrep fd jq`
+- Debian/Ubuntu: `sudo apt update && sudo apt install -y ripgrep fd-find jq` (alias `fd=fdfind`)
+
+## Agent Instructions
+
+- Replace commands: grep→rg, find→rg --files/fd, ls -R→rg --files, cat|grep→rg pattern file
+- Cap reads at 250 lines; prefer `rg -n -A 3 -B 3` for context
+- Use `jq` for JSON instead of regex
+
+<!-- END FAST-TOOLS PROMPT v1 | codex-mastery -->

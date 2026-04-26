@@ -11,7 +11,7 @@
 
    ```bash
    LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
-     pnpm launch:monitor -- --url https://<production-url> --once
+     pnpm launch:monitor -- --url https://<production-url> --once --require-admin-ops
    ```
 
 7. Run the synthetic auth monitor with the dedicated synthetic admin:
@@ -36,7 +36,8 @@
 13. `GET /api/admin/ping` returns 200 with role `admin`.
 14. The synthetic auth monitor command from pre-flight returns green.
 15. Admin -> Service Areas shows at least one active launch area.
-16. Admin -> Nurses shows at least one verified and available nurse.
+16. Admin -> Dashboard shows nurse supply `ready` with at least 10 verified,
+    available, dispatch-eligible nurses in every active launch area.
 
 ## Rehearse
 
@@ -72,7 +73,7 @@
 
     ```bash
     LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
-      pnpm launch:monitor -- --url https://<production-url>
+      pnpm launch:monitor -- --url https://<production-url> --require-admin-ops
     ```
 
     This polls `GET /api/health` and authenticated `GET /api/admin/ops/status`
@@ -94,9 +95,9 @@
     badge turns non-zero or blocked.
 30. Watch the first real request from intake through assignment, nurse accept,
     enroute, completion, payment trace, and payout trace.
-31. Escalate immediately if active service areas equals 0, verified and
-    available nurse supply equals 0, unassigned requests reach 3 or more for
-    more than 5 minutes, any enroute request becomes stale, exception queue
+31. Escalate immediately if active service areas equals 0,
+    `nurseSupply.launchReady` is false, unassigned requests reach 3 or more
+    for more than 5 minutes, any enroute request becomes stale, exception queue
     reaches 5 or more, any payment authorization or payout failure appears, or
     the auth/session monitor cannot sign in, bootstrap `/api/me`, or reach
     `/api/admin/ping`.

@@ -9,6 +9,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     include: [
+      'src/app/**/*.test.{ts,tsx}',
       'src/components/**/*.test.{ts,tsx}',
       'src/lib/**/*.test.{ts,tsx}',
       'src/hooks/**/*.test.{ts,tsx}',
@@ -25,7 +26,6 @@ export default defineConfig({
       '**/*.db.test.ts',
       '**/*.db.test.tsx',
       'src/server/**',
-      'src/app/api/**',
     ],
   },
 });
