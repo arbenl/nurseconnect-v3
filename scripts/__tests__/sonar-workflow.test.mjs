@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const ciWorkflow = readFileSync(".github/workflows/ci.yml", "utf8");
 const sonarWorkflow = readFileSync(".github/workflows/sonar.yml", "utf8");
+const sonarGateScript = readFileSync("scripts/sonar-gate.sh", "utf8");
 
 function extractJob(name) {
   const match = ciWorkflow.match(new RegExp(`\\n  ${name}:\\n([\\s\\S]*?)(?=\\n  [a-zA-Z0-9_-]+:\\n|\\n?$)`));
@@ -55,10 +56,15 @@ describe("Sonar workflow parity", () => {
     expect(summaryJob).not.toContain("pnpm");
   });
 
-  it("keeps the baseline workflow out of pull request enforcement", () => {
+  it("keeps the baseline workflow advisory and out of pull request enforcement", () => {
     expect(sonarWorkflow).toContain("name: Sonar Baseline");
     expect(sonarWorkflow).not.toMatch(/\n\s+pull_request:/);
-    expect(sonarWorkflow).toContain("SONAR_ENFORCEMENT: enforce");
-    expect(sonarWorkflow).not.toContain("SONAR_ENFORCEMENT: warn");
+    expect(sonarWorkflow).toContain("SONAR_ENFORCEMENT: warn");
+    expect(sonarWorkflow).not.toContain("SONAR_ENFORCEMENT: enforce");
+    expect(sonarWorkflow).not.toContain("SONAR_QUALITYGATE_WAIT");
+    expect(sonarGateScript).toContain("fetch_quality_gate");
+    expect(sonarGateScript).toContain("publish_step_summary");
+    expect(sonarGateScript).toContain("- quality_gate: ${qg_status}");
+    expect(sonarGateScript).toContain("- dashboard: ${DASHBOARD_URL}");
   });
 });
