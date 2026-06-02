@@ -2,8 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   assertSafeDatabase,
+  bootstrapSessionViaApp,
   cookieHeaderFromSetCookie,
   getDatabaseName,
+  markAuthUserVerifiedForSafeSeed,
   signUpViaApp,
 } from "../launch-rehearsal-seed.mjs";
 
@@ -27,7 +29,7 @@ describe("launch-rehearsal-seed", () => {
     ).toThrow("Refusing to seed non-test database");
   });
 
-  it("sends the app origin during Better Auth sign-up and session bootstrap", async () => {
+  it("sends the app origin during Better Auth sign-up and returns the session cookie", async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -39,8 +41,7 @@ describe("launch-rehearsal-seed", () => {
             },
           },
         ),
-      )
-      .mockResolvedValueOnce(jsonResponse({ ok: true }));
+      );
 
     const result = await signUpViaApp(
       "http://localhost:3010/",
@@ -51,18 +52,52 @@ describe("launch-rehearsal-seed", () => {
       fetchMock,
     );
 
-    expect(result).toEqual({ created: true });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({
+      created: true,
+      cookie: "better-auth.session_token=session-secret",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:3010/api/auth/sign-up/email");
     expect(fetchMock.mock.calls[0][1].headers).toMatchObject({
       "content-type": "application/json",
       origin: "http://localhost:3010",
     });
-    expect(fetchMock.mock.calls[1][0]).toBe("http://localhost:3010/api/me");
-    expect(fetchMock.mock.calls[1][1].headers).toMatchObject({
+  });
+
+  it("bootstraps the app session after the seed has marked auth email verified", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    const result = await bootstrapSessionViaApp(
+      "http://localhost:3010/",
+      {
+        email: "launch.admin@test.local",
+        name: "Launch Admin",
+      },
+      "better-auth.session_token=session-secret",
+      fetchMock,
+    );
+
+    expect(result).toEqual({ bootstrapped: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("http://localhost:3010/api/me");
+    expect(fetchMock.mock.calls[0][1].headers).toMatchObject({
       cookie: "better-auth.session_token=session-secret",
       origin: "http://localhost:3010",
     });
+  });
+
+  it("marks an auth user verified for safe launch seed databases", async () => {
+    const query = vi.fn().mockResolvedValueOnce({
+      rows: [{ id: "auth-user" }],
+    });
+
+    await expect(
+      markAuthUserVerifiedForSafeSeed({ query }, "launch.admin@test.local"),
+    ).resolves.toEqual({ updated: true });
+
+    expect(query.mock.calls[0][0]).toContain("email_verified = true");
+    expect(query.mock.calls[0][0]).toContain("email_verified_at");
+    expect(query.mock.calls[0][1]).toEqual(["launch.admin@test.local"]);
   });
 
   it("builds a Cookie header from one or more Set-Cookie values", () => {
@@ -110,27 +145,16 @@ describe("launch-rehearsal-seed", () => {
   });
 
   it("fails when post-sign-up session bootstrap fails", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        jsonResponse(
-          { user: { id: "auth-user" } },
-          {
-            headers: {
-              "set-cookie": "better-auth.session_token=session-secret; Path=/; HttpOnly",
-            },
-          },
-        ),
-      )
-      .mockResolvedValueOnce(jsonResponse({ error: "Unauthorized" }, { status: 401 }));
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ error: "Unauthorized" }, { status: 401 }));
 
     await expect(
-      signUpViaApp(
+      bootstrapSessionViaApp(
         "http://localhost:3010",
         {
           email: "launch.admin@test.local",
           name: "Launch Admin",
         },
+        "better-auth.session_token=session-secret",
         fetchMock,
       ),
     ).rejects.toThrow("Session bootstrap failed for launch.admin@test.local: 401");

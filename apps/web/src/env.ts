@@ -1,6 +1,8 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
+import { resolveEmailVerificationConfig } from "./lib/auth/email-verification-config";
+
 // ── Removed-platform rejection guard ────────────────────────────────
 // V3 is Vercel-native. Fail hard if old platform env vars leak in.
 const REJECTED_FIREBASE_VARS = [
@@ -30,6 +32,7 @@ for (const key of REJECTED_FIREBASE_VARS) {
 export const env = createEnv({
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
+    NEXT_PHASE: z.string().optional(),
     DATABASE_URL: z
       .string()
       .url()
@@ -52,7 +55,14 @@ export const env = createEnv({
     PGPOOL_MAX_LIFETIME_SECONDS: z.coerce.number().int().nonnegative().optional(),
     PGPOOL_ALLOW_EXIT_ON_IDLE: z.coerce.boolean().optional(),
     BETTER_AUTH_SECRET: z.string().min(1, "BETTER_AUTH_SECRET is required"),
+    APP_URL: z.string().url().optional(),
+    BETTER_AUTH_URL: z.string().url().optional(),
+    VERCEL_URL: z.string().min(1).optional(),
     FIRST_ADMIN_EMAILS: z.string().optional(),
+    NC_EMAIL_VERIFICATION_MODE: z.enum(["off", "observe", "enforce"]).default("off"),
+    EMAIL_PROVIDER: z.enum(["disabled", "test", "postmark"]).default("disabled"),
+    EMAIL_FROM: z.string().email().optional(),
+    POSTMARK_SERVER_TOKEN: z.string().min(1).optional(),
 
     // Feature flags — postgres-only during V3 mandate
     FEATURE_BACKEND_NURSE_PROFILE: z.literal("postgres").default("postgres"),
@@ -66,6 +76,7 @@ export const env = createEnv({
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
+    NEXT_PHASE: process.env.NEXT_PHASE,
     DATABASE_URL: process.env.DATABASE_URL,
     DATABASE_POOL_URL: process.env.DATABASE_POOL_URL,
     PGPOOL_MAX: process.env.PGPOOL_MAX,
@@ -75,7 +86,14 @@ export const env = createEnv({
     PGPOOL_MAX_LIFETIME_SECONDS: process.env.PGPOOL_MAX_LIFETIME_SECONDS,
     PGPOOL_ALLOW_EXIT_ON_IDLE: process.env.PGPOOL_ALLOW_EXIT_ON_IDLE,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    APP_URL: process.env.APP_URL,
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
     FIRST_ADMIN_EMAILS: process.env.FIRST_ADMIN_EMAILS,
+    NC_EMAIL_VERIFICATION_MODE: process.env.NC_EMAIL_VERIFICATION_MODE,
+    EMAIL_PROVIDER: process.env.EMAIL_PROVIDER,
+    EMAIL_FROM: process.env.EMAIL_FROM,
+    POSTMARK_SERVER_TOKEN: process.env.POSTMARK_SERVER_TOKEN,
     FEATURE_BACKEND_NURSE_PROFILE: process.env.FEATURE_BACKEND_NURSE_PROFILE,
     FEATURE_BACKEND_PATIENT_PROFILE: process.env.FEATURE_BACKEND_PATIENT_PROFILE,
     FEATURE_BACKEND_SERVICE_REQUEST: process.env.FEATURE_BACKEND_SERVICE_REQUEST,
@@ -85,3 +103,5 @@ export const env = createEnv({
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
 });
+
+resolveEmailVerificationConfig(process.env);

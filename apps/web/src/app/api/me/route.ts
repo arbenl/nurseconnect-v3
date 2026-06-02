@@ -6,7 +6,7 @@ import {
 import { NextResponse } from "next/server";
 
 import { getNurseByUserId } from "@/lib/nurse-record";
-import { getSession } from "@/server/auth";
+import { assertEmailVerificationAccess, authErrorResponse, getSession } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -33,6 +33,7 @@ export async function GET(request: Request) {
     }
 
     actorContext = { ...context, actorId: session.user.id };
+    await assertEmailVerificationAccess(session, "/api/me");
 
     const domainUser = await ensureDomainUserFromSession({
       id: session.user.id,
@@ -65,6 +66,11 @@ export async function GET(request: Request) {
     });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "api.me");
+    if (authResponse) {
+      return authResponse;
+    }
+
     const fallback = { ok: false, session: null, user: null, error: "Internal Server Error" } as const;
     const response = NextResponse.json(fallback, { status: 500 });
     logApiFailure(actorContext, error, 500, startedAt, {

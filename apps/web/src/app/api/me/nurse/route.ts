@@ -8,7 +8,7 @@ import {
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getSession } from "@/server/auth";
+import { assertEmailVerificationAccess, authErrorResponse, getSession } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -40,6 +40,8 @@ export async function PATCH(request: Request) {
   const actorContext = { ...context, actorId: session.user.id };
 
   try {
+    await assertEmailVerificationAccess(session, "/api/me/nurse");
+
     const json = await request.json();
     const result = nurseProfileSchema.safeParse(json);
 
@@ -100,6 +102,11 @@ export async function PATCH(request: Request) {
     logApiSuccess(actorContext, 200, startedAt, { source: "me.nurse" });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "me.nurse");
+    if (authResponse) {
+      return authResponse;
+    }
+
     if (error instanceof NurseProfileNotFoundError) {
       const response = NextResponse.json({ error: error.message }, { status: 404 });
       logApiFailure(actorContext, error, 404, startedAt, {

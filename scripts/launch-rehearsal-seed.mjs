@@ -182,20 +182,43 @@ export async function signUpViaApp(appUrl, user, fetchImpl = fetch) {
   }
 
   const cookie = cookieHeaderFromSetCookie(response.headers);
-  if (cookie) {
-    const sessionResponse = await fetchImpl(`${normalizedAppUrl}/api/me`, {
-      headers: {
-        cookie,
-        origin,
-      },
-    });
-    if (!sessionResponse.ok) {
-      const body = await sessionResponse.text();
-      throw new Error(`Session bootstrap failed for ${user.email}: ${sessionResponse.status} ${body}`);
-    }
+  return { created: true, cookie };
+}
+
+export async function markAuthUserVerifiedForSafeSeed(client, email) {
+  const updated = await queryOne(
+    client,
+    `UPDATE auth_users
+        SET email_verified = true,
+            email_verified_at = COALESCE(email_verified_at, NOW()),
+            updated_at = NOW()
+      WHERE email = $1
+      RETURNING id`,
+    [email],
+  );
+
+  return { updated: Boolean(updated) };
+}
+
+export async function bootstrapSessionViaApp(appUrl, user, cookie, fetchImpl = fetch) {
+  if (!cookie) {
+    return { bootstrapped: false };
   }
 
-  return { created: true };
+  const normalizedAppUrl = appUrl.replace(/\/$/, "");
+  const origin = appOrigin(normalizedAppUrl);
+  const sessionResponse = await fetchImpl(`${normalizedAppUrl}/api/me`, {
+    headers: {
+      cookie,
+      origin,
+    },
+  });
+  if (!sessionResponse.ok) {
+    const body = await sessionResponse.text();
+    throw new Error(`Session bootstrap failed for ${user.email}: ${sessionResponse.status} ${body}`);
+  }
+
+  return { bootstrapped: true };
 }
 
 export async function ensureDomainUser(client, user, authCreated) {
@@ -239,8 +262,8 @@ export async function ensureDomainUser(client, user, authCreated) {
 
   if (!authUser) {
     await client.query(
-      `INSERT INTO auth_users (id, email, name, email_verified, created_at, updated_at)
-       VALUES ($1, $2, $3, true, NOW(), NOW())
+      `INSERT INTO auth_users (id, email, name, email_verified, email_verified_at, created_at, updated_at)
+       VALUES ($1, $2, $3, true, NOW(), NOW(), NOW())
        ON CONFLICT (id) DO NOTHING`,
       [authId, user.email, user.name],
     );
@@ -267,7 +290,14 @@ export async function ensureDomainUser(client, user, authCreated) {
   return { id: inserted.id, created: true, authCreated };
 }
 
-export async function ensureNurse(client, nurseUserId, adminUserId, serviceAreaId) {
+function launchNurseLicenseNumber(nurseKey) {
+  const match = String(nurseKey).match(/nurse-(\d+)/);
+  const index = Number(match?.[1] ?? 1);
+  return `RN-LAUNCH-${String(index).padStart(3, "0")}`;
+}
+
+export async function ensureNurse(client, nurseUserId, adminUserId, serviceAreaId, nurseKey = "nurse-1") {
+  const licenseNumber = launchNurseLicenseNumber(nurseKey);
   const existing = await queryOne(
     client,
     "SELECT id FROM nurses WHERE user_id = $1 LIMIT 1",
@@ -279,25 +309,25 @@ export async function ensureNurse(client, nurseUserId, adminUserId, serviceAreaI
       `UPDATE nurses
           SET status = 'verified',
               phone = '+38344111222',
-              license_number = 'RN-LAUNCH-001',
+              license_number = $2,
               license_jurisdiction = 'Kosovo',
               specialization = 'Home care',
               license_valid_until = NOW() + INTERVAL '1 year',
-              verified_by = $2,
+              verified_by = $3,
               verified_at = COALESCE(verified_at, NOW()),
               is_available = true,
               updated_at = NOW()
         WHERE user_id = $1`,
-      [nurseUserId, adminUserId],
+      [nurseUserId, licenseNumber, adminUserId],
     );
   } else {
     await client.query(
       `INSERT INTO nurses
           (user_id, status, phone, license_number, license_jurisdiction, specialization,
            license_valid_until, verified_by, verified_at, is_available, created_at, updated_at)
-       VALUES ($1, 'verified', '+38344111222', 'RN-LAUNCH-001', 'Kosovo', 'Home care',
-           NOW() + INTERVAL '1 year', $2, NOW(), true, NOW(), NOW())`,
-      [nurseUserId, adminUserId],
+       VALUES ($1, 'verified', '+38344111222', $2, 'Kosovo', 'Home care',
+           NOW() + INTERVAL '1 year', $3, NOW(), true, NOW(), NOW())`,
+      [nurseUserId, licenseNumber, adminUserId],
     );
   }
 
@@ -381,12 +411,18 @@ export async function main() {
     const userResults = [];
 
     for (const user of seedUsers) {
-      let authResult = { created: false };
+      let authResult = { created: false, cookie: null };
       const existing = await queryOne(client, "SELECT id FROM users WHERE email = $1 LIMIT 1", [
         user.email,
       ]);
       if (!existing) {
         authResult = await signUpViaApp(appUrl, user);
+        // Email verification enforcement can block protected app APIs. Safe launch
+        // databases mark seeded auth users verified before any session bootstrap.
+        await markAuthUserVerifiedForSafeSeed(client, user.email);
+        await bootstrapSessionViaApp(appUrl, user, authResult.cookie);
+      } else {
+        await markAuthUserVerifiedForSafeSeed(client, user.email);
       }
       const domainUser = await ensureDomainUser(client, user, authResult.created);
       userResults.push({ ...user, ...domainUser, authCreated: authResult.created });
@@ -397,7 +433,7 @@ export async function main() {
     const partner = userResults.find((user) => user.key === "partner");
 
     for (const nurse of nurses) {
-      await ensureNurse(client, nurse.id, admin.id, serviceArea.id);
+      await ensureNurse(client, nurse.id, admin.id, serviceArea.id, nurse.key);
     }
     await ensurePartner(client, partner.id);
 
