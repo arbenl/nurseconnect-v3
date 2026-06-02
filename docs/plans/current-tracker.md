@@ -18,9 +18,9 @@ verification_command: pnpm verify-slice
 
 | ID | Status | Owner | Work | Exit Criteria |
 |---|---|---|---|---|
-| `NC-E0-00` | `in_progress` | platform | Establish canonical program/tracker and NurseConnect slice-runner guidance. | `current-program.md`, `current-tracker.md`, architecture program/tracker, slice philosophy, and runner skill spec exist and point to the same next slice, design-review gate, PR lifecycle, closeout, and promotion rules. |
-| `NC-E0-01` | `ready` | platform + identity | Enforce identity bridge (`users.auth_id`). | Reconciliation report exists; orphan policy recorded; `users.auth_id` is non-null/FK-enforced or migration plan is staged; invariant tests pass. |
-| `NC-E0-02` | `planned` | platform + auth | Production email verification rollout gate. | Production auth config requires email verification; dev/test remain usable; rollout risk documented. |
+| `NC-E0-00` | `completed` | platform | Establish canonical program/tracker, NurseConnect slice-runner guidance, closeout discipline, and repo-owned merge-gate artifacts. | Canonical docs agree on active program, active tracker, next slice, invariants, falsifiable slice rules, design-review gate, PR closeout, promotion rules, CODEOWNERS, branch-protection policy, and PR evidence requirements. |
+| `NC-E0-01` | `completed` | platform + identity | Enforce identity bridge (`users.auth_id`). | PR #73 merged at `d636a890288955c0b5a5767c05956310d4a89bfb`; reconciliation report exists; orphan policy recorded; FK/NOT NULL migration is staged behind shell lifecycle; invariant tests and required checks passed. |
+| `NC-E0-02` | `ready` | platform + auth | Production email verification rollout gate. | Production auth config requires email verification; dev/test remain usable; rollout risk documented. |
 | `NC-E0-03` | `planned` | platform + security | Env and secret-handling checks. | Runtime env vars are validated/documented; `pnpm env:check` remains required; secret scanning remains fail-closed. |
 | `NC-E0-04` | `planned` | platform | Repo hygiene and generated artifact cleanup. | Generated artifacts are untracked/ignored; no Firebase source remains. |
 | `NC-E0-05` | `planned` | architecture + qa | Module-boundary enforcement. | CI fails on illegal cross-domain imports; existing package boundaries are encoded in a deterministic check. |
@@ -29,14 +29,20 @@ verification_command: pnpm verify-slice
 ## Next Slice
 
 ```text
-NC-E0-01 / codex/phase-0-identity-link
+NC-E0-02 / codex/production-email-verification
 ```
 
 Rationale:
 
-- It closes the highest-value cheap security gap.
-- It unblocks tenant membership and enterprise auth.
-- It can be implemented without broad product behavior change.
+- PR #73 made shell claims and admin bootstrap depend on Better-Auth `emailVerified`.
+- Production still needs an explicit email-verification rollout gate so those invariants hold in real auth flows.
+- This remains smaller and safer than starting tenant/RLS work while production auth verification is not yet enforced.
+
+## Recent Closeout Evidence
+
+| Slice | PR | Merge Commit | Gate Summary |
+|---|---|---|---|
+| `NC-E0-01 / phase-0-identity-link` | `https://github.com/arbenl/nurseconnect-v3/pull/73` | `d636a890288955c0b5a5767c05956310d4a89bfb` | `PR Finalizer`, Sonar, GitGuardian, unit, DB, E2E API, and UI smoke gates passed. |
 
 ## Status Rules
 

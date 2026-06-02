@@ -1,0 +1,36 @@
+# Last reviewed: 2026-06-02
+#
+# High-risk NurseConnect paths require explicit owner review when GitHub branch
+# protection enables CODEOWNERS enforcement.
+#
+# Keep this repo-owned. Do not depend on Interdomestik teams or tooling.
+# Current owner coverage intentionally uses @arbenl only. If @arbenl is
+# unavailable and branch protection is active, an administrator must either add
+# a backup owner here or temporarily disable CODEOWNERS enforcement with a
+# recorded reason.
+
+/.github/** @arbenl
+/AGENTS.md @arbenl
+/package.json @arbenl
+/pnpm-lock.yaml @arbenl
+
+/docs/plans/** @arbenl
+/docs/adr/** @arbenl
+/docs/runbooks/slice_workflow.md @arbenl
+/docs/runbooks/slice_development_philosophy.md @arbenl
+/docs/runbooks/nurseconnect-slice-runner-skill.md @arbenl
+
+/apps/web/src/lib/auth/** @arbenl
+/apps/web/src/server/auth/** @arbenl
+/apps/web/src/app/api/**/route.ts @arbenl
+/apps/web/src/middleware.ts @arbenl
+
+/packages/database/** @arbenl
+/packages/domain-identity/** @arbenl
+/packages/contracts/** @arbenl
+
+/scripts/pr-finalizer.sh @arbenl
+/scripts/mcp/** @arbenl
+/scripts/multi-agent/** @arbenl
+/config/reviewers/** @arbenl
+/prompts/reviewers/** @arbenl
