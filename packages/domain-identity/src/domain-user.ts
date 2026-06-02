@@ -1,6 +1,6 @@
 import { and, db, eq, isNull, schema } from "@nurseconnect/database";
 
-const { users } = schema;
+const { authUsers, users } = schema;
 
 export type DomainUser = typeof users.$inferSelect;
 
@@ -17,6 +17,16 @@ const parseAllowlist = () =>
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean);
 
+async function authEmailIsVerified(authId: string) {
+  const [authUser] = await db
+    .select({ emailVerified: authUsers.emailVerified })
+    .from(authUsers)
+    .where(eq(authUsers.id, authId))
+    .limit(1);
+
+  return authUser?.emailVerified === true;
+}
+
 export async function ensureDomainUserFromSession(data: SessionUserProjectionInput) {
   const email = data.email.trim().toLowerCase();
 
@@ -27,11 +37,16 @@ export async function ensureDomainUserFromSession(data: SessionUserProjectionInp
     .limit(1);
 
   if (existingByAuthId) {
+    const nextName = data.name ?? existingByAuthId.name;
+    if (existingByAuthId.email === email && existingByAuthId.name === nextName) {
+      return existingByAuthId;
+    }
+
     const [updated] = await db
       .update(users)
       .set({
         email,
-        name: data.name ?? existingByAuthId.name,
+        name: nextName,
         updatedAt: new Date(),
       })
       .where(eq(users.id, existingByAuthId.id))
@@ -40,27 +55,51 @@ export async function ensureDomainUserFromSession(data: SessionUserProjectionInp
     return updated;
   }
 
-  const [existingByEmail] = await db
-    .select()
+  const shellCandidates = await db
+    .select({ id: users.id })
     .from(users)
     .where(and(eq(users.email, email), isNull(users.authId)))
-    .limit(1);
+    .limit(2);
 
-  if (existingByEmail) {
-    const [updated] = await db
-      .update(users)
-      .set({
-        authId: data.id,
-        email,
-        name: data.name ?? existingByEmail.name,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, existingByEmail.id))
-      .returning();
-
-    return updated;
+  if (shellCandidates.length > 1) {
+    throw new Error("Ambiguous unauthenticated shell rows for email");
   }
 
+  const canClaimShell = shellCandidates.length === 1 && (await authEmailIsVerified(data.id));
+
+  if (canClaimShell) {
+    const [shellCandidate] = shellCandidates;
+    if (!shellCandidate) {
+      throw new Error("Expected one unauthenticated shell row");
+    }
+
+    // Shell claims intentionally preserve firstName/lastName until the shell lifecycle slice owns them.
+    const claimPatch =
+      data.name === undefined
+        ? { authId: data.id, email, updatedAt: new Date() }
+        : { authId: data.id, email, name: data.name, updatedAt: new Date() };
+    const [claimedByEmail] = await db
+      .update(users)
+      .set(claimPatch)
+      .where(and(eq(users.id, shellCandidate.id), isNull(users.authId)))
+      .returning();
+
+    if (claimedByEmail) {
+      return claimedByEmail;
+    }
+  }
+
+  const [claimedByConcurrentRequest] = await db
+    .select()
+    .from(users)
+    .where(eq(users.authId, data.id))
+    .limit(1);
+
+  if (claimedByConcurrentRequest) {
+    return claimedByConcurrentRequest;
+  }
+
+  // users_auth_id_idx plus ON CONFLICT is the DB-level guard for concurrent first logins.
   const [user] = await db
     .insert(users)
     .values({
@@ -82,6 +121,7 @@ export async function ensureDomainUserFromSession(data: SessionUserProjectionInp
   return user;
 }
 
+/** @deprecated Use ensureDomainUserFromSession for session-backed domain projections. */
 export const upsertUser = ensureDomainUserFromSession;
 
 export async function maybeBootstrapFirstAdmin(domainUser: DomainUser) {
@@ -92,7 +132,12 @@ export async function maybeBootstrapFirstAdmin(domainUser: DomainUser) {
   const allowlist = parseAllowlist();
   const email = (domainUser.email ?? "").toLowerCase();
 
-  if (allowlist.length > 0 && allowlist.includes(email)) {
+  if (allowlist.length > 0 && allowlist.includes(email) && domainUser.authId) {
+    const verified = await authEmailIsVerified(domainUser.authId);
+    if (!verified) {
+      return domainUser;
+    }
+
     const [updated] = await db
       .update(users)
       .set({ role: "admin" })

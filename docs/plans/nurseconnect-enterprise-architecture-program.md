@@ -1,7 +1,8 @@
 ---
 plan_role: architecture_program
 status: active
-source_of_truth: true
+source_of_truth: false
+authority_note: "current-program.md is the singular source of truth; this program defers to it on conflict."
 owner: platform
 last_reviewed: 2026-06-02
 tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md

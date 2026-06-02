@@ -21,9 +21,26 @@ const routes = {
     args: ["-p", "{prompt}", "--model", "gemini-3.1-pro-preview", "--output-format", "text"],
   },
   copilot: {
-    label: "Copilot Pro+ Sonnet fallback review",
+    label: "Copilot Pro+ Sonnet 4.6 review",
     command: "copilot",
-    args: ["--model", "claude-sonnet-4.6", "-p", "{prompt}", "--available-tools=", "--no-custom-instructions", "--no-color", "--silent"],
+    args: [
+      "--model",
+      "claude-sonnet-4.6",
+      "--effort",
+      "low",
+      "-p",
+      "{prompt}",
+      "--available-tools=",
+      "--no-custom-instructions",
+      "--no-color",
+      "--silent",
+      "--no-remote",
+      "--no-ask-user",
+      "--output-format",
+      "text",
+      "--stream",
+      "off",
+    ],
   },
 };
 
@@ -36,6 +53,8 @@ const sensitivePatterns = [
   ["possible-mrn", /\b(?:MRN|medical\s*record\s*number)\s*[:=]\s*[A-Za-z0-9-]{6,}/i],
   ["possible-dob", /\b(?:DOB|date\s*of\s*birth)\s*[:=]\s*\d{1,2}[/-]\d{1,2}[/-]\d{2,4}/i],
 ];
+
+const defaultTimeoutMs = 120_000;
 
 function usage() {
   return `
@@ -80,9 +99,23 @@ function commandArgs(route, prompt) {
   return route.args.map((arg) => (arg === "{prompt}" ? prompt : arg));
 }
 
+function reviewerPrompt(packet) {
+  return [
+    "Review this NurseConnect slice design. Return concise findings grouped as MUST_FIX, SHOULD_FIX, NICE_TO_HAVE, and APPROVED_NOTES.",
+    "Focus on architecture, auth/tenant/PHI safety, testability, rollback, and PR readiness. Do not request secrets or PHI.",
+    "",
+    packet,
+  ].join("\n");
+}
+
+function timeoutMs() {
+  const parsed = Number(process.env.MODEL_REVIEW_TIMEOUT_MS || defaultTimeoutMs);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultTimeoutMs;
+}
+
 function runRoute(name, prompt, options) {
   const route = routes[name];
-  const args = commandArgs(route, prompt);
+  const args = commandArgs(route, reviewerPrompt(prompt));
   if (options.dryRun) {
     return Promise.resolve({ reviewer: name, status: "dry-run", command: route.command, args, stdout: `[dry-run] ${route.label}`, stderr: "", exitCode: 0 });
   }
@@ -90,14 +123,35 @@ function runRoute(name, prompt, options) {
     const child = spawn(route.command, args, { cwd: repoRoot, stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      child.kill("SIGKILL");
+      resolve({
+        reviewer: name,
+        status: "blocked",
+        command: route.command,
+        args,
+        stdout,
+        stderr: `${stderr}\nTimed out after ${timeoutMs()}ms`.trim(),
+        exitCode: -1,
+      });
+    }, timeoutMs());
     child.stdout.on("data", (chunk) => (stdout += chunk.toString()));
     child.stderr.on("data", (chunk) => (stderr += chunk.toString()));
-    child.on("error", (error) =>
-      resolve({ reviewer: name, status: "blocked", command: route.command, args, stdout, stderr: error.message, exitCode: -1 })
-    );
-    child.on("close", (code) =>
-      resolve({ reviewer: name, status: code === 0 ? "complete" : "blocked", command: route.command, args, stdout, stderr, exitCode: code ?? -1 })
-    );
+    child.on("error", (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ reviewer: name, status: "blocked", command: route.command, args, stdout, stderr: error.message, exitCode: -1 });
+    });
+    child.on("close", (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ reviewer: name, status: code === 0 ? "complete" : "blocked", command: route.command, args, stdout, stderr, exitCode: code ?? -1 });
+    });
   });
 }
 
