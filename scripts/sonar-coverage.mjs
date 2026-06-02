@@ -24,6 +24,14 @@ const targets = [
   ["@nurseconnect/domain-referral", "vitest.config.ts"],
 ];
 
+const dbCoverageTargets = [
+  {
+    filter: "@nurseconnect/domain-identity",
+    config: "vitest.db.config.ts",
+    reportsDirectory: "coverage/db",
+  },
+];
+
 function runPnpm(args) {
   const result = spawnSync("pnpm", args, {
     stdio: "inherit",
@@ -39,6 +47,50 @@ function runPnpm(args) {
   }
 }
 
+function enforceTestDatabaseUrl() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) return false;
+
+  const parsed = new URL(databaseUrl);
+  const dbName = parsed.pathname.replace(/^\//, "");
+  if (!dbName) {
+    throw new Error("Could not parse database name from DATABASE_URL");
+  }
+
+  if (!/(ci|test|gate)/.test(dbName)) {
+    parsed.pathname = `/${dbName}_test`;
+    process.env.DATABASE_URL = parsed.toString();
+    console.log(`[sonar-coverage] DATABASE_URL pointed to ${dbName}; using ${dbName}_test`);
+  }
+
+  return true;
+}
+
+function runDbCoverageTargets() {
+  if (!enforceTestDatabaseUrl()) {
+    console.log("\n[sonar-coverage] skipping DB coverage targets; DATABASE_URL is not set");
+    return;
+  }
+
+  console.log("\n[sonar-coverage] preparing clean database for DB coverage");
+  runPnpm(["db:from-clean"]);
+
+  for (const { filter, config, reportsDirectory } of dbCoverageTargets) {
+    console.log(`\n[sonar-coverage] ${filter} DB coverage`);
+    runPnpm([
+      "--filter",
+      filter,
+      "exec",
+      "vitest",
+      "run",
+      "--config",
+      config,
+      ...coverageArgs,
+      `--coverage.reportsDirectory=${reportsDirectory}`,
+    ]);
+  }
+}
+
 console.log("\n[sonar-coverage] building @nurseconnect/contracts");
 runPnpm(["--filter", "@nurseconnect/contracts", "build"]);
 
@@ -46,3 +98,5 @@ for (const [filter, config] of targets) {
   console.log(`\n[sonar-coverage] ${filter}`);
   runPnpm(["--filter", filter, "exec", "vitest", "run", "--config", config, ...coverageArgs]);
 }
+
+runDbCoverageTargets();

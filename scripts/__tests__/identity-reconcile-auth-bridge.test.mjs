@@ -11,11 +11,18 @@ import {
 
 describe("identity auth bridge reconciliation", () => {
   it("parses bounded report options", () => {
-    expect(parseArgs(["--json", "--include-identifiers", "--limit", "5"])).toEqual({
-      json: true,
-      includeIdentifiers: true,
-      limit: 5,
-    });
+    const originalCi = process.env.CI;
+    process.env.CI = "false";
+    try {
+      expect(parseArgs(["--json", "--include-identifiers", "--limit", "5"])).toEqual({
+        json: true,
+        includeIdentifiers: true,
+        limit: 5,
+      });
+    } finally {
+      if (originalCi === undefined) delete process.env.CI;
+      else process.env.CI = originalCi;
+    }
 
     expect(() => parseArgs(["--limit", "0"])).toThrow("--limit must be an integer");
     expect(() => parseArgs(["--limit", "501"])).toThrow("--limit must be an integer");
