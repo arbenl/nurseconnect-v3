@@ -6,7 +6,7 @@ import {
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { getSession } from "@/server/auth";
+import { assertEmailVerificationAccess, authErrorResponse, getSession } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -41,6 +41,8 @@ export async function POST(request: Request) {
   };
 
   try {
+    await assertEmailVerificationAccess(session, "/api/me/become-nurse");
+
     const json = await request.json();
     const result = becomeNurseSchema.safeParse(json);
 
@@ -89,6 +91,11 @@ export async function POST(request: Request) {
     });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "me.becomeNurse");
+    if (authResponse) {
+      return authResponse;
+    }
+
     if (error instanceof NurseCredentialValidationError) {
       const response = NextResponse.json({ error: error.message }, { status: 400 });
       logApiFailure(actorContext, error, 400, startedAt, {

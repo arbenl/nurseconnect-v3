@@ -2,6 +2,12 @@ import { db, schema } from "@nurseconnect/database";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
 
+import { sendBetterAuthVerificationEmail } from "./auth/email-provider";
+import {
+  EMAIL_VERIFICATION_TOKEN_TTL_SECONDS,
+  resolveEmailVerificationConfig,
+} from "./auth/email-verification-config";
+
 const {
   authUsers,
   authSessions,
@@ -9,31 +15,16 @@ const {
   authVerifications,
 } = schema;
 
-// NOTE: This file runs on the server (route handler imports it).
-const VERCEL_DEPLOYMENT_URL = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : undefined;
-const APP_URL =
-  process.env.APP_URL ??
-  process.env.BETTER_AUTH_URL ??
-  VERCEL_DEPLOYMENT_URL ??
-  "http://localhost:3010";
-const TRUSTED_ORIGINS = Array.from(
-  new Set(
-    [APP_URL, process.env.BETTER_AUTH_URL, VERCEL_DEPLOYMENT_URL].filter(
-      (origin): origin is string => Boolean(origin),
-    ),
-  ),
-);
+const emailVerificationConfig = resolveEmailVerificationConfig();
 const BASE_PATH = "/api/auth";
 
 export const auth = betterAuth({
   // Always set baseURL explicitly for stability/security in prod.
-  baseURL: APP_URL,
+  baseURL: emailVerificationConfig.appUrl,
   basePath: BASE_PATH,
 
   // Lock trusted origins (CSRF/origin checks).
-  trustedOrigins: TRUSTED_ORIGINS,
+  trustedOrigins: emailVerificationConfig.trustedOrigins,
 
   // Database (Drizzle + Postgres).
   database: drizzleAdapter(db, {
@@ -48,11 +39,18 @@ export const auth = betterAuth({
   }),
 
   // Minimum needed auth mode for now (email+password).
-  // You can tighten later (requireEmailVerification, reset email sender, etc.).
   emailAndPassword: {
     enabled: true,
-    autoSignIn: true,
-    requireEmailVerification: false,
+    // Observe mode keeps rollout non-blocking while requireAuth records unverified access.
+    autoSignIn: emailVerificationConfig.mode !== "enforce",
+    requireEmailVerification: emailVerificationConfig.mode === "enforce",
+  },
+
+  emailVerification: {
+    sendVerificationEmail: sendBetterAuthVerificationEmail,
+    sendOnSignUp: emailVerificationConfig.mode !== "off",
+    sendOnSignIn: emailVerificationConfig.mode !== "off",
+    expiresIn: EMAIL_VERIFICATION_TOKEN_TTL_SECONDS,
   },
 
   // Optional: enable joins if you have relations defined and want perf gains.

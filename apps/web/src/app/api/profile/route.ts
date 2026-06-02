@@ -2,11 +2,12 @@ import { headers } from "next/headers";
 import { NextResponse, NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth"; // direct import for API routes
+import { assertEmailVerificationAccess, UnauthorizedError } from "@/server/auth";
 
 // Legacy compatibility adapter for the diagnostic /profile page only.
 // Business profile ownership lives in /api/me and /api/me/profile via @nurseconnect/domain-identity.
 // Do not add new profile mutation logic here.
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const session = await auth.api.getSession({
     headers: await headers()
   });
@@ -15,15 +16,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  try {
+    await assertEmailVerificationAccess(session, "/api/profile");
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    throw error;
+  }
+
   return NextResponse.json({
     id: session.user.id,
     email: session.user.email,
     name: session.user.name,
-    role: (session.user as any).role,
+    role: (session.user as { role?: unknown }).role,
     // Add other fields from session if needed
   }, { status: 200 });
 }
 
-export async function PUT(req: NextRequest) {
+export async function PUT(_req: NextRequest) {
   return NextResponse.json({ error: "Profile updates via this legacy route are deprecated. Use Better-Auth user management." }, { status: 410 });
 }

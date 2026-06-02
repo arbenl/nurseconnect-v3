@@ -2,7 +2,7 @@ import { db, schema, eq } from "@nurseconnect/database";
 import { buildProfileUpdatePatch, ProfileValidationError } from "@nurseconnect/domain-identity";
 import { NextResponse } from "next/server";
 
-import { getSession } from "@/server/auth";
+import { assertEmailVerificationAccess, authErrorResponse, getSession } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -37,6 +37,7 @@ export async function PATCH(req: Request) {
       actorId: session.user.id,
       actorRole: "patient",
     };
+    await assertEmailVerificationAccess(session, "/api/me/profile");
 
     const body = await req.json();
     const profilePatch = buildProfileUpdatePatch(body);
@@ -78,6 +79,11 @@ export async function PATCH(req: Request) {
     });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "me.profile");
+    if (authResponse) {
+      return authResponse;
+    }
+
     if (error instanceof ProfileValidationError) {
       const response = NextResponse.json(
         { error: error.message, details: error.details },
