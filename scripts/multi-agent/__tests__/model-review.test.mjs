@@ -34,8 +34,13 @@ describe("model-review runner", () => {
       const copilot = readFileSync(join(root, "reviews/copilot.md"), "utf8");
 
       expect(manifest.reviewers).toEqual(["claude", "copilot"]);
+      expect(manifest.results[1].args).toContain("claude-sonnet-4.6");
+      expect(manifest.results[1].args).toContain("low");
+      expect(manifest.results[1].args).toContain("--no-remote");
+      expect(manifest.results[1].args).toContain("--no-ask-user");
+      expect(manifest.results[1].args).toContain("--stream");
       expect(claude).toContain("dry-run");
-      expect(copilot).toContain("Copilot Pro+");
+      expect(copilot).toContain("Copilot Pro+ Sonnet 4.6");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

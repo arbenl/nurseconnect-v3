@@ -8,13 +8,13 @@ vi.mock("./get-session", () => ({
   getSession: mockGetSession,
 }));
 
-const { referralPartners, users } = schema;
+const { authUsers, referralPartners, users } = schema;
 
 describe("requireRole", () => {
   let originalFirstAdminEmails: string | undefined;
 
   beforeEach(async () => {
-    await db.execute(`TRUNCATE TABLE "users" RESTART IDENTITY CASCADE`);
+    await db.execute(`TRUNCATE TABLE "auth_users", "users" RESTART IDENTITY CASCADE`);
     originalFirstAdminEmails = process.env.FIRST_ADMIN_EMAILS;
     mockGetSession.mockReset();
   });
@@ -29,6 +29,12 @@ describe("requireRole", () => {
 
   it("bootstraps and authorizes the configured first admin from session context", async () => {
     process.env.FIRST_ADMIN_EMAILS = "admin@example.com";
+    await db.insert(authUsers).values({
+      id: "auth_admin_1",
+      email: "admin@example.com",
+      name: "Admin User",
+      emailVerified: true,
+    });
     mockGetSession.mockResolvedValue({
       user: {
         id: "auth_admin_1",

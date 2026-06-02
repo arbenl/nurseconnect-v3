@@ -1,7 +1,8 @@
 ---
 plan_role: architecture_tracker
 status: active
-source_of_truth: true
+source_of_truth: false
+authority_note: "current-program.md is the singular source of truth; this tracker defers to it on conflict."
 owner: platform
 last_reviewed: 2026-06-02
 program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
@@ -65,3 +66,13 @@ current_tracker_bridge: docs/plans/current-tracker.md
 | `NC-E5-02` | `planned` | `phi-read-audit` | Audit reads of PHI-bearing resources. | Read audit tests prove access is logged without leaking PHI in logs. | High |
 | `NC-E5-03` | `planned` | `field-encryption` | Encrypt sensitive PHI fields after key-management ADR. | Encryption round-trip and migration tests pass. | High |
 | `NC-E5-04` | `planned` | `ops-slos-audit-export` | SLOs, alerting, and exportable audit evidence. | SLO dashboard/runbook and export test exist. | Medium |
+
+## NC-E6 — Platformization
+
+| ID | Status | Slice | Work | Acceptance Criteria | Risk |
+|---|---|---|---|---|---|
+| `NC-E6-01` | `planned` | `versioned-public-api` | Versioned API + OpenAPI generated from `contracts`. | OpenAPI emitted from contracts; version-compatibility tests pass. | Medium |
+| `NC-E6-02` | `planned` | `tenant-webhooks` | Outbound webhooks for tenants. | Signed, retried, tenant-scoped delivery tests pass. | Medium |
+| `NC-E6-03` | `planned` | `integration-adapters` | EHR/HL7-FHIR + PSP + calendar/SMS adapters behind an integration layer. | Adapter sandbox E2E; no domain coupling to vendor SDKs. | High |
+| `NC-E6-04` | `planned` | `enterprise-admin-console` | Tenant self-service admin (`apps/admin`). | Tenant-scoped admin actions audited and policy-gated. | Medium |
+| `NC-E6-05` | `deferred` | `physical-tenant-isolation` | Optional schema/DB-per-tenant — only if a buyer contractually requires it. | Decision gated on a signed requirement; not built speculatively. | High |

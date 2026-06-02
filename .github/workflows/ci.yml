@@ -73,8 +73,25 @@ jobs:
     needs: quality
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nurseconnect_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d nurseconnect_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     env:
       NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_ci
+      BETTER_AUTH_SECRET: ci_better_auth_secret_32_chars_minimum_123456
+      FIRST_ADMIN_EMAILS: admin.bootstrap@test.com
 
     steps:
       - name: Checkout repo

@@ -65,6 +65,7 @@
     "launch:browser-rehearsal:headed": "bash scripts/launch-browser-rehearsal-headed.sh",
     "launch:monitor": "node scripts/launch-monitor.mjs",
     "launch:auth-monitor": "node scripts/launch-auth-monitor.mjs",
+    "identity:reconcile": "node scripts/identity/reconcile-auth-bridge.mjs",
     "sonar:start": "docker compose --profile sonar up -d sonarqube sonar-db",
     "sonar:stop": "docker compose --profile sonar stop sonarqube sonar-db",
     "sonar:down": "docker compose --profile sonar down --remove-orphans",
