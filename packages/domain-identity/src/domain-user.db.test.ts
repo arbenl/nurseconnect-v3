@@ -15,7 +15,7 @@ function assertDefined<T>(value: T | null | undefined, message: string): T {
   return value;
 }
 
-async function insertAuthUser(input: { id: string; email: string; emailVerified?: boolean; name?: string }) {
+async function insertAuthUser(input: { id: string; email: string; emailVerified?: boolean; name?: string | null }) {
   await db.insert(authUsers).values({
     id: input.id,
     email: input.email,
@@ -247,6 +247,36 @@ describe("domain identity auth bridge", () => {
 
     const rows = await db.select().from(users).where(eq(users.email, "invited-partner@test.local"));
     expect(rows).toHaveLength(1);
+  });
+
+  it("preserves shell name when verified auth session has a null name", async () => {
+    await insertAuthUser({
+      id: "auth_null_name_shell_1",
+      email: "null-name-shell@test.local",
+      emailVerified: true,
+      name: null,
+    });
+    const [shell] = await db
+      .insert(users)
+      .values({
+        email: "null-name-shell@test.local",
+        role: "patient",
+        name: "Pre Auth Patient",
+      })
+      .returning();
+
+    const domainUser = assertDefined(
+      await ensureDomainUserFromSession({
+        id: "auth_null_name_shell_1",
+        email: "null-name-shell@test.local",
+        name: null,
+      }),
+      "Expected shell user to be claimed",
+    );
+
+    expect(domainUser.id).toBe(shell?.id);
+    expect(domainUser.authId).toBe("auth_null_name_shell_1");
+    expect(domainUser.name).toBe("Pre Auth Patient");
   });
 
   it("does not update an existing auth user when session data is unchanged", async () => {

@@ -75,7 +75,7 @@ export async function ensureDomainUserFromSession(data: SessionUserProjectionInp
 
     // Shell claims intentionally preserve firstName/lastName until the shell lifecycle slice owns them.
     const claimPatch =
-      data.name === undefined
+      data.name == null
         ? { authId: data.id, email, updatedAt: new Date() }
         : { authId: data.id, email, name: data.name, updatedAt: new Date() };
     const [claimedByEmail] = await db
