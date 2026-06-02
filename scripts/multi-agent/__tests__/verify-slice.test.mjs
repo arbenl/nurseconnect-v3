@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -58,5 +58,39 @@ describe("verify-slice workflow", () => {
     expect(script).toContain("git diff --cached --check");
     expect(script).toContain("git-diff-check-worktree");
     expect(script).toContain("run_untracked_diff_check");
+    expect(script).toContain("mcp-preflight");
+    expect(script).toContain("sentinel");
+    expect(script).toContain("sonar-agent");
+    expect(script).toContain("sentry-advisory");
+  });
+
+  it("can attach model-review receipts to a run root", () => {
+    const runRoot = mkdtempSync(join(tmpdir(), "nurseconnect-verify-slice-model-"));
+    const packet = join(runRoot, "packet.md");
+    writeFileSync(packet, "Safe model review packet.");
+
+    try {
+      execFileSync(
+        "bash",
+        [
+          scriptPath,
+          "--base",
+          "HEAD",
+          "--run-root",
+          runRoot,
+          "--model-review-packet",
+          packet,
+          "--model-reviewers",
+          "claude",
+          "--model-review-dry-run",
+        ],
+        { cwd: repoRoot, encoding: "utf8" }
+      );
+
+      const receipt = readFileSync(join(runRoot, "reviews/claude.json"), "utf8");
+      expect(receipt).toContain("Claude Sonnet");
+    } finally {
+      rmSync(runRoot, { recursive: true, force: true });
+    }
   });
 });

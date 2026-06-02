@@ -1,0 +1,16 @@
+name = "Scribe"
+mode = "safety"
+enabled = true
+can_modify_product = false
+write_authority = "advisory"
+owned_scope = [
+  "docs/plans",
+  "docs/runbooks",
+  ".github/PULL_REQUEST_TEMPLATE.md"
+]
+required_artifacts = [
+  "verify-slice run root",
+  "reviewer disposition",
+  "closeout evidence"
+]
+notes = "Owns PR framing, slice evidence, closeout, and tracker consistency. No product code edits."

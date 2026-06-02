@@ -1,0 +1,18 @@
+name = "QA Reviewer"
+enabled = true
+can_modify_product = false
+mode = "review"
+owned_scope = [
+  "apps/web/src",
+  "apps/web/tests",
+  "packages",
+  "scripts",
+  "docs/runbooks"
+]
+checks = [
+  "missing unit/API/E2E coverage",
+  "deterministic gate relevance",
+  "regression risk",
+  "test flakiness risk"
+]
+notes = "Read-only reviewer focused on test and user-visible regression risk."

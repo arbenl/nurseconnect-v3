@@ -1,0 +1,90 @@
+name: Multi-Agent PR Hardening
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Optional pull request number to harden"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  multi-agent-pr-hardening:
+    name: Multi-Agent PR Hardening
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CI: "true"
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nurseconnect_ci
+      BETTER_AUTH_SECRET: ci_better_auth_secret_32_chars_minimum_123456
+      APP_URL: http://localhost:3010
+      BETTER_AUTH_URL: http://localhost:3010
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || secrets.SONAR_PROJECT_KEY || 'arbenl_nurseconnect-v3' }}
+      SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || secrets.SONAR_ORGANIZATION || 'arbenl' }}
+      SONAR_ENFORCEMENT: warn
+      SONAR_RUN_COVERAGE: "false"
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG || secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || secrets.SENTRY_PROJECT }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER_INPUT: ${{ inputs.pr_number }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout requested PR
+        if: inputs.pr_number != ''
+        run: gh pr checkout "${PR_NUMBER_INPUT}"
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.15.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run multi-agent hardening lanes
+        run: pnpm multiagent:pr-hardening
+
+      - name: Upload multi-agent hardening artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multi-agent-hardening-${{ github.run_id }}
+          path: |
+            tmp/multi-agent/run-*/events.ndjson
+            tmp/multi-agent/run-*/role-scorecard.json
+            tmp/multi-agent/run-*/steps/
+            tmp/multi-agent/run-*/evidence/
+          if-no-files-found: warn
+          retention-days: 14

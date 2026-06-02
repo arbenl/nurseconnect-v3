@@ -1,0 +1,12 @@
+name = "Pixel"
+enabled = true
+can_modify_product = true
+mode = "ui"
+owned_scope = [
+  "apps/web/src/app",
+  "apps/web/src/components",
+  "apps/web/src/dashboard",
+  "packages/ui"
+]
+disallowed_backends = true
+notes = "UI-only edits: layout, components, copy, states, test ids, and accessibility."

@@ -8,6 +8,9 @@ RUN_ROOT=""
 ALLOW_MAIN=0
 RUN_STATIC=0
 RUN_REQUIRED=0
+MODEL_REVIEW_PACKET=""
+MODEL_REVIEWERS="claude,gemini,copilot"
+MODEL_REVIEW_DRY_RUN=0
 FETCH_STATUS="ok"
 BRANCH_STATUS="ok"
 
@@ -22,6 +25,9 @@ Options:
   --run-id <id>            Override run id
   --run-root <path>        Override output root
   --allow-main             Allow running on main/master
+  --model-review-packet    Minimized design packet to send to model reviewers
+  --model-reviewers        Comma list for model-review routes (default: claude,gemini,copilot)
+  --model-review-dry-run   Write model review receipts without calling model CLIs
   --static                 Run static local gates
   --required-gates         Run required local release gates
   -h, --help               Show this help
@@ -112,7 +118,7 @@ run_untracked_diff_check() {
 
 matches_changed_file() {
   local pattern="$1"
-  grep -E "$pattern" "$CHANGED_FILES" >/dev/null 2>&1
+  rg -q "$pattern" "$CHANGED_FILES" >/dev/null 2>&1
 }
 
 while [[ $# -gt 0 ]]; do
@@ -137,6 +143,20 @@ while [[ $# -gt 0 ]]; do
       ;;
     --allow-main)
       ALLOW_MAIN=1
+      shift
+      ;;
+    --model-review-packet)
+      [[ $# -ge 2 ]] || fail 'missing value for --model-review-packet'
+      MODEL_REVIEW_PACKET="$2"
+      shift 2
+      ;;
+    --model-reviewers)
+      [[ $# -ge 2 ]] || fail 'missing value for --model-reviewers'
+      MODEL_REVIEWERS="$2"
+      shift 2
+      ;;
+    --model-review-dry-run)
+      MODEL_REVIEW_DRY_RUN=1
       shift
       ;;
     --static)
@@ -405,14 +425,25 @@ write_orchestration_prompt
   echo
   echo "- Static: \`pnpm verify-slice -- --run-root \"$RUN_ROOT\" --static\`"
   echo "- Required local gates: \`pnpm verify-slice -- --run-root \"$RUN_ROOT\" --required-gates\`"
+  echo "- Model review: \`pnpm model-review -- --packet <design-packet.md> --run-root \"$RUN_ROOT\"\`"
 } >"$RUN_ROOT/reviewer-plan.md"
 
+if [[ -n "$MODEL_REVIEW_PACKET" ]]; then
+  model_review_cmd="pnpm model-review -- --packet \"$MODEL_REVIEW_PACKET\" --run-root \"$RUN_ROOT\" --reviewers \"$MODEL_REVIEWERS\""
+  [[ "$MODEL_REVIEW_DRY_RUN" -ne 1 ]] || model_review_cmd="$model_review_cmd --dry-run"
+  run_gate "model-review" "$model_review_cmd"
+fi
+
 if [[ "$RUN_STATIC" -eq 1 ]]; then
+  run_gate "mcp-preflight" "pnpm mcp:preflight"
   run_gate "env-check" "pnpm env:check"
   run_gate "git-diff-check-committed" "git diff --check $BASE_COMMIT...HEAD"
   run_gate "git-diff-check-staged" "git diff --cached --check"
   run_gate "git-diff-check-worktree" "git diff --check"
   run_untracked_diff_check
+  run_gate "sentinel" "bash scripts/multi-agent/sentinel-agent.sh --run-root \"$RUN_ROOT\" --base \"$BASE_REF\""
+  run_gate "sonar-agent" "bash scripts/multi-agent/sonar-agent.sh --run-root \"$RUN_ROOT\""
+  run_gate "sentry-advisory" "node scripts/multi-agent/sentry-advisory.mjs --run-root \"$RUN_ROOT\""
   run_gate "type-check" "pnpm -w type-check"
   run_gate "lint" "pnpm lint"
   run_gate "web-build" "pnpm --filter web build"

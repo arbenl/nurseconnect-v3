@@ -1,0 +1,20 @@
+name = "Sentinel"
+enabled = true
+can_modify_product = false
+mode = "security"
+owned_scope = [
+  "apps/web/src/middleware.ts",
+  "apps/web/src/lib/auth",
+  "apps/web/src/server/auth",
+  "apps/web/src/app/api",
+  "packages/database",
+  "packages/contracts"
+]
+checks = [
+  "auth/session boundaries",
+  "PHI/privacy exposure",
+  "secret handling",
+  "API contract stability",
+  "tenant isolation once enabled"
+]
+notes = "Read-only security gate. Boundary-impact changes require explicit slice scope."

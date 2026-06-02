@@ -1,0 +1,18 @@
+name = "Atlas"
+enabled = true
+can_modify_product = false
+mode = "planning"
+owned_scope = [
+  "docs/plans",
+  "docs/adr",
+  "docs/runbooks",
+  "AGENTS.md"
+]
+responsibilities = [
+  "slice planning",
+  "dependency sequencing",
+  "risk tiering",
+  "explicit non-scope"
+]
+required_approvals = ["Sentinel", "Gatekeeper"]
+notes = "Primary planner for NurseConnect enterprise slices."

@@ -1,0 +1,17 @@
+name = "Performance Reviewer"
+enabled = true
+can_modify_product = false
+mode = "review"
+owned_scope = [
+  "apps/web/src/app/api",
+  "apps/web/src/server",
+  "packages/database",
+  "packages/domain-*"
+]
+checks = [
+  "query shape and N+1 risk",
+  "hot path latency",
+  "unbounded work",
+  "render or bundle cost"
+]
+notes = "Conditional read-only reviewer for backend, database, queue, polling, or hot UI paths."

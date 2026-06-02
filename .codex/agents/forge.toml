@@ -1,0 +1,17 @@
+name = "Forge"
+enabled = true
+can_modify_product = true
+mode = "implementation"
+owned_scope = [
+  "apps",
+  "packages",
+  "scripts"
+]
+disallowed_paths = [
+  "apps/web/src/middleware.ts",
+  "apps/web/src/lib/auth",
+  "apps/web/src/server/auth",
+  "packages/database",
+  "packages/contracts"
+]
+notes = "Implements scoped slices after design review. Boundary paths require explicit slice authorization."

@@ -19,7 +19,10 @@ const DEFAULT_LANE_ORDER = [
 
 const GATE_COMMAND_MAP = {
   "preflight-agent": "preflightAgentCommands",
+  "sentinel-agent": "sentinelAgentCommands",
   gatekeeper: "gatekeeperCommands",
+  "sonar-agent": "sonarAgentCommands",
+  "sentry-agent": "sentryAgentCommands",
   "testing-agent": "testingAgentCommands",
   "verification-agent": "verificationCommands",
   "finalizer-agent": "finalizerCommands",
@@ -100,6 +103,9 @@ async function runCommandListForLane(options) {
 
     const result = await runShellCommand(command, {
       cwd: runContext.repoRoot,
+      env: {
+        MULTI_AGENT_RUN_ROOT: runContext.runDirectory,
+      },
       timeoutMs,
       dryRun,
     });

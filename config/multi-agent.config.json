@@ -11,23 +11,37 @@
   "lanes": {
     "ordered": [
       "preflight-agent",
+      "sentinel-agent",
       "gatekeeper",
+      "sonar-agent",
+      "sentry-agent",
       "testing-agent",
       "compliance-agent",
       "verification-agent",
       "finalizer-agent"
     ],
     "parallelizableInMultiMode": [
+      "sentinel-agent",
       "gatekeeper",
       "testing-agent"
     ]
   },
   "gates": {
     "preflightAgentCommands": [
+      "pnpm mcp:preflight",
       "pnpm env:check"
+    ],
+    "sentinelAgentCommands": [
+      "pnpm multiagent:sentinel -- --run-root \"$MULTI_AGENT_RUN_ROOT\""
     ],
     "gatekeeperCommands": [
       "pnpm gate:fast"
+    ],
+    "sonarAgentCommands": [
+      "pnpm multiagent:sonar -- --run-root \"$MULTI_AGENT_RUN_ROOT\""
+    ],
+    "sentryAgentCommands": [
+      "pnpm sentry:advisory -- --run-root \"$MULTI_AGENT_RUN_ROOT\""
     ],
     "testingAgentCommands": [
       "pnpm test:ci"
@@ -59,9 +73,21 @@
       "fixedUsd": 0.35,
       "usdPerSecond": 0.0006
     },
+    "sentinel-agent": {
+      "fixedUsd": 0.45,
+      "usdPerSecond": 0.0007
+    },
     "gatekeeper": {
       "fixedUsd": 0.65,
       "usdPerSecond": 0.0008
+    },
+    "sonar-agent": {
+      "fixedUsd": 0.5,
+      "usdPerSecond": 0.0008
+    },
+    "sentry-agent": {
+      "fixedUsd": 0.35,
+      "usdPerSecond": 0.0006
     },
     "testing-agent": {
       "fixedUsd": 0.75,

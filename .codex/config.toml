@@ -1,6 +1,17 @@
 sandbox_mode = "workspace-write"
 approval_policy = "on-request"
 evidence_root = "/tmp/nurseconnect-evidence"
+features.multi_agent = true
+
+[agents]
+max_threads = 5
+max_depth = 1
+
+[profiles.prepr]
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+approval_policy = "never"
+sandbox_mode = "workspace-write"
 
 [mcp_servers.context7]
 command = "npx"
@@ -21,3 +32,51 @@ args = [
 command = "/bin/bash"
 args = ["scripts/start-repo-qa.sh"]
 cwd = "."
+
+[roles.scribe]
+config = ".codex/agents/scribe.toml"
+enabled = true
+
+[roles.atlas]
+config = ".codex/agents/atlas.toml"
+enabled = true
+
+[roles.forge]
+config = ".codex/agents/forge.toml"
+enabled = true
+
+[roles.pixel]
+config = ".codex/agents/pixel.toml"
+enabled = true
+
+[roles.gatekeeper]
+config = ".codex/agents/gatekeeper.toml"
+enabled = true
+
+[roles.sentinel]
+config = ".codex/agents/sentinel.toml"
+enabled = true
+
+[roles.security_reviewer]
+config = ".codex/agents/security_reviewer.toml"
+enabled = true
+
+[roles.architecture_reviewer]
+config = ".codex/agents/architecture_reviewer.toml"
+enabled = true
+
+[roles.qa_reviewer]
+config = ".codex/agents/qa_reviewer.toml"
+enabled = true
+
+[roles.ops_reviewer]
+config = ".codex/agents/ops_reviewer.toml"
+enabled = true
+
+[roles.performance_reviewer]
+config = ".codex/agents/performance_reviewer.toml"
+enabled = true
+
+[roles.contracts_reviewer]
+config = ".codex/agents/contracts_reviewer.toml"
+enabled = true

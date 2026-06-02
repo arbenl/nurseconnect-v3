@@ -5,23 +5,46 @@ This runbook defines the required workflow for NurseConnect slices.
 ## Standard Flow
 
 1. Start from clean, synced `main`.
-2. Define the slice.
-3. Create a fresh branch: `codex/<slice-name>`.
-4. Implement only that slice.
-5. Run focused deterministic local checks while developing.
-6. Run `pnpm verify-slice` and keep the printed `run_root`.
-7. Run `pnpm verify-slice -- --run-root <run_root> --static`.
-8. Run the pre-PR reviewer pool from the generated reviewer plan.
-9. Fix every `MUST_FIX` finding, or document a technical rejection before PR.
-10. Run `pnpm verify-slice -- --run-root <run_root> --required-gates`.
-11. Open a PR.
-12. Let CI, the required `Sonar Quality Gate`, Copilot, and human review run.
-13. Fix PR findings until all review threads are resolved.
-14. Merge only when all required checks are green, including PR Finalizer.
-15. Sync local `main`.
-16. Update Notion when the slice changes program, roadmap, launch, or milestone state.
-17. Delete the local and remote branch.
-18. Start the next slice from fresh `main`.
+2. Draft the slice design from canonical program and tracker truth.
+3. Send the design to configured external reviewers when available.
+4. Apply accepted design-review feedback before implementation.
+5. Create a fresh branch: `codex/<slice-name>`.
+6. Implement only that slice.
+7. Run focused deterministic local checks while developing.
+8. Run `pnpm verify-slice` and keep the printed `run_root`.
+9. Run `pnpm verify-slice -- --run-root <run_root> --static`.
+10. Run the pre-PR reviewer pool from the generated reviewer plan.
+11. Fix every `MUST_FIX` finding, or document a technical rejection before PR.
+12. Run `pnpm verify-slice -- --run-root <run_root> --required-gates`.
+13. Open one PR with evidence.
+14. Monitor CI, Sonar, Copilot, Vercel if present, PR Finalizer, and review threads.
+15. Fix PR findings until all required checks and required reviews are green.
+16. Merge only when all required checks are green, including PR Finalizer.
+17. Sync local `main`.
+18. Update Notion or external trackers when the slice changes program state.
+19. Delete the local and remote branch.
+20. Record closeout evidence and promote the next slice only from fresh `main`.
+
+## Design Gate Before Implementation
+
+Do not start implementation until the slice design has been reviewed or explicitly waived by the user. The design packet should include:
+
+- tracker ID, branch name, and risk tier
+- why this slice is next
+- exact scope and explicit non-scope
+- expected files or boundaries
+- data, auth, tenant, PHI, and operational risks
+- rollback or mitigation plan
+- tests and verification commands
+- acceptance criteria that can fail deterministically
+
+Use configured model reviewers as advisory reviewers, not authority. Prefer this order when callable in the active runtime:
+
+- Claude for architecture, coupling, feasibility, and test-plan critique
+- Gemini Pro for product, workflow, UX, accessibility, and copy critique
+- Copilot Pro+ for implementation-risk and PR-review style critique
+
+Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root>` to write review receipts under `<run_root>/reviews/`. If a reviewer is unavailable, blocked, unauthenticated, or quota-limited, record the blocker and either use the strongest available fallback or ask the user for the external review result. Accepted findings must update the design before branch creation. Rejected findings need a short technical rationale.
 
 ## Verify Slice
 
@@ -113,3 +136,14 @@ The PR body should also state:
 - whether every `MUST_FIX` was fixed or technically rejected
 - local static gate result
 - local required gate result
+
+## Closeout And Promotion
+
+After merge:
+
+1. Sync local `main` and verify it is clean.
+2. Confirm the merged PR checks are green.
+3. Delete the local and remote feature branch.
+4. Update repo tracker state or external tracker state when authorized.
+5. Record closeout evidence: PR URL, merge commit, verify-slice run root, reviewer disposition, and remaining risks.
+6. Promote the next tracker slice only after `main` is synced and clean.
