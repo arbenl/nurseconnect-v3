@@ -17,6 +17,40 @@ describe("email verification config", () => {
     expect(config.appUrl).toBe("http://localhost:3010");
   });
 
+  it("treats empty placeholder values as unset", () => {
+    const config = resolveEmailVerificationConfig({
+      ...baseEnv,
+      APP_URL: "",
+      BETTER_AUTH_URL: "",
+      EMAIL_FROM: "",
+      POSTMARK_SERVER_TOKEN: "",
+    });
+
+    expect(config).toMatchObject({
+      mode: "off",
+      provider: "disabled",
+      appUrl: "http://localhost:3010",
+    });
+  });
+
+  it("falls back to Better Auth or deployment URLs when APP_URL is empty", () => {
+    expect(
+      resolveEmailVerificationConfig({
+        ...baseEnv,
+        APP_URL: "",
+        BETTER_AUTH_URL: "https://auth.nurseconnect.example",
+      }).appUrl,
+    ).toBe("https://auth.nurseconnect.example");
+
+    expect(
+      resolveEmailVerificationConfig({
+        ...baseEnv,
+        APP_URL: "",
+        VERCEL_URL: "preview.nurseconnect.example",
+      }).appUrl,
+    ).toBe("https://preview.nurseconnect.example");
+  });
+
   it("rejects off mode in production", () => {
     expect(() =>
       resolveEmailVerificationConfig({

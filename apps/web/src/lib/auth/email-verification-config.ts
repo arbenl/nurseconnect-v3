@@ -17,6 +17,15 @@ export type EmailVerificationConfig = {
 
 type ConfigInput = Record<string, string | undefined>;
 
+function emptyToUndefined(input: ConfigInput): ConfigInput {
+  return Object.fromEntries(
+    Object.entries(input).map(([key, value]) => [
+      key,
+      value?.trim() ? value : undefined,
+    ]),
+  );
+}
+
 const rawConfigSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PHASE: z.string().optional(),
@@ -35,9 +44,9 @@ function deploymentUrl(input: ConfigInput) {
 
 function resolvePublicAppUrl(input: ConfigInput) {
   return (
-    input.APP_URL ??
-    input.BETTER_AUTH_URL ??
-    deploymentUrl(input) ??
+    input.APP_URL ||
+    input.BETTER_AUTH_URL ||
+    deploymentUrl(input) ||
     "http://localhost:3010"
   );
 }
@@ -49,9 +58,10 @@ function uniqueOrigins(origins: Array<string | undefined>) {
 export function resolveEmailVerificationConfig(
   input: ConfigInput = process.env,
 ): EmailVerificationConfig {
+  const normalizedInput = emptyToUndefined(input);
   const raw = {
-    ...input,
-    APP_URL: resolvePublicAppUrl(input),
+    ...normalizedInput,
+    APP_URL: resolvePublicAppUrl(normalizedInput),
   };
   const parsed = rawConfigSchema.parse(raw);
   const appUrl = parsed.APP_URL ?? "http://localhost:3010";
@@ -68,7 +78,7 @@ export function resolveEmailVerificationConfig(
     throw new Error("[env] Production email verification must run in observe or enforce mode.");
   }
 
-  if (isProduction && !isProductionBuild && !input.APP_URL && !input.BETTER_AUTH_URL) {
+  if (isProduction && !isProductionBuild && !normalizedInput.APP_URL && !normalizedInput.BETTER_AUTH_URL) {
     throw new Error("[env] Production email verification requires APP_URL or BETTER_AUTH_URL.");
   }
 
@@ -96,7 +106,7 @@ export function resolveEmailVerificationConfig(
     mode: parsed.NC_EMAIL_VERIFICATION_MODE,
     provider: parsed.EMAIL_PROVIDER,
     appUrl,
-    trustedOrigins: uniqueOrigins([appUrl, input.BETTER_AUTH_URL, deploymentUrl(input)]),
+    trustedOrigins: uniqueOrigins([appUrl, normalizedInput.BETTER_AUTH_URL, deploymentUrl(normalizedInput)]),
     emailFrom: parsed.EMAIL_FROM,
     postmarkServerToken: parsed.POSTMARK_SERVER_TOKEN,
   };

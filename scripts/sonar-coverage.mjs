@@ -26,6 +26,11 @@ const targets = [
 
 const dbCoverageTargets = [
   {
+    filter: "web",
+    config: "vitest.config.node.ts",
+    reportsDirectory: "coverage/node",
+  },
+  {
     filter: "@nurseconnect/domain-identity",
     config: "vitest.db.config.ts",
     reportsDirectory: "coverage/db",
