@@ -51,19 +51,23 @@ Completed closeout evidence:
 - `NC-E0-01 / phase-0-identity-link` merged in PR #73 on 2026-06-02.
 - Merge commit: `d636a890288955c0b5a5767c05956310d4a89bfb`.
 - Required checks passed: `Type Check & Lint`, `Sonar Coverage`, `Sonar Quality Gate`, `Unit Tests (jsdom)`, `DB Integration Tests (node)`, `E2E API Tests`, `E2E UI Smoke Gate`, `PR Finalizer`, and `GitGuardian Security Checks`.
+- `NC-E0-02 / production-email-verification` merged in PR #75 on 2026-06-02.
+- Merge commit: `f534fd797378484820d42d612dcc94cbbdf48a33`.
+- Required checks passed: `Type Check & Lint`, `Sonar Coverage`, `Sonar Quality Gate`, `Unit Tests (jsdom)`, `DB Integration Tests (node)`, `E2E API Tests`, `E2E UI Smoke Gate`, `PR Finalizer`, and `GitGuardian Security Checks`.
+- Post-merge `main` CI harness regression was fixed in PR #76 on 2026-06-02 at `308d4d255f5da976480d591825d60b23953b7a34`; [`main` CI run #261](https://github.com/arbenl/nurseconnect-v3/actions/runs/26846870192) passed.
 
-The next promoted slice after program closeout is:
+The next promoted slice after the `NC-E0-02` closeout is:
 
 ```text
-NC-E0-02 / production-email-verification
+NC-E0-03 / env-secret-checks
 ```
 
 Scope:
 
-- require email verification in production auth configuration
-- keep dev/test usable without production rollout friction
-- prove admin bootstrap and shell-claim assumptions with focused tests
-- document rollout risk and rollback/mitigation
+- harden runtime environment validation and documentation
+- keep `pnpm env:check` fail-closed for required production-like variables
+- keep secret scanning fail-closed and document operator expectations
+- clarify Sonar, Sentinel, Sentry, and production-safe config boundaries for the next implementation slice
 
 ## Slice Execution Contract
 
