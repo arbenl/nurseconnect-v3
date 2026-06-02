@@ -44,29 +44,6 @@ else
   echo "Skipping coverage run (SONAR_RUN_COVERAGE=${SONAR_RUN_COVERAGE})"
 fi
 
-set +e
-pnpm sonar:scan 2>&1 | tee "$SCAN_LOG"
-scan_status=${PIPESTATUS[0]}
-set -e
-
-if (( scan_status != 0 )); then
-  {
-    echo "# Sonar Summary"
-    echo
-    echo "- scan_status: FAIL (${scan_status})"
-    echo "- enforcement: ${SONAR_ENFORCEMENT}"
-    echo "- host: ${SONAR_HOST_URL}"
-    echo "- project: ${SONAR_PROJECT_KEY}"
-  } >"$SUMMARY_MD"
-
-  if [[ "$SONAR_ENFORCEMENT" == "warn" ]]; then
-    echo "::warning::Sonar scan failed (status ${scan_status}) in warn mode"
-    exit 0
-  fi
-
-  exit "$scan_status"
-fi
-
 QG_URL="${SONAR_HOST_URL%/}/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}"
 DASHBOARD_URL="${SONAR_HOST_URL%/}/dashboard?id=${SONAR_PROJECT_KEY}"
 
@@ -75,8 +52,8 @@ if [[ -n "${SONAR_PULLREQUEST_KEY}" ]]; then
   DASHBOARD_URL="${DASHBOARD_URL}&pullRequest=${SONAR_PULLREQUEST_KEY}"
 fi
 
-set +e
-node - "$QG_URL" "$QG_JSON" <<'NODE'
+fetch_quality_gate() {
+  node - "$QG_URL" "$QG_JSON" <<'NODE'
 const fs = require("node:fs");
 const http = require("node:http");
 const https = require("node:https");
@@ -129,6 +106,51 @@ req.on("error", error => {
 
 req.end();
 NODE
+}
+
+publish_step_summary() {
+  if [[ -z "${GITHUB_STEP_SUMMARY:-}" || ! -f "$SUMMARY_MD" ]]; then
+    return
+  fi
+
+  {
+    echo "## Sonar Baseline"
+    echo
+    cat "$SUMMARY_MD"
+  } >>"$GITHUB_STEP_SUMMARY"
+}
+
+set +e
+pnpm sonar:scan 2>&1 | tee "$SCAN_LOG"
+scan_status=${PIPESTATUS[0]}
+set -e
+
+if (( scan_status != 0 )); then
+  {
+    echo "# Sonar Summary"
+    echo
+    echo "- scan_status: FAIL (${scan_status})"
+    echo "- quality_gate: NOT_QUERIED_AFTER_SCAN_FAILURE"
+    echo "- enforcement: ${SONAR_ENFORCEMENT}"
+    echo "- host: ${SONAR_HOST_URL}"
+    echo "- project: ${SONAR_PROJECT_KEY}"
+    if [[ -n "${SONAR_PULLREQUEST_KEY}" ]]; then
+      echo "- pull_request: ${SONAR_PULLREQUEST_KEY}"
+    fi
+    echo "- dashboard: ${DASHBOARD_URL}"
+  } >"$SUMMARY_MD"
+  publish_step_summary
+
+  if [[ "$SONAR_ENFORCEMENT" == "warn" ]]; then
+    echo "::error::Sonar scan failed (status ${scan_status}) in warn mode; not advisory because no fresh analysis was uploaded"
+    exit "$scan_status"
+  fi
+
+  exit "$scan_status"
+fi
+
+set +e
+fetch_quality_gate
 qg_fetch_status=$?
 set -e
 
@@ -142,6 +164,7 @@ if (( qg_fetch_status != 0 )); then
     echo "- host: ${SONAR_HOST_URL}"
     echo "- project: ${SONAR_PROJECT_KEY}"
   } >"$SUMMARY_MD"
+  publish_step_summary
 
   if [[ "$SONAR_ENFORCEMENT" == "warn" ]]; then
     echo "::warning::Could not fetch Sonar quality gate in warn mode"
@@ -167,6 +190,7 @@ qg_status="$(node -e "const fs=require('node:fs');const d=JSON.parse(fs.readFile
   fi
   echo "- dashboard: ${DASHBOARD_URL}"
 } >"$SUMMARY_MD"
+publish_step_summary
 
 if [[ "$qg_status" != "OK" ]]; then
   if [[ "$SONAR_ENFORCEMENT" == "warn" ]]; then

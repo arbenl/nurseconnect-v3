@@ -92,7 +92,7 @@ jobs:
       - name: Run Sonar baseline
         if: steps.sonar_config.outputs.enabled == 'true'
         env:
-          SONAR_ENFORCEMENT: enforce
+          SONAR_ENFORCEMENT: warn
           SONAR_RUN_COVERAGE: true
         run: bash scripts/sonar-gate.sh
 

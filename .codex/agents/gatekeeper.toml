@@ -1,0 +1,16 @@
+name = "Gatekeeper"
+enabled = true
+can_modify_product = false
+mode = "verification"
+owned_scope = [
+  "tmp/multi-agent",
+  "scripts",
+  ".github/workflows"
+]
+checks = [
+  "pnpm verify-slice -- --static",
+  "pnpm verify-slice -- --required-gates",
+  "pnpm mcp:preflight",
+  "pnpm gate:release"
+]
+notes = "Owns deterministic evidence and merge-safe gate discipline."
