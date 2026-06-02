@@ -20,7 +20,7 @@ describe("verify-slice workflow", () => {
     try {
       execFileSync(
         "bash",
-        [scriptPath, "--base", "HEAD", "--run-root", runRoot],
+        [scriptPath, "--base", "HEAD", "--run-root", runRoot, "--allow-main"],
         { cwd: repoRoot, encoding: "utf8" }
       );
 
@@ -78,6 +78,7 @@ describe("verify-slice workflow", () => {
           "HEAD",
           "--run-root",
           runRoot,
+          "--allow-main",
           "--model-review-packet",
           packet,
           "--model-reviewers",
