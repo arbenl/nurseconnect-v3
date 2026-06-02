@@ -9,7 +9,17 @@
 - [ ] `MUST_FIX` count:
 - [ ] `pnpm verify-slice -- --run-root <run-root> --static` result:
 - [ ] `pnpm verify-slice -- --run-root <run-root> --required-gates` result:
-- [ ] PR `Sonar Quality Gate` result:
+
+### Required Gates
+- [ ] `Type Check & Lint` result:
+- [ ] `Unit Tests (jsdom)` result:
+- [ ] `DB Integration Tests (node)` result:
+- [ ] `E2E API Tests` result:
+- [ ] `E2E UI Smoke Gate` result:
+- [ ] `Sonar Coverage` result:
+- [ ] `Sonar Quality Gate` result:
+- [ ] `GitGuardian Security Checks` result:
+- [ ] `PR Finalizer` result:
 
 ### Logs
 - [ ] Logs path: `artifacts/<TASK_ID>/validation.log`
@@ -23,6 +33,7 @@
 
 ## Pilot guardrails
 - [ ] No protected auth/routing/proxy/API contract files were changed.
+- [ ] N/A: docs/config-only PR with no protected runtime route, auth, proxy, or API contract changes.
 - [ ] Protected files are explicitly allowed below:
   - [ ] `path/to/file` (`reason`)
 
@@ -30,4 +41,5 @@
 - [ ] I verified product flow behavior is unchanged.
 - [ ] I included local run output for required checks in the evidence block.
 - [ ] I fixed or technically rejected all `MUST_FIX` reviewer findings.
+- [ ] I followed `docs/runbooks/slice_workflow.md`.
 - [ ] I have read and agree to the merge gate policy.

@@ -46,18 +46,24 @@ The active phase is **NC-E0: Program Operating System + Phase 0 Stabilization**.
 
 Phase 0 is intentionally boring: close cheap high-assurance gaps before schema-wide tenancy, CRM, outbox, or compliance work.
 
-The first implementation slice after this docs/process setup is:
+Completed closeout evidence:
+
+- `NC-E0-01 / phase-0-identity-link` merged in PR #73 on 2026-06-02.
+- Merge commit: `d636a890288955c0b5a5767c05956310d4a89bfb`.
+- Required checks passed: `Type Check & Lint`, `Sonar Coverage`, `Sonar Quality Gate`, `Unit Tests (jsdom)`, `DB Integration Tests (node)`, `E2E API Tests`, `E2E UI Smoke Gate`, `PR Finalizer`, and `GitGuardian Security Checks`.
+
+The next promoted slice after program closeout is:
 
 ```text
-NC-E0-01 / phase-0-identity-link
+NC-E0-02 / production-email-verification
 ```
 
 Scope:
 
-- reconcile `users.auth_id`
-- define orphan policy
-- make the auth/domain identity bridge enforceable
-- add DB invariant tests
+- require email verification in production auth configuration
+- keep dev/test usable without production rollout friction
+- prove admin bootstrap and shell-claim assumptions with focused tests
+- document rollout risk and rollback/mitigation
 
 ## Slice Execution Contract
 

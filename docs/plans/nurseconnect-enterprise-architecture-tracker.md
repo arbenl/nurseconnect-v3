@@ -15,9 +15,9 @@ current_tracker_bridge: docs/plans/current-tracker.md
 
 | ID | Status | Slice | Work | Acceptance Criteria | Risk |
 |---|---|---|---|---|---|
-| `NC-E0-00` | `in_progress` | `program-operating-system` | Establish canonical program/tracker, slice philosophy, and runner guidance. | Canonical docs agree on active program, active tracker, next slice, invariants, falsifiable slice rules, design-review gate, PR closeout, and next-slice promotion. | Low |
-| `NC-E0-01` | `ready` | `phase-0-identity-link` | Reconcile and enforce `users.auth_id`. | Reconciliation report, orphan policy, migration/test plan, invariant tests. | Medium |
-| `NC-E0-02` | `planned` | `production-email-verification` | Make email verification production-required with rollout controls. | Prod config requires verification; dev/test unaffected; auth E2E proves gates. | Low-Medium |
+| `NC-E0-00` | `completed` | `program-closeout-and-gates` | Establish canonical program/tracker, slice philosophy, runner guidance, closeout discipline, and repo-owned merge-gate artifacts. | Canonical docs agree on active program, active tracker, next slice, invariants, falsifiable slice rules, design-review gate, PR closeout, next-slice promotion, CODEOWNERS, branch-protection policy, and PR evidence requirements. | Low |
+| `NC-E0-01` | `completed` | `phase-0-identity-link` | Reconcile and enforce `users.auth_id`. | PR #73 merged at `d636a890288955c0b5a5767c05956310d4a89bfb`; reconciliation report, orphan policy, staged FK/NOT NULL plan, invariant tests, Sonar, and PR Finalizer passed. | Medium |
+| `NC-E0-02` | `ready` | `production-email-verification` | Make email verification production-required with rollout controls. | Prod config requires verification; dev/test unaffected; auth E2E proves gates. | Low-Medium |
 | `NC-E0-03` | `planned` | `env-secret-checks` | Harden env and secret checks. | `pnpm env:check` validates required vars; Gitleaks remains fail-closed. | Low |
 | `NC-E0-04` | `planned` | `repo-hygiene` | Remove generated artifacts and tighten `.gitignore`. | Build/test does not reintroduce tracked generated files. | Low |
 | `NC-E0-05` | `planned` | `module-boundary-guard` | Add deterministic module-boundary enforcement and 150-line modularity guard for new/modified files. | Illegal cross-domain imports fail CI; oversized new/modified source files fail except approved generated/migration/config exceptions. | Medium |

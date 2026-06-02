@@ -137,6 +137,43 @@ The PR body should also state:
 - local static gate result
 - local required gate result
 
+The PR body must keep the `Evidence`, `Logs`, `Screenshots`, `Runbook`, and
+`Pilot guardrails` sections from `.github/PULL_REQUEST_TEMPLATE.md`; `PR
+Finalizer` parses those sections and fails the PR when required evidence is
+missing.
+
+## Merge Gate Artifacts
+
+Repo-owned merge gate artifacts live in `.github/`:
+
+- `.github/CODEOWNERS` names owner review for auth, schema, contract, workflow,
+  reviewer, and canonical program paths.
+- `.github/branch-protection.json` records the GitHub REST branch-protection
+  payload for `main`, including required CI/Sonar/GitGuardian/PR Finalizer
+  contexts and CODEOWNERS enforcement.
+
+The JSON file is declarative until an authorized maintainer applies it with the
+`apply_command` embedded in the file. Do not treat the file itself as proof that
+GitHub server-side branch protection is active; verify with the GitHub API when
+closeout requires it.
+
+Authorized maintainers can apply the recorded policy after merge:
+
+```bash
+jq '.payload' .github/branch-protection.json \
+  | gh api --method PUT repos/arbenl/nurseconnect-v3/branches/main/protection --input -
+```
+
+Then verify server-side state:
+
+```bash
+gh api repos/arbenl/nurseconnect-v3/branches/main/protection \
+  --jq '{required_status_checks,required_pull_request_reviews,enforce_admins}'
+```
+
+Only run those commands for `arbenl/nurseconnect-v3` `main`, never for forks or
+other repositories.
+
 ## Closeout And Promotion
 
 After merge:
