@@ -29,7 +29,7 @@ The previously open decision was **tenant shape**. This ADR now closes it as org
 
 ## Decision
 
-**Decision A — shared-schema tenant isolation:** adopt **shared-schema multi-tenancy with Postgres RLS**, keyed off a session GUC (`app.current_tenant_id`), porting Interdomestik's `withTenantContext`; require a **non-superuser DB role** guarded by `assertRlsConnectionRoleReady()` (`rls-role-assertion.ts`); add `organizations` + `org_memberships`; and add `tenant_id`/`organization_id` to domain tables (with composite unique `(tenant_id, id)` on the tables we will FK-scope — not blindly all, per §5.1 of the report).
+**Decision A — shared-schema tenant isolation:** adopt **shared-schema multi-tenancy with Postgres RLS**, keyed off a session GUC (`app.current_tenant_id`) whose value is the owning `organization_id`; port Interdomestik's `withTenantContext`; require a **non-superuser DB role** guarded by `assertRlsConnectionRoleReady()` (`rls-role-assertion.ts`); add `organizations` + `org_memberships`; and add canonical `organization_id` tenant ownership to domain tables (with composite unique `(organization_id, id)` on the tables we will FK-scope — not blindly all, per §5.1 of the report).
 
 **Decision B — organization plus branch/facility:** ship **organization → branch/facility/location** as the v1 tenant shape. `organization` is the customer/contracting, legal-party, BAA/DPA, and RLS tenant boundary. `branch`/`facility`/`location` is a first-class resource scope for demand, assignments, visits, audit, exports, and branch-scoped authorization.
 
@@ -58,7 +58,7 @@ Rationale: the business model is closer to an on-demand healthcare staffing mark
 
 **Positive:** unblocks B2B and on-demand staffing; DB-enforced isolation (defense in depth) not just app filters; proven pattern; facility-scoped authorization and audit are available without a later schema-wide retrofit; platform-level nurse supply remains possible without making PHI platform-global.
 
-**Negative / costs:** every tenant-owned domain table gains `tenant_id`/`organization_id` plus the FKs and uniqueness needed for tenant-safe relationships; demand-side transactional tables also need branch/facility ownership where care-site scope applies; every query must be tenant-scoped; a non-superuser RLS connection role must be provisioned; platform-level nurse data needs a strict classification so PHI, credentialing evidence, consents, and assignment participation do not leak across tenants.
+**Negative / costs:** every tenant-owned domain table gains canonical `organization_id` tenant ownership plus the FKs and uniqueness needed for tenant-safe relationships; demand-side transactional tables also need branch/facility ownership where care-site scope applies; every query must be tenant-scoped; a non-superuser RLS connection role must be provisioned; platform-level nurse data needs a strict classification so PHI, credentialing evidence, consents, and assignment participation do not leak across tenants.
 
 **Required guardrails (port from Interdomestik):** `withTenant`/`assertTenant` query helpers, the fail-closed `assertRlsConnectionRoleReady()`, and the `abuse_test_rls.js` + `e2e-tenant-host-lanes` isolation tests in CI.
 
