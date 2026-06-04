@@ -142,6 +142,15 @@ changed_files_against_main() {
   git diff --name-only "$merge_base"...HEAD
 }
 
+merge_base_against_main() {
+  local base_ref="${STRICT_GUARD_BASE_REF:-origin/main}"
+
+  if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
+    return 1
+  fi
+  git merge-base HEAD "$base_ref"
+}
+
 is_docs_only_push() {
   local files
   local file
@@ -162,12 +171,18 @@ is_docs_only_push() {
 }
 
 run_docs_only_push_gate() {
+  local merge_base
+
   log "Running docs-only pre-push gate."
+  export DATABASE_URL="${DATABASE_URL:-postgresql://nurseconnect:nurseconnect@127.0.0.1:5432/nurseconnect_test}"
   pnpm mcp:preflight
   pnpm env:check
   pnpm repo:hygiene
-  git diff --check
+  if merge_base="$(merge_base_against_main)"; then
+    git diff --check "$merge_base"...HEAD
+  fi
   git diff --cached --check
+  git diff --check
 }
 
 main() {

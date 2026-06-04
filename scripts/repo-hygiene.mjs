@@ -34,7 +34,7 @@ const firebaseAllowedPrefixes = [
   "packages/database/drizzle/",
 ];
 
-const firebaseTerms = /\b(firebase|firestore|FIREBASE|Firestore)\b/;
+const firebaseTerms = /firebase|firestore/i;
 
 function gitLines(args) {
   const out = execFileSync("git", args, { encoding: "utf8" });
