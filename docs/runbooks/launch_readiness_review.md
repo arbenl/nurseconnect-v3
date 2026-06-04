@@ -44,6 +44,8 @@ true in the target production environment and the operator records a GO decision
   active launch service area.
 - The production app deploy is reachable at the intended hostname.
 - The production database has been migrated to the current head migration.
+- Production backup/PITR posture and restore-drill evidence have been reviewed
+  against the [Disaster Recovery Runbook](disaster-recovery.md).
 
 Use the [Production Bootstrap Runbook](production_bootstrap_runbook.md) for the
 environment and admin bootstrap procedure.
@@ -213,6 +215,9 @@ decision is GO.
 Go only when all items are true:
 
 - [ ] `pnpm gate:release` passes on clean `main`.
+- [ ] Production backup/PITR posture and restore-drill evidence have been
+      reviewed against the
+      [Disaster Recovery Runbook](disaster-recovery.md).
 - [ ] Latest release PR included a green `Sonar Quality Gate` check and PR
       summary.
 - [ ] `pnpm launch:readiness` passes on clean `main`.

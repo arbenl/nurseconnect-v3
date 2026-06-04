@@ -6,6 +6,9 @@
 * **Migrations have been applied** using the direct database URL.
 * The Vercel project is linked to this repository.
 * Application is deployed and reachable at the intended production URL.
+* Backup/PITR posture has been checked against the
+  [Disaster Recovery Runbook](disaster-recovery.md), and any launch-blocking
+  restore-drill evidence gaps are recorded.
 
 ### 1) Environment Preparation
 
