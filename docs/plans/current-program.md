@@ -58,21 +58,22 @@ Completed closeout evidence:
 - `NC-E0-03 / env-secret-checks` merged in PR #78 on 2026-06-04.
 - Merge commit: `ec3a0f7845b73235aaf3200528728beea873c754`.
 - Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and the post-merge strict release gate.
+- `NC-E0-04 / repo-hygiene` merged in PR #80 on 2026-06-04.
+- Merge commit: `6ae17d68db4a86875b6049ddfccaedea82e15183`.
+- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke.
 
-The next promoted slice after the `NC-E0-03` closeout is:
+The next promoted slice after the `NC-E0-04` closeout is:
 
 ```text
-NC-E0-04 / repo-hygiene
+NC-E0-05 / codex/module-boundary-guard
 ```
 
 Scope:
 
-- remove generated artifacts from source control where present
-- tighten `.gitignore` so deterministic build/test output stays untracked
-- verify no Firebase source remains in the active repository
-- calibrate docs-only local gates so tracker/runbook-only slices do not duplicate the full release gate before CI
-- add optional Codex/Claude/Gemini/Copilot critique debate receipts for slices that need deeper review
-- keep the slice scoped to repo hygiene, with no product runtime behavior changes
+- add deterministic module-boundary enforcement for existing package/domain ownership
+- fail CI on illegal cross-domain imports
+- add a modularity guard for oversized new or modified source files, with explicit generated/migration/config exceptions
+- keep the slice scoped to architecture enforcement and avoid product runtime behavior changes
 
 ## Slice Execution Contract
 
