@@ -94,7 +94,7 @@ Decision scope:
 The next implementation slice is:
 
 ```text
-NC-E1-03 / codex/default-tenant-backfill-plan
+NC-E1-04 / codex/tenant-isolation-tests
 ```
 
 ## Slice Execution Contract

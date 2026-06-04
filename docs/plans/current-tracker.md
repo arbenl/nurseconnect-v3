@@ -27,19 +27,20 @@ verification_command: pnpm verify-slice
 | `NC-E0-06` | `completed` | ops | Disaster recovery baseline. | PR #84 merged at `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`; DR runbook records RPO/RTO, backup assumptions, restore workflow, evidence redaction rules, and restore-drill evidence requirements; required checks, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E1-01` | `completed` | architecture | Tenant model decision. | ADR-001 accepted organization plus branch/facility/location from v1; marketplace demand is tenant/facility scoped; nurse supply is platform-level only for non-PHI routing identity; nurse eligibility/credentialing/consent/assignment/audit context is tenant/facility/jurisdiction scoped; jurisdiction is compliance/operating scope, not tenant boundary; debate evidence recorded in `docs/reviews/nc-e1-01-tenant-model-debate.md`. |
 | `NC-E1-02` | `completed` | platform + database | RLS platform mechanism. | PR #87 merged at `14c522558b630eb1ff3a2760dd27cac858ea0a8c`; tenant context wrapper, fail-closed tenant assertion, RLS connection-role assertion, focused database unit/DB tests, runbook, Sonar coverage mapping, required CI/Sonar/GitGuardian/PR Finalizer/API/UI gates, and local verify-slice evidence passed. |
-| `NC-E1-03` | `review` | platform + database | Default tenant backfill plan. | Default tenant/backfill plan and observe-before-enforce mechanism are designed in `docs/runbooks/default-tenant-backfill-plan.md` with expand/contract sequencing, rollback, jurisdiction/data-residency guardrails, out-of-band DB access evidence, and falsifiable migration readiness checks before schema work. |
+| `NC-E1-03` | `completed` | platform + database | Default tenant backfill plan. | PR #89 merged at `15a6c9ebe688a6174a1e5620e33ffd986f90e04d`; `docs/runbooks/default-tenant-backfill-plan.md` defines expand/contract sequencing, default org/facility/jurisdiction bootstrap gates, data audit and PHI classification gates, out-of-band DB access evidence, pooler/callsite constraints, pause criteria, rollback, and model-review disposition before schema work. |
+| `NC-E1-04` | `ready` | platform + database | Tenant isolation abuse tests. | Tenant A cannot read/write Tenant B through DB/API tests; shared-nurse, platform-admin, pooled-connection cleanup, and wrong-tenant negative cases are represented before production RLS enforcement. |
 
 ## Next Slice
 
 ```text
-NC-E1-03 / codex/default-tenant-backfill-plan
+NC-E1-04 / codex/tenant-isolation-tests
 ```
 
 Rationale:
 
-- PR #87 completed `NC-E1-02 / rls-platform-mechanism` at `14c522558b630eb1ff3a2760dd27cac858ea0a8c`.
-- The repo now has an additive tenant context wrapper, tenant-context assertion, RLS connection-role assertion, and database coverage mapping.
-- `NC-E1-03 / default-tenant-backfill-plan` is the next smallest safe step before schema-wide tenant columns or enforce-mode RLS policies.
+- PR #89 completed `NC-E1-03 / default-tenant-backfill-plan` at `15a6c9ebe688a6174a1e5620e33ffd986f90e04d`.
+- The repo now has the RLS platform mechanism plus a reviewed default-tenant expand/contract plan with explicit data-audit, PHI-classification, pooler, audit, payout/export, and rollback gates.
+- `NC-E1-04 / tenant-isolation-tests` is the next smallest safe step before schema-wide tenant columns or enforce-mode RLS policies.
 
 ## Recent Closeout Evidence
 
@@ -53,6 +54,7 @@ Rationale:
 | `NC-E0-06 / dr-baseline` | `https://github.com/arbenl/nurseconnect-v3/pull/84` | `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811` | Disaster recovery runbook, RPO/RTO targets, backup/PITR assumptions, PHI-safe restore-drill evidence template, launch-readiness DR links, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E1-01 / tenant-model-decision` | `https://github.com/arbenl/nurseconnect-v3/pull/86` | `bb801d748c797ac94489df3a52de327ffdbdb310` | ADR-001 Decision B, tenant/facility/jurisdiction classification, marketplace nurse supply boundary, model debate evidence, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E1-02 / rls-platform-mechanism` | `https://github.com/arbenl/nurseconnect-v3/pull/87` | `14c522558b630eb1ff3a2760dd27cac858ea0a8c` | Tenant context wrapper, tenant-context assertion, RLS role assertion, database unit/DB tests, RLS runbook, Sonar coverage mapping, verify-slice static/required gates, CI, Sonar Quality Gate, Sonar PR Summary, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
+| `NC-E1-03 / default-tenant-backfill-plan` | `https://github.com/arbenl/nurseconnect-v3/pull/89` | `15a6c9ebe688a6174a1e5620e33ffd986f90e04d` | Default tenant backfill runbook, expand/contract sequence, data-audit and PHI-classification gates, model-review disposition, local verify-slice static/required gates, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 
 ## Status Rules
 
