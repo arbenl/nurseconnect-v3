@@ -25,6 +25,8 @@ Collect these inputs before making the launch decision:
   dedicated synthetic admin.
 - `GET /api/health` result from production.
 - Authenticated `GET /api/admin/ops/status` result from production.
+- Disaster recovery backup/PITR posture and restore-drill evidence result from
+  [Disaster Recovery Runbook](disaster-recovery.md).
 - Admin dashboard Launch operator signals screen observation. If a screenshot is
   needed for evidence, crop it to the non-PHI Launch operator signals area and
   redact any request, patient, partner, payment, or session context before
@@ -56,6 +58,8 @@ All hard gates must be green for GO:
 - Recent failed payouts are 0.
 - Required CI checks on the release branch or `main` are green, including the
   blocking `Sonar Quality Gate` check on the release PR.
+- Production backup/PITR posture is verified and the latest restore-drill
+  evidence is green or has an accepted HOLD mitigation.
 - Rollback owner and pause-intake owner are named.
 
 ## Soft Launch Gates
@@ -157,6 +161,7 @@ production evidence.
 - Auth monitor output location:
 - `/api/health` result summary:
 - `/api/admin/ops/status` result summary:
+- DR backup/PITR and restore-drill result:
 - Manual rehearsal result:
 - Accepted exclusions reviewed: yes / no
 - Notes:
