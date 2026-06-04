@@ -16,7 +16,7 @@ Run root: `tmp/multi-agent/design-review/nc-e2-02-tenant-memberships`
 
 ## Accepted Findings
 
-- `organization_memberships.user_id` uses `on delete restrict` so membership
+- `org_memberships.user_id` uses `on delete restrict` so membership
   rows remain access evidence unless a later legal/privacy erasure procedure
   explicitly owns hard deletion.
 - RLS policy guidance now names a fail-closed `current_setting` predicate and

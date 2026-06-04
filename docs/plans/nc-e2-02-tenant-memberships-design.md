@@ -36,7 +36,7 @@ tests, or app behavior.
 The implementation slice should add the membership foundation only:
 
 - `organizations` table as the RLS tenant boundary.
-- `organization_memberships` table linking domain `users.id` to
+- `org_memberships` table linking domain `users.id` to
   `organizations.id`.
 - tenant membership enums and indexes.
 - tenant-scoped membership query helpers in the identity/platform boundary.
@@ -103,7 +103,7 @@ Design notes:
 - `updated_at` must be maintained by an `updated_at` trigger or an equivalent
   deterministic ORM lifecycle path; default-only timestamps are not sufficient.
 
-### `organization_memberships`
+### `org_memberships`
 
 Purpose: user-to-organization relationship used by identity and authorization.
 
@@ -112,9 +112,9 @@ Minimum columns:
 - `id uuid primary key default gen_random_uuid()`
 - `organization_id uuid not null references organizations(id) on delete restrict`
 - `user_id uuid not null references users(id) on delete restrict`
-- `role organization_member_role not null`
-- `status organization_membership_status not null default 'active'`
-- `source organization_membership_source not null default 'bootstrap'`
+- `role org_member_role not null`
+- `status org_membership_status not null default 'active'`
+- `source org_membership_source not null default 'bootstrap'`
 - `created_by_user_id uuid references users(id) on delete set null`
 - `updated_by_user_id uuid references users(id) on delete set null`
 - `activated_at timestamptz`
@@ -126,9 +126,9 @@ Required indexes and constraints:
 - unique `(organization_id, user_id)` to make one current membership row
   authoritative. This unique constraint is the index for that pair; do not add a
   duplicate non-unique `(organization_id, user_id)` index.
-- index `organization_memberships_user_id_idx` on `user_id`.
-- index `organization_memberships_organization_id_idx` on `organization_id`.
-- index `organization_memberships_org_status_idx` on
+- index `org_memberships_user_id_idx` on `user_id`.
+- index `org_memberships_organization_id_idx` on `organization_id`.
+- index `org_memberships_org_status_idx` on
   `(organization_id, status)`.
 
 Allowed role enum values:
@@ -243,7 +243,7 @@ The implementation needs a deterministic single-tenant bridge:
 The implementation should prepare membership tables for RLS without broadening
 tenant-owned care data:
 
-- `organization_memberships.organization_id` is the tenant key.
+- `org_memberships.organization_id` is the tenant key.
 - RLS policy readiness should use a fail-closed predicate. The implementation
   must include a reviewed policy template equivalent to:
 
@@ -259,7 +259,7 @@ organization_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uu
   to the expected organization inside the tested helper path.
 - Readiness/guard harness updates should classify:
   - `organizations`: tenant-boundary table
-  - `organization_memberships`: tenant-owned membership table, RLS required
+  - `org_memberships`: tenant-owned membership table, RLS required
 - Cross-tenant membership reads must fail in DB-backed tests when tenant context
   is set to another organization.
 - Direct membership authorization helpers must filter `status = 'active'`.
@@ -339,7 +339,7 @@ Required gates:
 
 The implementation slice is complete only when:
 
-- `organizations` and `organization_memberships` exist with Drizzle schema,
+- `organizations` and `org_memberships` exist with Drizzle schema,
   migration SQL, and migration metadata.
 - membership helpers filter by `user_id`, `organization_id`, active status, and
   optional roles.
