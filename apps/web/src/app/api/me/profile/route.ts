@@ -1,8 +1,8 @@
-import { db, schema, eq } from "@nurseconnect/database";
+import { db, eq, schema } from "@nurseconnect/database";
 import { buildProfileUpdatePatch, ProfileValidationError } from "@nurseconnect/domain-identity";
 import { NextResponse } from "next/server";
 
-import { assertEmailVerificationAccess, authErrorResponse, getSession } from "@/server/auth";
+import { authErrorResponse, resolveCurrentSessionUser } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -22,9 +22,8 @@ export async function PATCH(req: Request) {
   let actorContext = context;
 
   try {
-    const session = await getSession();
-
-    if (!session?.user?.id) {
+    const resolved = await resolveCurrentSessionUser();
+    if (!resolved) {
       const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       logApiFailure(context, "Unauthorized", 401, startedAt, {
         source: "me.profile",
@@ -34,10 +33,9 @@ export async function PATCH(req: Request) {
 
     actorContext = {
       ...context,
-      actorId: session.user.id,
-      actorRole: "patient",
+      actorId: resolved.user.id,
+      actorRole: resolved.user.role,
     };
-    await assertEmailVerificationAccess(session, "/api/me/profile");
 
     const body = await req.json();
     const profilePatch = buildProfileUpdatePatch(body);
@@ -45,7 +43,7 @@ export async function PATCH(req: Request) {
     const [updatedUser] = await db
       .update(users)
       .set(profilePatch)
-      .where(eq(users.authId, session.user.id))
+      .where(eq(users.id, resolved.user.id))
       .returning();
 
     if (!updatedUser) {

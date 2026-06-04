@@ -2,7 +2,7 @@ import { db } from "@nurseconnect/database";
 import { getVisitNotificationsForActor } from "@nurseconnect/domain-visit";
 import { NextResponse } from "next/server";
 
-import { getCachedUser } from "@/lib/auth/user";
+import { authErrorResponse, requireAnyRole } from "@/server/auth";
 import {
   createApiLogContext,
   logApiFailure,
@@ -51,58 +51,37 @@ export async function GET(request: Request) {
     action: "me.notifications",
   });
   logApiStart(context, startedAt);
-
-  const user = await getCachedUser();
-  if (!user) {
-    const unauthorizedContext = { ...context, actorId: undefined, actorRole: undefined };
-    const response = NextResponse.json({ error: "Unauthorized" }, {
-      status: 401,
-      headers: NO_CACHE_HEADERS,
-    });
-    logApiFailure(unauthorizedContext, "Unauthorized", 401, startedAt, {
-      source: "notifications",
-    });
-    return withRequestId(response, context.requestId);
-  }
-
-  const actorContext = { ...context, actorId: user.id, actorRole: user.role };
-  if (user.role !== "admin" && user.role !== "nurse" && user.role !== "patient") {
-    const response = NextResponse.json({ error: "Forbidden" }, {
-      status: 403,
-      headers: NO_CACHE_HEADERS,
-    });
-    logApiFailure(actorContext, "Forbidden", 403, startedAt, {
-      source: "notifications",
-    });
-    return withRequestId(response, context.requestId);
-  }
-
-  const query = new URL(request.url).searchParams;
-  const sinceResult = parseSince(query.get("since"));
-  if ("error" in sinceResult) {
-    const response = NextResponse.json({ error: sinceResult.error }, {
-      status: 400,
-      headers: NO_CACHE_HEADERS,
-    });
-    logApiFailure(actorContext, sinceResult.error, 400, startedAt, {
-      source: "notifications",
-    });
-    return withRequestId(response, context.requestId);
-  }
-
-  const limitResult = parseLimit(query.get("limit"));
-  if ("error" in limitResult) {
-    const response = NextResponse.json({ error: limitResult.error }, {
-      status: 400,
-      headers: NO_CACHE_HEADERS,
-    });
-    logApiFailure(actorContext, limitResult.error, 400, startedAt, {
-      source: "notifications",
-    });
-    return withRequestId(response, context.requestId);
-  }
+  let actorContext = context;
 
   try {
+    const { user } = await requireAnyRole(["admin", "nurse", "patient"]);
+    actorContext = { ...context, actorId: user.id, actorRole: user.role };
+
+    const query = new URL(request.url).searchParams;
+    const sinceResult = parseSince(query.get("since"));
+    if ("error" in sinceResult) {
+      const response = NextResponse.json({ error: sinceResult.error }, {
+        status: 400,
+        headers: NO_CACHE_HEADERS,
+      });
+      logApiFailure(actorContext, sinceResult.error, 400, startedAt, {
+        source: "notifications",
+      });
+      return withRequestId(response, context.requestId);
+    }
+
+    const limitResult = parseLimit(query.get("limit"));
+    if ("error" in limitResult) {
+      const response = NextResponse.json({ error: limitResult.error }, {
+        status: 400,
+        headers: NO_CACHE_HEADERS,
+      });
+      logApiFailure(actorContext, limitResult.error, 400, startedAt, {
+        source: "notifications",
+      });
+      return withRequestId(response, context.requestId);
+    }
+
     const { notifications } = await getVisitNotificationsForActor(db, {
       actorUserId: user.id,
       actorRole: user.role,
@@ -113,6 +92,12 @@ export async function GET(request: Request) {
     logApiSuccess(actorContext, 200, startedAt, { count: notifications.length });
     return withRequestId(response, context.requestId);
   } catch (error) {
+    const authResponse = authErrorResponse(error, actorContext, startedAt, "notifications");
+    if (authResponse) {
+      authResponse.headers.set("Cache-Control", NO_CACHE_HEADERS["Cache-Control"]);
+      return authResponse;
+    }
+
     logApiFailure(actorContext, error, 500, startedAt, { source: "notifications" });
     return withRequestId(
       NextResponse.json(

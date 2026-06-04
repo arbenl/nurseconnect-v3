@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => {
     logApiSuccess: vi.fn(),
     maybeBootstrapFirstAdmin: vi.fn(),
     or: vi.fn(),
+    resolveCurrentSessionUser: vi.fn(),
     schema: {
       serviceRequests: {
         assignedNurseUserId: "assignedNurseUserId",
@@ -86,6 +87,7 @@ vi.mock("@/server/auth", () => ({
   assertEmailVerificationAccess: mocks.assertEmailVerificationAccess,
   authErrorResponse: mocks.authErrorResponse,
   getSession: mocks.getSession,
+  resolveCurrentSessionUser: mocks.resolveCurrentSessionUser,
 }));
 
 vi.mock("@/server/telemetry/ops-logger", () => ({
@@ -125,6 +127,7 @@ describe("email verification access routes", () => {
     mocks.logApiFailure.mockReset();
     mocks.logApiStart.mockReset();
     mocks.logApiSuccess.mockReset();
+    mocks.resolveCurrentSessionUser.mockReset();
     mocks.withRequestId.mockClear();
 
     mocks.createApiLogContext.mockReturnValue({
@@ -135,6 +138,7 @@ describe("email verification access routes", () => {
     mocks.authGetSession.mockResolvedValue(session);
     mocks.headers.mockResolvedValue(new Headers());
     mocks.authErrorResponse.mockReturnValue(unauthorizedResponse());
+    mocks.resolveCurrentSessionUser.mockResolvedValue(null);
     mocks.assertEmailVerificationAccess.mockRejectedValue(
       new mocks.UnauthorizedError("Email verification required"),
     );
@@ -162,16 +166,10 @@ describe("email verification access routes", () => {
     );
 
     expect(response.status).toBe(401);
-    expect(mocks.assertEmailVerificationAccess).toHaveBeenCalledWith(
-      session,
-      "/api/me/profile",
-    );
-    expect(mocks.authErrorResponse).toHaveBeenCalledWith(
-      expect.any(Error),
-      expect.objectContaining({ actorId: "auth-user-1" }),
-      expect.any(Number),
-      "me.profile",
-    );
+    expect(mocks.resolveCurrentSessionUser).toHaveBeenCalled();
+    expect(mocks.buildProfileUpdatePatch).not.toHaveBeenCalled();
+    expect(mocks.db.update).not.toHaveBeenCalled();
+    expect(mocks.assertEmailVerificationAccess).not.toHaveBeenCalled();
   });
 
   it("blocks /api/me/nurse mutations before availability changes", async () => {
