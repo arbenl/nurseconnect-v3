@@ -31,7 +31,7 @@ The active architecture program is:
 
 - **Do not implement the whole target architecture at once.** Every change must be a bounded slice.
 - **Identity hardening precedes tenancy.** `users.auth_id` must be reconciled and enforced before tenant membership becomes authoritative.
-- **Tenant isolation uses shared-schema Postgres RLS as the target mechanism.** Tenant shape remains a separate decision until first enterprise-customer model is confirmed.
+- **Tenant isolation uses shared-schema Postgres RLS as the target mechanism.** Tenant shape is organization plus branch/facility/location from v1; country/jurisdiction is a compliance and operating scope, not the tenant boundary.
 - **Interdomestik is a reference, not a dependency.** Copy-and-own platform patterns where useful; do not import business-domain assumptions.
 - **Outbox persistence is net-new NurseConnect work.** Interdomestik provides an interface/test reference, not a complete persisted implementation.
 - **Notifications are post-commit and non-PHI until compliance/vendor decisions are complete.**
@@ -68,18 +68,28 @@ Completed closeout evidence:
 - Merge commit: `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`.
 - Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke; docs-only local static and required gates passed.
 
-Phase 0 stabilization is complete. The next program gate is blocked until the
-tenant model decision is made:
+Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
+ADR-001 Decision B:
 
 ```text
-NC-E1-01 / codex/tenant-model-decision
+Tenant shape: organization plus branch/facility/location
 ```
 
-Blocked scope:
+Decision scope:
 
-- document the first enterprise customer model
-- close ADR-001 Decision B for flat organization vs organization plus branch
-- keep NC-E1 RLS implementation slices planned until this decision is recorded
+- customer demand is tenant/facility scoped
+- nurse supply is platform-level only for non-PHI routing identity
+- nurse eligibility, credentials, consent, assignment participation, visit access,
+  and audit evidence are tenant/facility/jurisdiction scoped
+- country/jurisdiction is a compliance and operating scope, not tenant boundary
+- multi-country production rollout requires regional/data-residency topology review
+  before launch
+
+The next implementation slice is:
+
+```text
+NC-E1-02 / codex/rls-platform-mechanism
+```
 
 ## Slice Execution Contract
 

@@ -31,7 +31,7 @@ NurseConnect reaches enterprise readiness when these are true:
 
 - every domain row has an enforceable tenant boundary
 - the auth/domain identity bridge cannot be null or ambiguous
-- authorization can express tenant, role, branch/resource, and PHI minimum-necessary constraints
+- authorization can express tenant, role, branch/facility/resource, jurisdiction, and PHI minimum-necessary constraints
 - state changes can emit durable events without losing atomicity
 - assignment notifications and retries are reliable without blocking request transactions
 - CRM primitives exist for organizations, facilities, contacts, notes, tasks, activities, and communications
@@ -98,11 +98,15 @@ NC-E6  Platformization
 - business-domain stage names
 - any PII assumptions that are not valid for PHI
 
+## Closed Program Decisions
+
+1. Tenant shape: organization plus branch/facility/location from v1.
+2. Marketplace model: customer demand is tenant/facility scoped; nurse supply is platform-level only for non-PHI routing identity, with tenant/facility/jurisdiction-specific eligibility and assignment context.
+3. Country/jurisdiction: operating and compliance scope, not the tenant boundary. Multi-country production rollout requires regional/data-residency topology review before launch.
+
 ## Open Program Decisions
 
-1. First enterprise customer model: hospital network, staffing agency, referral-partner network, franchise/multi-branch operator, or another shape.
-2. Tenant shape: flat organizations vs organization plus branch.
-3. Regulatory scope: US HIPAA only, or international/GDPR too.
-4. Notification vendor and BAA path.
-5. Worker runtime for outbox/jobs.
-6. Whether any enterprise buyer requires physical tenant isolation later.
+1. Regulatory scope: US HIPAA only, or international/GDPR too.
+2. Notification vendor and BAA path.
+3. Worker runtime for outbox/jobs.
+4. Whether any enterprise buyer requires physical tenant isolation later.
