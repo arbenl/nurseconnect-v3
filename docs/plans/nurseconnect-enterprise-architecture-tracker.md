@@ -28,8 +28,8 @@ current_tracker_bridge: docs/plans/current-tracker.md
 | ID | Status | Slice | Work | Acceptance Criteria | Risk |
 |---|---|---|---|---|---|
 | `NC-E1-01` | `completed` | `tenant-model-decision` | Decide flat org vs org+branch. | ADR-001 accepted organization plus branch/facility/location from v1; marketplace demand is tenant/facility scoped; nurse supply is platform-level only for non-PHI routing identity; jurisdiction is compliance/operating scope, not tenant boundary; debate evidence recorded in `docs/reviews/nc-e1-01-tenant-model-debate.md`. | High |
-| `NC-E1-02` | `ready` | `rls-platform-mechanism` | Add tenant context wrapper, query helpers, DB role assertion. | RLS mechanism tests pass; app refuses unsafe DB role in production-like config; implementation design includes nurse platform-vs-tenant data classification and regional/data-residency guardrails before schema work. | High |
-| `NC-E1-03` | `planned` | `default-tenant-backfill-plan` | Define expand/contract tenant migration. | Default tenant/backfill plan and observe-before-enforce mechanism approved. | High |
+| `NC-E1-02` | `completed` | `rls-platform-mechanism` | Add tenant context wrapper, query helpers, DB role assertion. | PR #87 merged at `14c522558b630eb1ff3a2760dd27cac858ea0a8c`; RLS mechanism tests pass; app can refuse unsafe DB roles through the fail-closed role assertion; runbook records nurse platform-vs-tenant data classification, transaction-local tenant context, pooling cleanup, and regional/data-residency guardrails before schema work. | High |
+| `NC-E1-03` | `ready` | `default-tenant-backfill-plan` | Define expand/contract tenant migration. | Default tenant/backfill plan and observe-before-enforce mechanism approved. | High |
 | `NC-E1-04` | `planned` | `tenant-isolation-tests` | Add tenant isolation abuse tests. | Tenant A cannot read/write Tenant B in DB/API tests. | High |
 
 ## NC-E2 — Identity/AuthZ Platform
