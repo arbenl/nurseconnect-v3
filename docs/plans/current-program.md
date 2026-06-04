@@ -65,7 +65,7 @@ Completed closeout evidence:
 The next promoted slice after the `NC-E0-04` closeout is:
 
 ```text
-NC-E0-05 / module-boundary-guard
+NC-E0-05 / codex/module-boundary-guard
 ```
 
 Scope:
