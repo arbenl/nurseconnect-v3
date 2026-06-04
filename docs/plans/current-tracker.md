@@ -29,19 +29,20 @@ verification_command: pnpm verify-slice
 | `NC-E1-02` | `completed` | platform + database | RLS platform mechanism. | PR #87 merged at `14c522558b630eb1ff3a2760dd27cac858ea0a8c`; tenant context wrapper, fail-closed tenant assertion, RLS connection-role assertion, focused database unit/DB tests, runbook, Sonar coverage mapping, required CI/Sonar/GitGuardian/PR Finalizer/API/UI gates, and local verify-slice evidence passed. |
 | `NC-E1-03` | `completed` | platform + database | Default tenant backfill plan. | PR #89 merged at `15a6c9ebe688a6174a1e5620e33ffd986f90e04d`; `docs/runbooks/default-tenant-backfill-plan.md` defines expand/contract sequencing, default org/facility/jurisdiction bootstrap gates, data audit and PHI classification gates, out-of-band DB access evidence, pooler/callsite constraints, pause criteria, rollback, and model-review disposition before schema work. |
 | `NC-E1-04` | `completed` | platform + database | Tenant isolation abuse tests. | PR #91 merged at `81035fad9d1fea3e17c0d43731d8ab9fdcf31901`; versioned tenant-isolation contract, readiness/guard/enforce harness modes, focused script tests, pooled-connection assertion reference, runbook, model-review disposition, verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
-| `NC-E2-01` | `ready` | identity + platform | Move current-user resolution into one platform identity boundary. | All role checks resolve through one function; bypass tests fail on alternate paths. |
+| `NC-E2-01` | `completed` | identity + platform | Move current-user resolution into one platform identity boundary. | PR #93 merged at `b46861d353cc196ffbfaf1a456952414ff28bae0`; `/api/me/profile` and `/api/me/notifications` now use centralized current-user/role resolution; the legacy cached-user helper was removed; AST guard coverage blocks direct `users.authId` current-user lookups outside approved identity/schema/test boundaries; Copilot findings were fixed and resolved; verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
+| `NC-E2-02` | `ready` | identity + platform + database | Add org membership model after tenant shape decision. | Membership queries are tenant-scoped and tested. |
 
 ## Next Slice
 
 ```text
-NC-E2-01 / codex/platform-identity
+NC-E2-02 / codex/tenant-memberships
 ```
 
 Rationale:
 
-- PR #91 completed `NC-E1-04 / tenant-isolation-tests` at `81035fad9d1fea3e17c0d43731d8ab9fdcf31901`.
-- The repo now has the RLS platform mechanism, reviewed default-tenant expand/contract plan, and a tenant-isolation abuse-test harness that can move from readiness to guard to enforce as tenant-owned schema/RLS lands.
-- `NC-E2-01 / platform-identity` is the next smallest safe step before tenant memberships and tenant/resource-aware authorization become authoritative.
+- PR #93 completed `NC-E2-01 / platform-identity` at `b46861d353cc196ffbfaf1a456952414ff28bae0`.
+- Current-user resolution is now centralized enough to make tenant membership lookups and tenant/resource-aware authorization testable through one identity boundary.
+- `NC-E2-02 / tenant-memberships` is the next smallest safe step toward tenant-scoped authorization before broader platform AuthZ policies.
 
 ## Recent Closeout Evidence
 
@@ -57,6 +58,7 @@ Rationale:
 | `NC-E1-02 / rls-platform-mechanism` | `https://github.com/arbenl/nurseconnect-v3/pull/87` | `14c522558b630eb1ff3a2760dd27cac858ea0a8c` | Tenant context wrapper, tenant-context assertion, RLS role assertion, database unit/DB tests, RLS runbook, Sonar coverage mapping, verify-slice static/required gates, CI, Sonar Quality Gate, Sonar PR Summary, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E1-03 / default-tenant-backfill-plan` | `https://github.com/arbenl/nurseconnect-v3/pull/89` | `15a6c9ebe688a6174a1e5620e33ffd986f90e04d` | Default tenant backfill runbook, expand/contract sequence, data-audit and PHI-classification gates, model-review disposition, local verify-slice static/required gates, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E1-04 / tenant-isolation-tests` | `https://github.com/arbenl/nurseconnect-v3/pull/91` | `81035fad9d1fea3e17c0d43731d8ab9fdcf31901` | Versioned tenant-isolation contract, readiness/guard/enforce harness modes, focused script tests, pooled-connection assertion reference, runbook, model-review disposition, local verify-slice static/required gates, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
+| `NC-E2-01 / platform-identity` | `https://github.com/arbenl/nurseconnect-v3/pull/93` | `b46861d353cc196ffbfaf1a456952414ff28bae0` | Central current-user resolver adoption for `/api/me/profile`, centralized role guard for `/api/me/notifications`, legacy cached-user helper removal, AST current-user boundary guard, Copilot finding fixes, local verify-slice static/required gates, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 
 ## Status Rules
 
