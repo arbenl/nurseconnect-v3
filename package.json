@@ -33,6 +33,7 @@
     "multiagent:sonar": "bash scripts/multi-agent/sonar-agent.sh",
     "model-review": "node scripts/multi-agent/model-review.mjs",
     "repo:hygiene": "node scripts/repo-hygiene.mjs",
+    "tenant:isolation": "node scripts/tenant-isolation-abuse.mjs",
     "architecture:boundaries": "node scripts/check-architecture-boundaries.mjs",
     "sentry:advisory": "node scripts/multi-agent/sentry-advisory.mjs",
     "verify-slice": "bash scripts/multi-agent/verify-slice.sh",
