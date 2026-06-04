@@ -7,28 +7,16 @@
         "patterns": [
           {
             "group": ["firebase/*", "firebase-admin/*", "@firebase/*"],
-            "message": "Firebase is quarantined. Import from @/legacy/firebase/ if truly needed, or use @nurseconnect/database."
+            "message": "Firebase is not supported in NurseConnect V3. Use Better Auth and @nurseconnect/database."
           },
           {
             "group": ["@/lib/firebase*", "@/lib/firebaseClient*"],
-            "message": "Firebase files moved to @/legacy/firebase/. Update your import path."
+            "message": "Firebase is not supported in NurseConnect V3. Use Better Auth and @nurseconnect/database."
           }
         ]
       }
     ]
   },
-  "overrides": [
-    {
-      "files": [
-        "src/legacy/**/*",
-        "src/lib/auth/config.ts",
-        "vitest.config.emu.ts"
-      ],
-      "rules": {
-        "no-restricted-imports": "off"
-      }
-    }
-  ],
   "settings": {
     "import/resolver": {
       "typescript": {

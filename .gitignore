@@ -1,27 +1,29 @@
 # Dependencies
 node_modules/
-pnpm-debug.log*
 .pnpm-store/
 .pnp*
 .pnp.*
 
-# builds & caches
+# Builds and caches
 .turbo/
 .next/
 coverage/
 dist/
 out/
 **/*.tsbuildinfo
+apps/web/tsconfig.tsbuildinfo
 
 # Vercel
 .vercel
 
-# env files (keep examples tracked)
+# Env files (keep examples tracked)
 .env*
 !.env.example
 apps/*/.env.local
 apps/*/.env.development.local
 apps/*/.env.production.local
+apps/web/.env
+.env.test
 
 # Logs
 *.log
@@ -35,35 +37,25 @@ pnpm-debug.log*
 Thumbs.db
 
 # Test outputs
-coverage
 .nyc_output
 playwright-report/
 test-results/
 apps/web/test_output*.txt
+server.pid
+phase0_pack.zip
 
 # Editor
 .vscode/
 
+# Embedded repos (keep on disk but do not track)
 nurseconnect_ecosystem/
 nurseconnect_ecosystem_backup/
 nurseconnect_ecosystem_git/
-# node/next
-node_modules/
-.next/
-out/
-pnpm-debug.log*
-
-# IDE
-.vscode/
-.DS_Store
 
 # firebase emulator cache (optional)
 .firebase/
-
-# embedded repos (keep on disk but don't track)
-nurseconnect_ecosystem/
-nurseconnect_ecosystem_backup/
-nurseconnect_ecosystem_git/
+apps/web/.seed/
+apps/web/firebase-export-*/
 
 # agent outputs
 /output/
@@ -73,12 +65,6 @@ nurseconnect_ecosystem_git/
 .worktrees/
 .codex/playwright-profile/
 .codex/playwright-output/
-.env.test
-.turbo/
-
-# Firebase emulator exports / local seeds
-apps/web/.seed/
-apps/web/firebase-export-*/
 
 # Drizzle local artifacts (migrations are tracked, only ignore cache if needed)
 
@@ -88,9 +74,3 @@ tmp/
 
 # Steer run artifacts
 artifacts/
-
-# local web env (forbidden in V3)
-apps/web/.env
-.env.test
-# Build artifacts
-apps/web/tsconfig.tsbuildinfo

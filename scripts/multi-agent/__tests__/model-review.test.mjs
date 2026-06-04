@@ -46,6 +46,40 @@ describe("model-review runner", () => {
     }
   });
 
+  it("generates debate synthesis receipts when requested", () => {
+    const root = mkdtempSync(join(tmpdir(), "nurseconnect-model-review-"));
+    const packet = join(root, "packet.md");
+    writeFileSync(packet, "# Slice Design\n\nReview NC-E0-04 repo hygiene.");
+
+    try {
+      execFileSync("node", [
+        scriptPath,
+        "--packet",
+        packet,
+        "--run-root",
+        root,
+        "--reviewers",
+        "codex,claude",
+        "--debate",
+        "--dry-run",
+      ], { cwd: repoRoot });
+
+      const manifest = JSON.parse(
+        readFileSync(join(root, "reviews/model-review-manifest.json"), "utf8")
+      );
+      const debate = readFileSync(join(root, "reviews/debate.md"), "utf8");
+      const codex = readFileSync(join(root, "reviews/codex.md"), "utf8");
+
+      expect(manifest.reviewers).toEqual(["codex", "claude"]);
+      expect(manifest.debate).toBe(true);
+      expect(debate).toContain("Model Critique Debate");
+      expect(debate).toContain("READY IF DETERMINISTIC GATES PASS");
+      expect(codex).toContain("Codex implementation critique");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("fails closed when a packet contains likely secrets or PHI", () => {
     const root = mkdtempSync(join(tmpdir(), "nurseconnect-model-review-"));
     const packet = join(root, "packet.md");

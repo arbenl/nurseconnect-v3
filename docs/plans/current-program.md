@@ -70,6 +70,8 @@ Scope:
 - remove generated artifacts from source control where present
 - tighten `.gitignore` so deterministic build/test output stays untracked
 - verify no Firebase source remains in the active repository
+- calibrate docs-only local gates so tracker/runbook-only slices do not duplicate the full release gate before CI
+- add optional Codex/Claude/Gemini/Copilot critique debate receipts for slices that need deeper review
 - keep the slice scoped to repo hygiene, with no product runtime behavior changes
 
 ## Slice Execution Contract
