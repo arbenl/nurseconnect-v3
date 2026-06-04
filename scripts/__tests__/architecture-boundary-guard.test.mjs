@@ -7,6 +7,7 @@ import {
   checkLineGuard,
   checkPackageBoundaries,
   importSpecifiers,
+  parseNameStatus,
 } from "../check-architecture-boundaries.mjs";
 
 const requiredAllowlistFiles = {
@@ -53,6 +54,10 @@ describe("architecture boundary guard", () => {
     expect(violations.join("\n")).toContain("illegal cross-domain import");
   });
 
+  it("does not treat exported string constants as module re-exports", () => {
+    expect(importSpecifiers('export const packageName = "@nurseconnect/domain-nurse";')).toEqual([]);
+  });
+
   it("keeps the domain-identity to domain-nurse seam test-only", () => {
     const violations = checkPackageBoundaries(
       ["packages/domain-identity/src/domain-user.ts"],
@@ -90,6 +95,31 @@ describe("architecture boundary guard", () => {
     );
 
     expect(violations.join("\n")).toContain("grew from 170 to 171 lines");
+  });
+
+  it("uses the previous path as the base for renamed files", () => {
+    const changes = parseNameStatus("R100\0packages/domain-request/src/old.ts\0packages/domain-request/src/new.ts\0");
+    const current = { "packages/domain-request/src/new.ts": textLines(LINE_LIMIT + 2) };
+    const base = { "packages/domain-request/src/old.ts": textLines(LINE_LIMIT + 1) };
+
+    const violations = checkLineGuard(
+      changes,
+      (file) => current[file] ?? "",
+      (file) => base[file] ?? ""
+    );
+
+    expect(violations.join("\n")).toContain("grew from 151 to 152 lines");
+  });
+
+  it("skips deleted files in the line guard", () => {
+    const violations = checkLineGuard(
+      [{ file: "packages/domain-request/src/deleted.ts", status: "D" }],
+      () => {
+        throw new Error("deleted file should not be read");
+      }
+    );
+
+    expect(violations).toEqual([]);
   });
 
   it("exempts tests, route files, and app component files from the line guard", () => {

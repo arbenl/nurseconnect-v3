@@ -57,7 +57,8 @@ export function isTestFile(file) {
 export function importSpecifiers(text) {
   const specs = [];
   const patterns = [
-    /\b(?:import|export)\s+(?:type\s+)?(?:[\s\S]*?\s+from\s*)?["'](@nurseconnect\/[^"']+)["']/g,
+    /\bimport\s+(?:type\s+)?(?:[^"']*?\s+from\s*)?["'](@nurseconnect\/[^"']+)["']/g,
+    /\bexport\s+(?:type\s+)?(?:\*|\{[^}]*\})\s+from\s*["'](@nurseconnect\/[^"']+)["']/g,
     /\bimport\s*\(\s*["'](@nurseconnect\/[^"']+)["']\s*\)/g,
   ];
   for (const pattern of patterns) {
@@ -87,7 +88,7 @@ export function checkPackageBoundaries(files, readText) {
       if (from.startsWith("@nurseconnect/domain-") && to.startsWith("@nurseconnect/domain-")) {
         violations.push(`${file}: illegal cross-domain import ${from} -> ${specifier}`);
       } else if (to === "@nurseconnect/ui" && from !== "@nurseconnect/ui") {
-        violations.push(`${file}: @nurseconnect/ui is only allowed from apps/web or the UI package`);
+        violations.push(`${file}: @nurseconnect/ui is not allowed from scanned package source`);
       } else if (to.startsWith("@nurseconnect/")) {
         violations.push(`${file}: unsupported package dependency ${from} -> ${specifier}`);
       }
@@ -112,20 +113,34 @@ function baseRef() {
 
 function changedFiles(base) {
   const rows = new Map();
-  for (const row of lines(git(["diff", "--name-status", `${base}...HEAD`]))) {
-    const [status, file] = row.split(/\s+/, 2);
-    rows.set(file, status);
+  let baseDiff = "";
+  try {
+    baseDiff = git(["diff", "--name-status", "-z", `${base}...HEAD`]);
+  } catch {
+    baseDiff = git(["diff", "--name-status", "-z", base, "HEAD"]);
   }
-  for (const row of lines(git(["diff", "--name-status"]))) {
-    const [status, file] = row.split(/\s+/, 2);
-    rows.set(file, status);
+  for (const change of parseNameStatus(baseDiff)) rows.set(change.file, change);
+  for (const change of parseNameStatus(git(["diff", "--name-status", "-z"]))) rows.set(change.file, change);
+  for (const change of parseNameStatus(git(["diff", "--cached", "--name-status", "-z"]))) rows.set(change.file, change);
+  for (const file of lines(git(["ls-files", "--others", "--exclude-standard"]))) rows.set(file, { file, status: "A" });
+  return [...rows.values()];
+}
+
+export function parseNameStatus(text) {
+  const fields = String(text || "").split("\0").filter(Boolean);
+  const changes = [];
+  for (let index = 0; index < fields.length;) {
+    const status = fields[index++];
+    const kind = status[0];
+    if (kind === "R" || kind === "C") {
+      const previousFile = fields[index++];
+      const file = fields[index++];
+      changes.push({ file, previousFile, status: kind });
+    } else {
+      changes.push({ file: fields[index++], status: kind });
+    }
   }
-  for (const row of lines(git(["diff", "--cached", "--name-status"]))) {
-    const [status, file] = row.split(/\s+/, 2);
-    rows.set(file, status);
-  }
-  for (const file of lines(git(["ls-files", "--others", "--exclude-standard"]))) rows.set(file, "A");
-  return [...rows].map(([file, status]) => ({ file, status }));
+  return changes.filter((change) => change.file);
 }
 
 function count(text) {
@@ -142,10 +157,11 @@ function baseText(base, file) {
 
 export function checkLineGuard(changes, readCurrent, readBase = () => "") {
   const violations = [];
-  for (const { file, status } of changes) {
+  for (const { file, previousFile, status } of changes) {
+    if (status === "D") continue;
     if (!lineGuardSource.test(file) || lineExempt.some((rule) => rule.test(file))) continue;
     const current = count(readCurrent(file));
-    const previous = status === "A" ? 0 : count(readBase(file));
+    const previous = status === "A" ? 0 : count(readBase(previousFile || file));
     if (status === "A" && current > LINE_LIMIT) violations.push(`${file}: new file has ${current} lines (limit ${LINE_LIMIT})`);
     if (status !== "A" && current > LINE_LIMIT && current > previous) {
       violations.push(`${file}: grew from ${previous} to ${current} lines while over limit ${LINE_LIMIT}`);
