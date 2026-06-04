@@ -4,7 +4,7 @@ status: active
 source_of_truth: false
 authority_note: "current-program.md is the singular source of truth; this tracker defers to it on conflict."
 owner: platform
-last_reviewed: 2026-06-02
+last_reviewed: 2026-06-04
 program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 current_tracker_bridge: docs/plans/current-tracker.md
 ---
@@ -18,8 +18,8 @@ current_tracker_bridge: docs/plans/current-tracker.md
 | `NC-E0-00` | `completed` | `program-closeout-and-gates` | Establish canonical program/tracker, slice philosophy, runner guidance, closeout discipline, and repo-owned merge-gate artifacts. | Canonical docs agree on active program, active tracker, next slice, invariants, falsifiable slice rules, design-review gate, PR closeout, next-slice promotion, CODEOWNERS, branch-protection policy, and PR evidence requirements. | Low |
 | `NC-E0-01` | `completed` | `phase-0-identity-link` | Reconcile and enforce `users.auth_id`. | PR #73 merged at `d636a890288955c0b5a5767c05956310d4a89bfb`; reconciliation report, orphan policy, staged FK/NOT NULL plan, invariant tests, Sonar, and PR Finalizer passed. | Medium |
 | `NC-E0-02` | `completed` | `production-email-verification` | Make email verification production-required with rollout controls. | PR #75 merged at `f534fd797378484820d42d612dcc94cbbdf48a33`; prod config requires verification; dev/test unaffected; auth E2E and rollout runbook exist; post-merge main CI fixed by PR #76 at `308d4d255f5da976480d591825d60b23953b7a34`. | Low-Medium |
-| `NC-E0-03` | `ready` | `env-secret-checks` | Harden env and secret checks. | `pnpm env:check` validates required vars; Gitleaks remains fail-closed. | Low |
-| `NC-E0-04` | `planned` | `repo-hygiene` | Remove generated artifacts and tighten `.gitignore`. | Build/test does not reintroduce tracked generated files. | Low |
+| `NC-E0-03` | `completed` | `env-secret-checks` | Harden env and secret checks. | PR #78 merged at `ec3a0f7845b73235aaf3200528728beea873c754`; `pnpm env:check` validates required vars; Gitleaks remains fail-closed; CI, Sonar, GitGuardian, PR Finalizer, API E2E, UI smoke, and post-merge strict release gate passed. | Low |
+| `NC-E0-04` | `ready` | `repo-hygiene` | Remove generated artifacts and tighten `.gitignore`. | Build/test does not reintroduce tracked generated files. | Low |
 | `NC-E0-05` | `planned` | `module-boundary-guard` | Add deterministic module-boundary enforcement and 150-line modularity guard for new/modified files. | Illegal cross-domain imports fail CI; oversized new/modified source files fail except approved generated/migration/config exceptions. | Medium |
 | `NC-E0-06` | `planned` | `dr-baseline` | Write and drill DR runbook. | Restore drill evidence captured. | Low |
 

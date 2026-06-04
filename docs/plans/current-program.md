@@ -3,7 +3,7 @@ plan_role: canonical_program
 status: active
 source_of_truth: true
 owner: platform
-last_reviewed: 2026-06-02
+last_reviewed: 2026-06-04
 tracker_path: docs/plans/current-tracker.md
 architecture_program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
@@ -55,19 +55,22 @@ Completed closeout evidence:
 - Merge commit: `f534fd797378484820d42d612dcc94cbbdf48a33`.
 - Required checks passed: `Type Check & Lint`, `Sonar Coverage`, `Sonar Quality Gate`, `Unit Tests (jsdom)`, `DB Integration Tests (node)`, `E2E API Tests`, `E2E UI Smoke Gate`, `PR Finalizer`, and `GitGuardian Security Checks`.
 - Post-merge `main` CI harness regression was fixed in PR #76 on 2026-06-02 at `308d4d255f5da976480d591825d60b23953b7a34`; [`main` CI run #261](https://github.com/arbenl/nurseconnect-v3/actions/runs/26846870192) passed.
+- `NC-E0-03 / env-secret-checks` merged in PR #78 on 2026-06-04.
+- Merge commit: `ec3a0f7845b73235aaf3200528728beea873c754`.
+- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and the post-merge strict release gate.
 
-The next promoted slice after the `NC-E0-02` closeout is:
+The next promoted slice after the `NC-E0-03` closeout is:
 
 ```text
-NC-E0-03 / env-secret-checks
+NC-E0-04 / repo-hygiene
 ```
 
 Scope:
 
-- harden runtime environment validation and documentation
-- keep `pnpm env:check` fail-closed for required production-like variables
-- keep secret scanning fail-closed and document operator expectations
-- clarify Sonar, Sentinel, Sentry, and production-safe config boundaries for the next implementation slice
+- remove generated artifacts from source control where present
+- tighten `.gitignore` so deterministic build/test output stays untracked
+- verify no Firebase source remains in the active repository
+- keep the slice scoped to repo hygiene, with no product runtime behavior changes
 
 ## Slice Execution Contract
 
