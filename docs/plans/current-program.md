@@ -42,7 +42,7 @@ The active architecture program is:
 
 ## Current Phase
 
-The active phase is **NC-E1: Tenant/RLS Foundation**.
+The active phase is **NC-E2: Identity/AuthZ Platform**.
 
 Phase 0 was intentionally boring: close cheap high-assurance gaps before schema-wide tenancy, CRM, outbox, or compliance work.
 
@@ -73,6 +73,12 @@ Completed closeout evidence:
 - `NC-E1-02 / rls-platform-mechanism` merged in PR #87 on 2026-06-04.
 - Merge commit: `14c522558b630eb1ff3a2760dd27cac858ea0a8c`.
 - Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, focused database type/unit/DB tests, architecture boundary guard, verify-slice static, and verify-slice required gates.
+- `NC-E1-03 / default-tenant-backfill-plan` merged in PR #89 on 2026-06-04.
+- Merge commit: `15a6c9ebe688a6174a1e5620e33ffd986f90e04d`.
+- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, model-review disposition, verify-slice static, and verify-slice required gates.
+- `NC-E1-04 / tenant-isolation-tests` merged in PR #91 on 2026-06-04.
+- Merge commit: `81035fad9d1fea3e17c0d43731d8ab9fdcf31901`.
+- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, tenant-isolation readiness/guard harness checks, focused DB context tests, model-review disposition, verify-slice static, and verify-slice required gates.
 
 Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
 ADR-001 Decision B:
@@ -94,7 +100,7 @@ Decision scope:
 The next implementation slice is:
 
 ```text
-NC-E1-04 / codex/tenant-isolation-tests
+NC-E2-01 / codex/platform-identity
 ```
 
 ## Slice Execution Contract
