@@ -40,11 +40,19 @@ Do not start implementation until the slice design has been reviewed or explicit
 
 Use configured model reviewers as advisory reviewers, not authority. Prefer this order when callable in the active runtime:
 
+- Codex for implementation critique and local-change coherence
 - Claude for architecture, coupling, feasibility, and test-plan critique
 - Gemini Pro for product, workflow, UX, accessibility, and copy critique
 - Copilot Pro+ for implementation-risk and PR-review style critique
 
-Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root>` to write review receipts under `<run_root>/reviews/`. If a reviewer is unavailable, blocked, unauthenticated, or quota-limited, record the blocker and either use the strongest available fallback or ask the user for the external review result. Accepted findings must update the design before branch creation. Rejected findings need a short technical rationale.
+Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --debate` when the slice needs multi-model critique. It writes individual receipts plus `<run_root>/reviews/debate.md` and `<run_root>/reviews/debate.json`. If a reviewer is unavailable, blocked, unauthenticated, or quota-limited, record the blocker and either use the strongest available fallback or ask the user for the external review result. Accepted findings must update the design before branch creation. Rejected findings need a short technical rationale.
+
+Default debate triggers:
+
+- Tier 2 or Tier 3 implementation slices
+- AI-affected slices
+- broad Tier 1 tooling/gate changes
+- any slice where reviewers disagree or the user requests deeper critique
 
 ## Verify Slice
 
@@ -67,21 +75,42 @@ pnpm verify-slice -- --run-root tmp/multi-agent/verify-slice/<run-id> --required
 `--static` runs:
 
 ```bash
+pnpm mcp:preflight
 pnpm env:check
+pnpm repo:hygiene
 git diff --check
 git diff --cached --check
 git diff --check <base>...HEAD
 temporary-index diff check for untracked files
+sentinel advisory
+sentry advisory
+```
+
+For non-docs slices, `--static` also runs:
+
+```bash
+sonar advisory
 pnpm -w type-check
 pnpm lint
 pnpm --filter web build
 pnpm launch:readiness
 ```
 
-`--required-gates` runs:
+For non-docs slices, `--required-gates` runs:
 
 ```bash
 pnpm gate:release
+```
+
+For docs/tracker-only slices, `--required-gates` runs the docs/static hygiene path instead of the full release gate:
+
+```bash
+pnpm mcp:preflight
+pnpm env:check
+pnpm repo:hygiene
+git diff --check
+git diff --cached --check
+git diff --check <base>...HEAD
 ```
 
 ## Reviewer Pool

@@ -9,8 +9,9 @@ ALLOW_MAIN=0
 RUN_STATIC=0
 RUN_REQUIRED=0
 MODEL_REVIEW_PACKET=""
-MODEL_REVIEWERS="claude,gemini,copilot"
+MODEL_REVIEWERS="codex,claude,gemini,copilot"
 MODEL_REVIEW_DRY_RUN=0
+MODEL_REVIEW_DEBATE=0
 FETCH_STATUS="ok"
 BRANCH_STATUS="ok"
 
@@ -26,7 +27,8 @@ Options:
   --run-root <path>        Override output root
   --allow-main             Allow running on main/master
   --model-review-packet    Minimized design packet to send to model reviewers
-  --model-reviewers        Comma list for model-review routes (default: claude,gemini,copilot)
+  --model-reviewers        Comma list for model-review routes (default: codex,claude,gemini,copilot)
+  --model-review-debate    Write model debate synthesis receipts
   --model-review-dry-run   Write model review receipts without calling model CLIs
   --static                 Run static local gates
   --required-gates         Run required local release gates
@@ -121,6 +123,20 @@ matches_changed_file() {
   rg -q "$pattern" "$CHANGED_FILES" >/dev/null 2>&1
 }
 
+all_changed_files_match() {
+  local pattern="$1"
+  if [[ ! -s "$CHANGED_FILES" ]]; then
+    return 1
+  fi
+  while IFS= read -r file; do
+    [[ -n "$file" ]] || continue
+    if [[ ! "$file" =~ $pattern ]]; then
+      return 1
+    fi
+  done <"$CHANGED_FILES"
+  return 0
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --)
@@ -157,6 +173,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --model-review-dry-run)
       MODEL_REVIEW_DRY_RUN=1
+      shift
+      ;;
+    --model-review-debate)
+      MODEL_REVIEW_DEBATE=1
       shift
       ;;
     --static)
@@ -252,6 +272,7 @@ contracts_touched="no"
 ops_touched="no"
 security_touched="no"
 database_touched="no"
+docs_only="no"
 
 if matches_changed_file '(^apps/web/src/(app|components|dashboard|lib)/|^packages/ui/)'; then
   ui_touched="yes"
@@ -275,6 +296,10 @@ fi
 
 if matches_changed_file '(^packages/database/|^apps/web/src/server/.*\.db\.test\.ts|drizzle)'; then
   database_touched="yes"
+fi
+
+if all_changed_files_match '^(AGENTS\.md|README\.md|HANDOVER\.md|GEMINI\.md|IMPORTANT_RULES\.md|project_architecture\.md|contributing\.md|docs/.*|\.github/PULL_REQUEST_TEMPLATE\.md)$'; then
+  docs_only="yes"
 fi
 
 reviewers=(security_reviewer architecture_reviewer qa_reviewer ops_reviewer)
@@ -306,6 +331,7 @@ write_manifest() {
 - ops_touched: \`$ops_touched\`
 - security_touched: \`$security_touched\`
 - database_touched: \`$database_touched\`
+- docs_only: \`$docs_only\`
 - selected_reviewers: \`${reviewers[*]}\`
 - reusable_reviewer_config_dir: \`$ROOT_DIR/config/reviewers\`
 - reusable_reviewer_prompt_dir: \`$ROOT_DIR/prompts/reviewers\`
@@ -384,6 +410,7 @@ Conditional signals:
 - ops_touched: \`$ops_touched\`
 - security_touched: \`$security_touched\`
 - database_touched: \`$database_touched\`
+- docs_only: \`$docs_only\`
 EOF
 }
 
@@ -425,33 +452,49 @@ write_orchestration_prompt
   echo
   echo "- Static: \`pnpm verify-slice -- --run-root \"$RUN_ROOT\" --static\`"
   echo "- Required local gates: \`pnpm verify-slice -- --run-root \"$RUN_ROOT\" --required-gates\`"
-  echo "- Model review: \`pnpm model-review -- --packet <design-packet.md> --run-root \"$RUN_ROOT\"\`"
+  echo "- Model review: \`pnpm model-review -- --packet <design-packet.md> --run-root \"$RUN_ROOT\" --debate\`"
+  if [[ "$docs_only" == "yes" ]]; then
+    echo "- Docs-only required gates: required-gates uses docs/static hygiene checks instead of \`pnpm gate:release\`."
+  fi
 } >"$RUN_ROOT/reviewer-plan.md"
 
 if [[ -n "$MODEL_REVIEW_PACKET" ]]; then
   model_review_cmd="pnpm model-review -- --packet \"$MODEL_REVIEW_PACKET\" --run-root \"$RUN_ROOT\" --reviewers \"$MODEL_REVIEWERS\""
   [[ "$MODEL_REVIEW_DRY_RUN" -ne 1 ]] || model_review_cmd="$model_review_cmd --dry-run"
+  [[ "$MODEL_REVIEW_DEBATE" -ne 1 ]] || model_review_cmd="$model_review_cmd --debate"
   run_gate "model-review" "$model_review_cmd"
 fi
 
 if [[ "$RUN_STATIC" -eq 1 ]]; then
   run_gate "mcp-preflight" "pnpm mcp:preflight"
   run_gate "env-check" "pnpm env:check"
+  run_gate "repo-hygiene" "pnpm repo:hygiene"
   run_gate "git-diff-check-committed" "git diff --check $BASE_COMMIT...HEAD"
   run_gate "git-diff-check-staged" "git diff --cached --check"
   run_gate "git-diff-check-worktree" "git diff --check"
   run_untracked_diff_check
   run_gate "sentinel" "bash scripts/multi-agent/sentinel-agent.sh --run-root \"$RUN_ROOT\" --base \"$BASE_REF\""
-  run_gate "sonar-agent" "bash scripts/multi-agent/sonar-agent.sh --run-root \"$RUN_ROOT\""
   run_gate "sentry-advisory" "node scripts/multi-agent/sentry-advisory.mjs --run-root \"$RUN_ROOT\""
-  run_gate "type-check" "pnpm -w type-check"
-  run_gate "lint" "pnpm lint"
-  run_gate "web-build" "pnpm --filter web build"
-  run_gate "launch-readiness" "pnpm launch:readiness"
+  if [[ "$docs_only" == "yes" ]]; then
+    printf '[verify-slice] docs-only static path: skipping type-check, lint, web build, sonar advisory, and launch readiness\n'
+  else
+    run_gate "sonar-agent" "bash scripts/multi-agent/sonar-agent.sh --run-root \"$RUN_ROOT\""
+    run_gate "type-check" "pnpm -w type-check"
+    run_gate "lint" "pnpm lint"
+    run_gate "web-build" "pnpm --filter web build"
+    run_gate "launch-readiness" "pnpm launch:readiness"
+  fi
 fi
 
 if [[ "$RUN_REQUIRED" -eq 1 ]]; then
-  run_gate "gate-release" "pnpm gate:release"
+  if [[ "$docs_only" == "yes" ]]; then
+    run_gate "required-docs-mcp-preflight" "pnpm mcp:preflight"
+    run_gate "required-docs-env-check" "pnpm env:check"
+    run_gate "required-docs-repo-hygiene" "pnpm repo:hygiene"
+    run_gate "required-docs-diff-check" "git diff --check $BASE_COMMIT...HEAD && git diff --cached --check && git diff --check"
+  else
+    run_gate "gate-release" "pnpm gate:release"
+  fi
 fi
 
 printf '[verify-slice] PASS\n'

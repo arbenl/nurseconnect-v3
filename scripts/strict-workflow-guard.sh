@@ -131,6 +131,45 @@ run_pr_comment_gate() {
   PR_NUMBER="$pr_number" node scripts/check-pr-bot-comments.mjs
 }
 
+changed_files_against_main() {
+  local base_ref="${STRICT_GUARD_BASE_REF:-origin/main}"
+  local merge_base
+
+  if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
+    return 1
+  fi
+  merge_base="$(git merge-base HEAD "$base_ref")"
+  git diff --name-only "$merge_base"...HEAD
+}
+
+is_docs_only_push() {
+  local files
+  local file
+  local docs_pattern='^(AGENTS\.md|README\.md|HANDOVER\.md|GEMINI\.md|IMPORTANT_RULES\.md|project_architecture\.md|contributing\.md|docs/.*|\.github/PULL_REQUEST_TEMPLATE\.md)$'
+
+  files="$(changed_files_against_main || true)"
+  if [[ -z "$files" ]]; then
+    return 1
+  fi
+
+  while IFS= read -r file; do
+    [[ -n "$file" ]] || continue
+    if [[ ! "$file" =~ $docs_pattern ]]; then
+      return 1
+    fi
+  done <<<"$files"
+  return 0
+}
+
+run_docs_only_push_gate() {
+  log "Running docs-only pre-push gate."
+  pnpm mcp:preflight
+  pnpm env:check
+  pnpm repo:hygiene
+  git diff --check
+  git diff --cached --check
+}
+
 main() {
   local repo_root
   repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
@@ -154,13 +193,17 @@ main() {
       ;;
     pre-push)
       load_local_env_defaults
-      if [[ -z "${DATABASE_URL:-}" ]]; then
-        log "DATABASE_URL is required for pre-push release gate. Set STRICT_GUARD_SKIP=1 for an emergency local bypass."
-        exit 1
-      fi
       require_clean_tree "pre-push (before gate)"
-      log "Running strict release gate (pnpm gate:release)."
-      pnpm gate:release
+      if is_docs_only_push; then
+        run_docs_only_push_gate
+      else
+        if [[ -z "${DATABASE_URL:-}" ]]; then
+          log "DATABASE_URL is required for pre-push release gate. Set STRICT_GUARD_SKIP=1 for an emergency local bypass."
+          exit 1
+        fi
+        log "Running strict release gate (pnpm gate:release)."
+        pnpm gate:release
+      fi
       normalize_generated_artifacts
       require_clean_tree "pre-push (after gate)"
       run_pr_comment_gate

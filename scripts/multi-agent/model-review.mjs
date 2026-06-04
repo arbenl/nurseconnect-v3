@@ -7,9 +7,14 @@ import { fileURLToPath } from "node:url";
 import { parseArgv } from "./lib/cli.mjs";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
-const defaults = ["claude", "gemini", "copilot"];
+const defaults = ["codex", "claude", "gemini", "copilot"];
 
 const routes = {
+  codex: {
+    label: "Codex implementation critique",
+    command: "codex",
+    args: ["exec", "--model", process.env.CODEX_REVIEW_MODEL || "gpt-5.5", "{prompt}"],
+  },
   claude: {
     label: "Claude Sonnet architecture review",
     command: "claude",
@@ -62,7 +67,8 @@ Usage: pnpm model-review -- --packet <file> [options]
 
 Options:
   --run-root <path>          Evidence root. Defaults to tmp/multi-agent/model-review/<timestamp>
-  --reviewers <list>         Comma list: claude,gemini,copilot
+  --reviewers <list>         Comma list: codex,claude,gemini,copilot
+  --debate                   Write a critique debate synthesis from reviewer receipts
   --dry-run                  Write receipts without calling model CLIs
   --allow-sensitive          Allow packet despite PHI/secret pattern matches
 `;
@@ -103,6 +109,17 @@ function reviewerPrompt(packet) {
   return [
     "Review this NurseConnect slice design. Return concise findings grouped as MUST_FIX, SHOULD_FIX, NICE_TO_HAVE, and APPROVED_NOTES.",
     "Focus on architecture, auth/tenant/PHI safety, testability, rollback, and PR readiness. Do not request secrets or PHI.",
+    "",
+    packet,
+  ].join("\n");
+}
+
+function debatePrompt(packet, selected) {
+  return [
+    "You are one participant in a NurseConnect slice critique debate.",
+    `Other requested reviewers: ${selected.join(", ")}.`,
+    "Challenge assumptions, identify the strongest MUST_FIX risk, and name any finding you would reject with rationale.",
+    "Do not request or expose secrets, PHI, patient details, or raw production data.",
     "",
     packet,
   ].join("\n");
@@ -164,6 +181,56 @@ function writeReceipt(reviewDir, result) {
   );
 }
 
+function findingLines(text, label) {
+  const lines = String(text || "").split("\n");
+  const findings = [];
+  for (const line of lines) {
+    if (/\b(MUST_FIX|SHOULD_FIX|NICE_TO_HAVE|HARDENING|OPTIONAL)\b/i.test(line)) {
+      findings.push(`${label}: ${line.trim()}`);
+    }
+  }
+  return findings.slice(0, 20);
+}
+
+function writeDebate(reviewDir, results) {
+  const completed = results.filter((result) => result.status === "complete" || result.status === "dry-run");
+  const blocked = results.filter((result) => result.status === "blocked");
+  const mustFix = results.flatMap((result) => findingLines(result.stdout, result.reviewer).filter((line) => /MUST_FIX/i.test(line)));
+  const otherFindings = results.flatMap((result) => findingLines(result.stdout, result.reviewer).filter((line) => !/MUST_FIX/i.test(line)));
+  const verdict = mustFix.length > 0 ? "NOT READY UNTIL MUST_FIX DISPOSITION" : "READY IF DETERMINISTIC GATES PASS";
+  const debate = {
+    generatedAt: new Date().toISOString(),
+    participants: results.map((result) => ({ reviewer: result.reviewer, status: result.status, exitCode: result.exitCode })),
+    completed: completed.map((result) => result.reviewer),
+    blocked: blocked.map((result) => ({ reviewer: result.reviewer, stderr: result.stderr.slice(0, 500) })),
+    agreedMustFixCandidates: mustFix,
+    otherFindingCandidates: otherFindings,
+    disputedOrMissingEvidence: blocked.map((result) => `${result.reviewer} unavailable; treat as missing advisory signal, not approval.`),
+    verdict,
+  };
+
+  writeFileSync(path.join(reviewDir, "debate.json"), `${JSON.stringify(debate, null, 2)}\n`);
+  writeFileSync(
+    path.join(reviewDir, "debate.md"),
+    [
+      "# Model Critique Debate",
+      "",
+      `- verdict: \`${verdict}\``,
+      `- completed: \`${debate.completed.join(", ") || "none"}\``,
+      `- blocked: \`${debate.blocked.map((item) => item.reviewer).join(", ") || "none"}\``,
+      "",
+      "## Agreed MUST_FIX Candidates",
+      ...(mustFix.length > 0 ? mustFix.map((item) => `- ${item}`) : ["- None detected in reviewer output."]),
+      "",
+      "## Other Finding Candidates",
+      ...(otherFindings.length > 0 ? otherFindings.map((item) => `- ${item}`) : ["- None detected in reviewer output."]),
+      "",
+      "## Missing Or Disputed Evidence",
+      ...(debate.disputedOrMissingEvidence.length > 0 ? debate.disputedOrMissingEvidence.map((item) => `- ${item}`) : ["- None."]),
+    ].join("\n"),
+  );
+}
+
 function safeResult(result) {
   return { ...result, args: result.args.map((arg) => (arg.length > 240 ? `${arg.slice(0, 240)}...` : arg)) };
 }
@@ -183,15 +250,20 @@ async function main() {
   const reviewDir = path.join(runRoot, "reviews");
   mkdirSync(reviewDir, { recursive: true });
   const selected = splitReviewers(args.reviewers);
+  const prompt = args.debate ? debatePrompt(packet, selected) : packet;
   const results = [];
   for (const reviewer of selected) {
-    const result = await runRoute(reviewer, packet, { dryRun: Boolean(args["dry-run"]) });
+    const result = await runRoute(reviewer, prompt, { dryRun: Boolean(args["dry-run"]) });
     results.push(result);
     writeReceipt(reviewDir, result);
   }
-  const manifest = { packetPath, runRoot, reviewers: selected, results: results.map(safeResult) };
+  if (args.debate) {
+    writeDebate(reviewDir, results);
+  }
+  const manifest = { packetPath, runRoot, reviewers: selected, debate: Boolean(args.debate), results: results.map(safeResult) };
   writeFileSync(path.join(reviewDir, "model-review-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   process.stdout.write(`[model-review] run_root=${runRoot}\n[model-review] reviewers=${selected.join(" ")}\n`);
+  if (args.debate) process.stdout.write(`[model-review] debate=${path.join(reviewDir, "debate.md")}\n`);
 }
 
 main().catch((error) => fail(error?.message || String(error)));

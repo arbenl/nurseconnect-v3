@@ -59,9 +59,11 @@ describe("verify-slice workflow", () => {
     expect(script).toContain("git-diff-check-worktree");
     expect(script).toContain("run_untracked_diff_check");
     expect(script).toContain("mcp-preflight");
+    expect(script).toContain("repo-hygiene");
     expect(script).toContain("sentinel");
     expect(script).toContain("sonar-agent");
     expect(script).toContain("sentry-advisory");
+    expect(script).toContain("docs-only static path");
   });
 
   it("can attach model-review receipts to a run root", () => {
@@ -84,12 +86,15 @@ describe("verify-slice workflow", () => {
           "--model-reviewers",
           "claude",
           "--model-review-dry-run",
+          "--model-review-debate",
         ],
         { cwd: repoRoot, encoding: "utf8" }
       );
 
       const receipt = readFileSync(join(runRoot, "reviews/claude.json"), "utf8");
+      const debate = readFileSync(join(runRoot, "reviews/debate.md"), "utf8");
       expect(receipt).toContain("Claude Sonnet");
+      expect(debate).toContain("Model Critique Debate");
     } finally {
       rmSync(runRoot, { recursive: true, force: true });
     }

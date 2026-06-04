@@ -32,6 +32,7 @@
     "multiagent:sentinel": "bash scripts/multi-agent/sentinel-agent.sh",
     "multiagent:sonar": "bash scripts/multi-agent/sonar-agent.sh",
     "model-review": "node scripts/multi-agent/model-review.mjs",
+    "repo:hygiene": "node scripts/repo-hygiene.mjs",
     "sentry:advisory": "node scripts/multi-agent/sentry-advisory.mjs",
     "verify-slice": "bash scripts/multi-agent/verify-slice.sh",
     "mcp:preflight": "node scripts/mcp/preflight.mjs",

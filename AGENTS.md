@@ -54,7 +54,7 @@ Use the NurseConnect slice workflow for product, platform, ops, and launch work:
 12. Merge only after all required checks pass, including PR Finalizer.
 13. Sync local `main`, update Notion when the slice changes program state, and delete the local and remote branch.
 
-For tiny docs-only slices, a lightweight reviewer pool is acceptable only when the PR body explicitly explains the reduced review scope. Do not silently skip `verify-slice`.
+For tiny docs-only slices, a lightweight reviewer pool is acceptable only when the PR body explicitly explains the reduced review scope. Do not silently skip `verify-slice`. Docs-only `verify-slice --required-gates` and the pre-push guard use the docs/static hygiene path instead of the full `pnpm gate:release`; CI and PR Finalizer remain authoritative after the PR opens.
 
 <!-- FAST-TOOLS PROMPT v1 | codex-mastery | watermark:do-not-alter -->
 

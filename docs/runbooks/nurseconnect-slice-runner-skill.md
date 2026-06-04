@@ -44,7 +44,7 @@ Follow `docs/runbooks/slice_workflow.md`:
 
 1. Clean synced `main`.
 2. Draft a bounded slice design.
-3. Request Claude/Gemini/Copilot review with `pnpm model-review` when configured or record blockers.
+3. Request Codex/Claude/Gemini/Copilot review with `pnpm model-review -- --debate` when the slice needs deeper critique, or record blockers.
 4. Apply accepted design feedback before branch creation.
 5. Fresh `codex/<slice-name>` branch.
 6. Focused implementation.
@@ -66,3 +66,23 @@ Follow `docs/runbooks/slice_workflow.md`:
 - Auth, tenancy, schema, RLS, outbox, audit, PHI, compliance: Tier 3.
 
 Tier 3 slices require especially explicit rollback and verification evidence.
+
+## Gate Weight
+
+`verify-slice` is mandatory for repo slices, but gate weight follows scope:
+
+- Tier 0 docs/tracker-only slices run docs/static hygiene required gates instead
+  of local `pnpm gate:release`.
+- Non-docs implementation, tooling, runtime, schema, auth, PHI, and CI/gate
+  slices still run full required local release gates before PR.
+- CI, branch protection, GitGuardian, Sonar, PR Finalizer, and required review
+  outcomes remain authoritative after PR creation.
+
+## Critique Debate
+
+Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --debate`
+when a slice benefits from multi-model critique: Tier 2/Tier 3, AI-affected
+slices, broad Tier 1 tooling/gate changes, or reviewer disagreement.
+
+The debate is advisory evidence. It must not receive PHI, secrets, raw
+production data, patient details, or unnecessary clinical details.
