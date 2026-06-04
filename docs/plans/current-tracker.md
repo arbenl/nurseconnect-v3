@@ -25,18 +25,19 @@ verification_command: pnpm verify-slice
 | `NC-E0-04` | `completed` | platform | Repo hygiene and generated artifact cleanup. | PR #80 merged at `6ae17d68db4a86875b6049ddfccaedea82e15183`; generated artifacts are untracked/ignored; active Firebase source/config templates are removed or fail deterministic hygiene checks; docs-only gates use a deterministic lightweight path; model critique debate is available when warranted. |
 | `NC-E0-05` | `completed` | architecture + qa | Module-boundary enforcement. | PR #82 merged at `505f8aae60cc3dbc7e19ef7384e1df94457d3b4c`; CI fails on illegal cross-domain imports/re-exports; existing package boundaries and diff-scoped modularity guard are encoded in `pnpm architecture:boundaries`; required gates, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E0-06` | `completed` | ops | Disaster recovery baseline. | PR #84 merged at `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`; DR runbook records RPO/RTO, backup assumptions, restore workflow, evidence redaction rules, and restore-drill evidence requirements; required checks, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
+| `NC-E1-01` | `completed` | architecture | Tenant model decision. | ADR-001 accepted organization plus branch/facility/location from v1; marketplace demand is tenant/facility scoped; nurse supply is platform-level only for non-PHI routing identity; nurse eligibility/credentialing/consent/assignment/audit context is tenant/facility/jurisdiction scoped; jurisdiction is compliance/operating scope, not tenant boundary; debate evidence recorded in `docs/reviews/nc-e1-01-tenant-model-debate.md`. |
 
 ## Next Slice
 
 ```text
-Blocked: NC-E1-01 / codex/tenant-model-decision
+NC-E1-02 / codex/rls-platform-mechanism
 ```
 
 Rationale:
 
 - PR #84 completed the final NC-E0 Phase 0 stabilization guardrail at `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`.
-- NC-E1 tenant/RLS work must not start until `NC-E1-01 / codex/tenant-model-decision` closes the first enterprise customer model and ADR-001 Decision B.
-- `NC-E1-02 / rls-platform-mechanism` remains planned, not ready, until the tenant shape decision is recorded.
+- `NC-E1-01 / tenant-model-decision` closes ADR-001 Decision B as organization plus branch/facility/location from v1.
+- `NC-E1-02 / rls-platform-mechanism` is now ready, with explicit guardrails for platform nurse vs tenant nurse data classification and country/jurisdiction data-residency constraints before schema work.
 
 ## Recent Closeout Evidence
 

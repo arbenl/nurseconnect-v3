@@ -27,8 +27,8 @@ current_tracker_bridge: docs/plans/current-tracker.md
 
 | ID | Status | Slice | Work | Acceptance Criteria | Risk |
 |---|---|---|---|---|---|
-| `NC-E1-01` | `blocked` | `tenant-model-decision` | Decide flat org vs org+branch. | First enterprise customer model documented; ADR-001 Decision B closed. | High |
-| `NC-E1-02` | `planned` | `rls-platform-mechanism` | Add tenant context wrapper, query helpers, DB role assertion. | RLS mechanism tests pass; app refuses unsafe DB role in production-like config. | High |
+| `NC-E1-01` | `completed` | `tenant-model-decision` | Decide flat org vs org+branch. | ADR-001 accepted organization plus branch/facility/location from v1; marketplace demand is tenant/facility scoped; nurse supply is platform-level only for non-PHI routing identity; jurisdiction is compliance/operating scope, not tenant boundary; debate evidence recorded in `docs/reviews/nc-e1-01-tenant-model-debate.md`. | High |
+| `NC-E1-02` | `ready` | `rls-platform-mechanism` | Add tenant context wrapper, query helpers, DB role assertion. | RLS mechanism tests pass; app refuses unsafe DB role in production-like config; implementation design includes nurse platform-vs-tenant data classification and regional/data-residency guardrails before schema work. | High |
 | `NC-E1-03` | `planned` | `default-tenant-backfill-plan` | Define expand/contract tenant migration. | Default tenant/backfill plan and observe-before-enforce mechanism approved. | High |
 | `NC-E1-04` | `planned` | `tenant-isolation-tests` | Add tenant isolation abuse tests. | Tenant A cannot read/write Tenant B in DB/API tests. | High |
 
