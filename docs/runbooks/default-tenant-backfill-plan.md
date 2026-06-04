@@ -164,9 +164,11 @@ claim.
 ## Callsite And Pooler Constraints
 
 Later tenant-context slices must use the existing transaction-local tenant
-context mechanism. All tenant-scoped database calls run inside
-`db.transaction()` through `withTenantContext` or an equivalent helper that sets
-the tenant GUC with `set_config(..., true)`.
+context mechanism. Callers must select the correct database handle first, then
+pass it to `withTenantContext(database, organizationId, callback)` or an
+equivalent helper that opens the transaction and sets the tenant GUC with
+`set_config(..., true)`. Helper functions should receive the scoped transaction
+or selected database handle instead of importing the global database client.
 
 Do not rely on session-level GUC state, session-level `RESET`, or connection
 pooler stickiness for tenant isolation. Pooler validation must prove tenant
