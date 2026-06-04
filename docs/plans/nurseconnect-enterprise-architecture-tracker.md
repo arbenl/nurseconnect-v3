@@ -21,7 +21,7 @@ current_tracker_bridge: docs/plans/current-tracker.md
 | `NC-E0-03` | `completed` | `env-secret-checks` | Harden env and secret checks. | PR #78 merged at `ec3a0f7845b73235aaf3200528728beea873c754`; `pnpm env:check` validates required vars; Gitleaks remains fail-closed; CI, Sonar, GitGuardian, PR Finalizer, API E2E, UI smoke, and post-merge strict release gate passed. | Low |
 | `NC-E0-04` | `completed` | `repo-hygiene` | Remove generated artifacts, tighten `.gitignore`, and calibrate lightweight docs-only gates. | PR #80 merged at `6ae17d68db4a86875b6049ddfccaedea82e15183`; build/test output is untracked/ignored; active Firebase source/config templates are removed or fail deterministic hygiene checks; docs-only gates avoid duplicate local release-gate cost; optional model critique debate writes receipts when warranted. | Low |
 | `NC-E0-05` | `completed` | `module-boundary-guard` | Add deterministic module-boundary enforcement and 150-line modularity guard for new/modified files. | PR #82 merged at `505f8aae60cc3dbc7e19ef7384e1df94457d3b4c`; illegal cross-domain imports/re-exports fail CI; oversized new/growing source files fail except approved generated/migration/config exceptions. | Medium |
-| `NC-E0-06` | `ready` | `dr-baseline` | Write and drill DR runbook. | Restore drill evidence captured. | Low |
+| `NC-E0-06` | `completed` | `dr-baseline` | Write and drill DR runbook. | PR #84 merged at `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`; DR runbook, RPO/RTO targets, backup/PITR assumptions, PHI-safe restore-drill evidence template, and launch-readiness DR links landed with required gates green. | Low |
 
 ## NC-E1 — Tenant/RLS Foundation
 

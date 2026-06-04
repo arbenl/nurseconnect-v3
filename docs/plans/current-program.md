@@ -64,19 +64,22 @@ Completed closeout evidence:
 - `NC-E0-05 / module-boundary-guard` merged in PR #82 on 2026-06-04.
 - Merge commit: `505f8aae60cc3dbc7e19ef7384e1df94457d3b4c`.
 - Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and local required release gate evidence.
+- `NC-E0-06 / dr-baseline` merged in PR #84 on 2026-06-04.
+- Merge commit: `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`.
+- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke; docs-only local static and required gates passed.
 
-The next promoted slice after the `NC-E0-05` closeout is:
+Phase 0 stabilization is complete. The next program gate is blocked until the
+tenant model decision is made:
 
 ```text
-NC-E0-06 / codex/dr-baseline
+NC-E1-01 / codex/tenant-model-decision
 ```
 
-Scope:
+Blocked scope:
 
-- write the disaster recovery baseline runbook
-- record RPO/RTO targets and backup assumptions
-- capture restore-drill evidence requirements
-- keep the slice scoped to operational documentation and deterministic evidence, with no product runtime behavior changes
+- document the first enterprise customer model
+- close ADR-001 Decision B for flat organization vs organization plus branch
+- keep NC-E1 RLS implementation slices planned until this decision is recorded
 
 ## Slice Execution Contract
 

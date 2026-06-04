@@ -24,19 +24,19 @@ verification_command: pnpm verify-slice
 | `NC-E0-03` | `completed` | platform + security | Env and secret-handling checks. | PR #78 merged at `ec3a0f7845b73235aaf3200528728beea873c754`; runtime env vars are validated/documented; `pnpm env:check` remains required; secret scanning remains fail-closed; CI, Sonar, GitGuardian, PR Finalizer, API E2E, UI smoke, and post-merge strict release gate passed. |
 | `NC-E0-04` | `completed` | platform | Repo hygiene and generated artifact cleanup. | PR #80 merged at `6ae17d68db4a86875b6049ddfccaedea82e15183`; generated artifacts are untracked/ignored; active Firebase source/config templates are removed or fail deterministic hygiene checks; docs-only gates use a deterministic lightweight path; model critique debate is available when warranted. |
 | `NC-E0-05` | `completed` | architecture + qa | Module-boundary enforcement. | PR #82 merged at `505f8aae60cc3dbc7e19ef7384e1df94457d3b4c`; CI fails on illegal cross-domain imports/re-exports; existing package boundaries and diff-scoped modularity guard are encoded in `pnpm architecture:boundaries`; required gates, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
-| `NC-E0-06` | `ready` | ops | Disaster recovery baseline. | DR runbook records RPO/RTO, backup assumptions, and restore-drill evidence. |
+| `NC-E0-06` | `completed` | ops | Disaster recovery baseline. | PR #84 merged at `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`; DR runbook records RPO/RTO, backup assumptions, restore workflow, evidence redaction rules, and restore-drill evidence requirements; required checks, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 
 ## Next Slice
 
 ```text
-NC-E0-06 / codex/dr-baseline
+Blocked: NC-E1-01 / codex/tenant-model-decision
 ```
 
 Rationale:
 
-- PR #82 completed module-boundary enforcement at `505f8aae60cc3dbc7e19ef7384e1df94457d3b4c`.
-- Disaster recovery baseline is the final Phase 0 stabilization guardrail before tenant/RLS, outbox, CRM, or compliance slices.
-- This turns backup, RPO/RTO, and restore-drill expectations into explicit operational evidence before broader enterprise hardening work starts.
+- PR #84 completed the final NC-E0 Phase 0 stabilization guardrail at `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`.
+- NC-E1 tenant/RLS work must not start until `NC-E1-01 / codex/tenant-model-decision` closes the first enterprise customer model and ADR-001 Decision B.
+- `NC-E1-02 / rls-platform-mechanism` remains planned, not ready, until the tenant shape decision is recorded.
 
 ## Recent Closeout Evidence
 
@@ -47,6 +47,7 @@ Rationale:
 | `NC-E0-03 / env-secret-checks` | `https://github.com/arbenl/nurseconnect-v3/pull/78` | `ec3a0f7845b73235aaf3200528728beea873c754` | Env validation, secret-handling documentation, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and post-merge strict release gate passed. |
 | `NC-E0-04 / repo-hygiene` | `https://github.com/arbenl/nurseconnect-v3/pull/80` | `6ae17d68db4a86875b6049ddfccaedea82e15183` | Repo hygiene, generated artifact cleanup, active Firebase source/config cleanup, docs-only gate calibration, model critique debate tooling, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E0-05 / module-boundary-guard` | `https://github.com/arbenl/nurseconnect-v3/pull/82` | `505f8aae60cc3dbc7e19ef7384e1df94457d3b4c` | Module-boundary guard, cross-domain import/re-export enforcement, diff-scoped modularity guard, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and local required release gate passed. |
+| `NC-E0-06 / dr-baseline` | `https://github.com/arbenl/nurseconnect-v3/pull/84` | `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811` | Disaster recovery runbook, RPO/RTO targets, backup/PITR assumptions, PHI-safe restore-drill evidence template, launch-readiness DR links, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 
 ## Status Rules
 
