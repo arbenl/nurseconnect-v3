@@ -79,6 +79,9 @@ Completed closeout evidence:
 - `NC-E1-04 / tenant-isolation-tests` merged in PR #91 on 2026-06-04.
 - Merge commit: `81035fad9d1fea3e17c0d43731d8ab9fdcf31901`.
 - Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, tenant-isolation readiness/guard harness checks, focused DB context tests, model-review disposition, verify-slice static, and verify-slice required gates.
+- `NC-E2-01 / platform-identity` merged in PR #93 on 2026-06-04.
+- Merge commit: `b46861d353cc196ffbfaf1a456952414ff28bae0`.
+- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, central current-user resolver tests, AST current-user boundary guard, Copilot finding fixes, model-review disposition, verify-slice static, and verify-slice required gates.
 
 Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
 ADR-001 Decision B:
@@ -100,7 +103,7 @@ Decision scope:
 The next implementation slice is:
 
 ```text
-NC-E2-01 / codex/platform-identity
+NC-E2-02 / codex/tenant-memberships
 ```
 
 ## Slice Execution Contract

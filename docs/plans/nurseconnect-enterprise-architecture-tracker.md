@@ -36,8 +36,8 @@ current_tracker_bridge: docs/plans/current-tracker.md
 
 | ID | Status | Slice | Work | Acceptance Criteria | Risk |
 |---|---|---|---|---|---|
-| `NC-E2-01` | `ready` | `platform-identity` | Move current-user resolution into one platform identity boundary. | All role checks resolve through one function; bypass tests fail on alternate paths. | Medium |
-| `NC-E2-02` | `planned` | `tenant-memberships` | Add org membership model after tenant shape decision. | Membership queries are tenant-scoped and tested. | High |
+| `NC-E2-01` | `completed` | `platform-identity` | Move current-user resolution into one platform identity boundary. | PR #93 merged at `b46861d353cc196ffbfaf1a456952414ff28bae0`; `/api/me/profile` and `/api/me/notifications` resolve current-user/role state through centralized identity boundaries; the legacy cached-user helper was removed; direct `users.authId` current-user lookups are blocked outside approved identity/schema/test boundaries; Copilot findings, verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. | Medium |
+| `NC-E2-02` | `ready` | `tenant-memberships` | Add org membership model after tenant shape decision. | Membership queries are tenant-scoped and tested. | High |
 | `NC-E2-03` | `planned` | `platform-authz` | Add in-process tenant/resource-aware policy functions. | Policy matrix covers allow/deny/cross-tenant/PHI field cases. | High |
 
 ## NC-E3 — Notifications + Events Backbone
