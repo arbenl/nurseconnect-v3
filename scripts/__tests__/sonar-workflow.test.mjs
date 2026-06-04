@@ -8,6 +8,8 @@ import { describe, expect, it } from "vitest";
 const ciWorkflow = readFileSync(".github/workflows/ci.yml", "utf8");
 const sonarWorkflow = readFileSync(".github/workflows/sonar.yml", "utf8");
 const multiAgentWorkflow = readFileSync(".github/workflows/multi-agent-pr-hardening.yml", "utf8");
+const sonarProjectProperties = readFileSync("sonar-project.properties", "utf8");
+const sonarCoverageScript = readFileSync("scripts/sonar-coverage.mjs", "utf8");
 const sonarGateScript = readFileSync("scripts/sonar-gate.sh", "utf8");
 
 function extractJob(name) {
@@ -58,6 +60,13 @@ describe("Sonar workflow parity", () => {
     expect(summaryJob).not.toContain("actions/checkout");
     expect(summaryJob).not.toContain("SONAR_TOKEN");
     expect(summaryJob).not.toContain("pnpm");
+  });
+
+  it("keeps database coverage generated and imported by Sonar", () => {
+    expect(sonarCoverageScript).toContain('["@nurseconnect/database", "vitest.config.ts"]');
+    expect(sonarCoverageScript).toContain('filter: "@nurseconnect/database"');
+    expect(sonarProjectProperties).toContain("packages/database/coverage/lcov.info");
+    expect(sonarProjectProperties).toContain("packages/database/coverage/db/lcov.info");
   });
 
   it("keeps the baseline workflow advisory and out of pull request enforcement", () => {

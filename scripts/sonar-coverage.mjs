@@ -13,6 +13,7 @@ const coverageArgs = [
 const targets = [
   ["web", "vitest.config.ts"],
   ["@nurseconnect/contracts", "vitest.config.ts"],
+  ["@nurseconnect/database", "vitest.config.ts"],
   ["@nurseconnect/platform-telemetry", "vitest.config.ts"],
   ["@nurseconnect/domain-request", "vitest.config.ts"],
   ["@nurseconnect/domain-dispatch", "vitest.config.ts"],
@@ -32,6 +33,11 @@ const dbCoverageTargets = [
   },
   {
     filter: "@nurseconnect/domain-identity",
+    config: "vitest.db.config.ts",
+    reportsDirectory: "coverage/db",
+  },
+  {
+    filter: "@nurseconnect/database",
     config: "vitest.db.config.ts",
     reportsDirectory: "coverage/db",
   },
