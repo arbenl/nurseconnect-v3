@@ -30,13 +30,13 @@ current_tracker_bridge: docs/plans/current-tracker.md
 | `NC-E1-01` | `completed` | `tenant-model-decision` | Decide flat org vs org+branch. | ADR-001 accepted organization plus branch/facility/location from v1; marketplace demand is tenant/facility scoped; nurse supply is platform-level only for non-PHI routing identity; jurisdiction is compliance/operating scope, not tenant boundary; debate evidence recorded in `docs/reviews/nc-e1-01-tenant-model-debate.md`. | High |
 | `NC-E1-02` | `completed` | `rls-platform-mechanism` | Add tenant context wrapper, query helpers, DB role assertion. | PR #87 merged at `14c522558b630eb1ff3a2760dd27cac858ea0a8c`; RLS mechanism tests pass; app can refuse unsafe DB roles through the fail-closed role assertion; runbook records nurse platform-vs-tenant data classification, transaction-local tenant context, pooling cleanup, and regional/data-residency guardrails before schema work. | High |
 | `NC-E1-03` | `completed` | `default-tenant-backfill-plan` | Define expand/contract tenant migration. | PR #89 merged at `15a6c9ebe688a6174a1e5620e33ffd986f90e04d`; default tenant/backfill plan and observe-before-enforce mechanism are documented in `docs/runbooks/default-tenant-backfill-plan.md`, including default org/facility/jurisdiction bootstrap, table classification, out-of-band DB access evidence, data-audit and PHI-classification gates, pooler/callsite constraints, and pause/rollback gates. | High |
-| `NC-E1-04` | `ready` | `tenant-isolation-tests` | Add tenant isolation abuse tests. | Tenant A cannot read/write Tenant B in DB/API tests; shared-nurse, platform-admin, pooled-connection cleanup, and wrong-tenant negative cases are represented before production RLS enforcement. | High |
+| `NC-E1-04` | `completed` | `tenant-isolation-tests` | Add tenant isolation abuse tests. | PR #91 merged at `81035fad9d1fea3e17c0d43731d8ab9fdcf31901`; versioned tenant-isolation contract, readiness/guard/enforce harness modes, focused script tests, pooled-connection assertion reference, runbook, model-review disposition, verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. | High |
 
 ## NC-E2 — Identity/AuthZ Platform
 
 | ID | Status | Slice | Work | Acceptance Criteria | Risk |
 |---|---|---|---|---|---|
-| `NC-E2-01` | `planned` | `platform-identity` | Move current-user resolution into one platform identity boundary. | All role checks resolve through one function; bypass tests fail on alternate paths. | Medium |
+| `NC-E2-01` | `ready` | `platform-identity` | Move current-user resolution into one platform identity boundary. | All role checks resolve through one function; bypass tests fail on alternate paths. | Medium |
 | `NC-E2-02` | `planned` | `tenant-memberships` | Add org membership model after tenant shape decision. | Membership queries are tenant-scoped and tested. | High |
 | `NC-E2-03` | `planned` | `platform-authz` | Add in-process tenant/resource-aware policy functions. | Policy matrix covers allow/deny/cross-tenant/PHI field cases. | High |
 
