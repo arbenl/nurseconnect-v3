@@ -42,9 +42,9 @@ The active architecture program is:
 
 ## Current Phase
 
-The active phase is **NC-E0: Program Operating System + Phase 0 Stabilization**.
+The active phase is **NC-E1: Tenant/RLS Foundation**.
 
-Phase 0 is intentionally boring: close cheap high-assurance gaps before schema-wide tenancy, CRM, outbox, or compliance work.
+Phase 0 was intentionally boring: close cheap high-assurance gaps before schema-wide tenancy, CRM, outbox, or compliance work.
 
 Completed closeout evidence:
 
@@ -67,6 +67,12 @@ Completed closeout evidence:
 - `NC-E0-06 / dr-baseline` merged in PR #84 on 2026-06-04.
 - Merge commit: `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`.
 - Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke; docs-only local static and required gates passed.
+- `NC-E1-01 / tenant-model-decision` merged in PR #86 on 2026-06-04.
+- Merge commit: `bb801d748c797ac94489df3a52de327ffdbdb310`.
+- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke.
+- `NC-E1-02 / rls-platform-mechanism` merged in PR #87 on 2026-06-04.
+- Merge commit: `14c522558b630eb1ff3a2760dd27cac858ea0a8c`.
+- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, focused database type/unit/DB tests, architecture boundary guard, verify-slice static, and verify-slice required gates.
 
 Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
 ADR-001 Decision B:
@@ -88,7 +94,7 @@ Decision scope:
 The next implementation slice is:
 
 ```text
-NC-E1-02 / codex/rls-platform-mechanism
+NC-E1-03 / codex/default-tenant-backfill-plan
 ```
 
 ## Slice Execution Contract
