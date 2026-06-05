@@ -22,10 +22,11 @@ Read these first, in order:
 
 ## Non-Negotiables
 
-- Do not assume Interdomestik repo tools apply to NurseConnect unless NurseConnect wires them locally.
+- Do not use `interdomestik_qa`; NurseConnect owns `nurseconnect_qa` from `.codex/config.toml`, with `nurse_qa` as an alias.
 - Do not edit user-global Codex config for NurseConnect.
 - Do not implement more than one tracker slice per branch.
 - Do not start implementation until the slice design is reviewed, explicitly waived by the user, or external reviewer blockers are recorded and deterministic local acceptance criteria are clear.
+- Keep every new checked source, script, workflow, config, Markdown, and test file at or below 150 lines; touched oversized legacy files must not grow.
 - Do not start tenant/RLS schema work before `NC-E0-01` identity hardening is complete.
 - Do not assume org→branch until `NC-E1-01` closes.
 - Do not place notification provider calls inside request allocation transactions.
@@ -46,14 +47,14 @@ Follow `docs/runbooks/slice_workflow.md`:
 1. Clean synced `main`.
 2. Draft a bounded slice design.
 3. Apply `docs/runbooks/plugin_activation_policy.md` to choose any optional plugins.
-4. Request Codex/Claude/Gemini/Copilot review with `pnpm model-review -- --debate` when the slice needs deeper critique and routes are callable, or record blockers.
+4. Run model preflight/access checks, then use the five-route debate command when routes are callable, or record blocked routes as non-approval evidence.
 5. Apply accepted design feedback before branch creation.
 6. Fresh `codex/<slice-name>` branch.
 7. Focused implementation.
 8. Focused local tests.
 9. `pnpm verify-slice`.
 10. `pnpm verify-slice -- --run-root <run_root> --static`.
-11. Confirm MCP preflight, Sentinel, Sonar advisory, and Sentry advisory evidence under `run_root`.
+11. Confirm `nurseconnect_qa`, MCP preflight, modularity, Sentinel, Sentry, and applicable local Sonar evidence under `run_root`; PR Sonar Quality Gate remains blocking.
 12. Reviewer pool.
 13. Fix or reject `MUST_FIX`.
 14. `pnpm verify-slice -- --run-root <run_root> --required-gates`.
@@ -80,16 +81,51 @@ Tier 3 slices require especially explicit rollback and verification evidence.
 - CI, branch protection, GitGuardian, Sonar, PR Finalizer, and required review
   outcomes remain authoritative after PR creation.
 
+## NurseConnect QA
+
+Use `nurseconnect_qa` or its `nurse_qa` alias for project map, code search,
+branch status, scope audit, modularity audit, slice evidence audit, and
+configured repo verification. If the active runtime exposes only another repo's
+QA namespace, record that blocker, do not call it, and generate
+`<run_root>/evidence/nurseconnect-qa.{json,md}`:
+
+```text
+RUN_ROOT=<run_root> BASE_REF=<base> node scripts/multi-agent/nurseconnect-qa-evidence.mjs
+```
+
 ## Critique Debate
 
-Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --debate`
-when a slice benefits from multi-model critique: Tier 2/Tier 3, AI-affected
-slices, broad Tier 1 tooling/gate changes, or reviewer disagreement.
+Before relying on model reviewers, run preflight and access checks for the
+cost-aware default `sonnet46,gemini,copilot`. For Tier 2/Tier 3, AI-affected,
+protected, or gate/tooling slices, use debate mode with those routes and keep
+`reviews/model-review-preflight.*`,
+`reviews/model-review-access.*`, `reviews/<reviewer>.{json,md}`,
+`evidence/model-review.{json,md}`, and `reviews/debate.{json,md}`.
+Escalate to `claude47,claude48,sonnet46,gemini,copilot` only for high-trust
+surfaces, unresolved disagreement, or user request.
+
+```text
+pnpm model-review -- --preflight --run-root <run_root> --reviewers sonnet46,gemini,copilot
+pnpm model-review -- --access-check --run-root <run_root> --reviewers sonnet46,gemini,copilot
+pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --reviewers sonnet46,gemini,copilot --debate
+RUN_ROOT=<run_root> node scripts/multi-agent/model-review-summary.mjs
+```
 
 Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --fallback-ladder`
-when one advisory review is enough or provider quota is tight. The ladder tries
-Claude routes first, then Gemini, then Copilot Sonnet, records blocked attempts,
-and stops at the first completed review.
+only for lower-risk slices where one advisory review is enough or provider quota
+is tight. The ladder tries Claude routes first, then Gemini, then Copilot
+Sonnet, records blocked attempts, and stops at the first completed review.
+
+Protected-surface PR evidence with passing model access must include:
+
+```text
+pnpm slice:evidence -- --run-root <run_root> --require-reviewers "sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"
+```
+
+If model access is blocked, cite `reviews/model-review-access.*`, state blocked
+routes were not counted as approval, still generate `evidence/model-review.*`
+from any available-route review or explicit not-run summary, and keep
+deterministic gates mandatory.
 
 The debate is advisory evidence. It must not receive PHI, secrets, raw
 production data, patient details, or unnecessary clinical details.

@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 export const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 export const scriptPath = join(repoRoot, "scripts/multi-agent/slice-evidence.mjs");
-export const requiredReviewers = ["claude48", "claude47", "sonnet46", "gemini", "copilot"];
+export const requiredReviewers = ["sonnet46", "gemini", "copilot"];
 
 export function makeRoot() {
   return mkdtempSync(join(tmpdir(), "nurseconnect-slice-evidence-"));
@@ -41,6 +41,15 @@ export function writeRunRoot(root, overrides = {}) {
   }));
   writeFileSync(join(root, "evidence/nurseconnect-qa.json"), json(overrides.qa ?? {
     status: "success",
+    mcpIdentity: {
+      canonical: "nurseconnect_qa",
+      requested: "nurseconnect_qa",
+      effective: "nurseconnect_qa",
+      aliases: ["nurse_qa"],
+      owned: ["nurseconnect_qa", "nurse_qa"],
+      forbidden: ["interdomestik_qa"],
+      configured: ["context7", "nurse_qa", "nurseconnect_qa", "playwright"],
+    },
     availableTools: ["branch_status", "modularity_audit", "project_map", "scope_audit", "slice_evidence_audit"],
     branchStatus: { changedFileCount: 2 },
     modularityAudit: { status: "success" },

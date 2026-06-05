@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(currentDir, "../../..");
-const requiredReviewers = ["claude48", "claude47", "sonnet46", "gemini", "copilot"];
+const requiredReviewers = ["sonnet46", "gemini", "copilot"];
 
 async function writeRunRoot(root) {
   await mkdir(join(root, "evidence"), { recursive: true });
@@ -32,6 +32,15 @@ async function writeRunRoot(root) {
   }));
   await writeFile(join(root, "evidence/nurseconnect-qa.json"), json({
     status: "success",
+    mcpIdentity: {
+      canonical: "nurseconnect_qa",
+      requested: "nurseconnect_qa",
+      effective: "nurseconnect_qa",
+      aliases: ["nurse_qa"],
+      owned: ["nurseconnect_qa", "nurse_qa"],
+      forbidden: ["interdomestik_qa"],
+      configured: ["context7", "nurse_qa", "nurseconnect_qa", "playwright"],
+    },
     availableTools: ["branch_status", "modularity_audit", "project_map", "scope_audit", "slice_evidence_audit"],
     branchStatus: { changedFileCount: 1 },
     modularityAudit: { status: "success" },

@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
-const requiredModelReviewers = ["claude48", "claude47", "sonnet46", "gemini", "copilot"];
+const requiredModelReviewers = ["sonnet46", "gemini", "copilot"];
 const protectedPatterns = [/^apps\/web\/src\/app\/api\/auth\//, /^apps\/web\/src\/app\/.*\/route\.ts$/, /^apps\/web\/src\/middleware\.ts$/, /\/proxy\//, /^packages\/contracts\//, /^apps\/contracts\//, /^contracts\//, /^packages\/database\//, /^\.github\/workflows\//, /^scripts\/(multi-agent|mcp|lib\/pr-slice-evidence|pr-finalizer|check-pr-slice-evidence|check-modularity-guard)/, /^package\.json$/, /auth|session|webhook|payment|payout|admin|PHI|phi|secret/i];
 
 function extractSection(markdown, heading) {

@@ -66,7 +66,7 @@ plugin assumptions.
   of counting them as approval.
 - Quota fallback: when external review is helpful but full debate is too heavy
   or Claude/Gemini quota is exhausted, use `pnpm model-review -- --fallback-ladder`
-  with `claude48,claude47,sonnet46,gemini,copilot`. It records blocked
+  with `sonnet46,gemini,copilot`. Add `claude47,claude48` only for escalations. It records blocked
   attempts and stops at the first completed review.
 
 ## Activation Evidence

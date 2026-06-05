@@ -38,13 +38,13 @@ Do not start implementation until the slice design has been reviewed or explicit
 - tests and verification commands
 - acceptance criteria that can fail deterministically
 
-Use configured model reviewers as advisory reviewers, not authority. Default route order is `claude48`, `claude47`, `sonnet46`, Gemini Pro, Copilot Pro+, then a local Codex route when configured.
+Use configured model reviewers as advisory reviewers, not authority. Default cost-aware route order is `sonnet46`, Gemini Pro, Copilot Pro+, then a local Codex route when configured. Escalate to `claude47` or `claude48` for high-trust surfaces or unresolved disagreement.
 
-Before relying on external reviewer routes, run `pnpm model-review -- --preflight --run-root <run_root> --reviewers claude48,claude47,sonnet46,gemini,copilot`, then `pnpm model-review -- --access-check --run-root <run_root> --reviewers claude48,claude47,sonnet46,gemini,copilot`. Keep `<run_root>/reviews/model-review-preflight.*` and `model-review-access.*`; blocked model ids, auth, quota, or provider failures are not approval and must be recorded as blocked external-review evidence.
+Before relying on external reviewer routes, run `pnpm model-review -- --preflight --run-root <run_root> --reviewers sonnet46,gemini,copilot`, then `pnpm model-review -- --access-check --run-root <run_root> --reviewers sonnet46,gemini,copilot`. Keep `<run_root>/reviews/model-review-preflight.*` and `model-review-access.*`; blocked model ids, auth, quota, or provider failures are not approval and must be recorded as blocked external-review evidence.
 
 If an installed route uses an unavailable model id, override only that route with `CLAUDE_48_REVIEW_MODEL`, `CLAUDE_47_REVIEW_MODEL`, `CLAUDE_SONNET_46_REVIEW_MODEL`, `GEMINI_REVIEW_MODEL`, or `COPILOT_REVIEW_MODEL`, then re-run access check.
 
-Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --reviewers claude48,claude47,sonnet46,gemini,copilot --debate` for multi-model critique when access check passes. It writes receipts plus `reviews/debate.*`; accepted findings update the design, and rejected findings need technical rationale.
+Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --reviewers sonnet46,gemini,copilot --debate` for routine multi-model critique. Use `--reviewers claude48,claude47,sonnet46,gemini,copilot` only for escalation. It writes receipts plus `reviews/debate.*`; accepted findings update the design, and rejected findings need technical rationale.
 
 Default debate triggers: Tier 2/Tier 3 implementation, AI-affected slices, broad Tier 1 tooling/gate changes, reviewer disagreement, or explicit user request. If external routes are blocked, do not fabricate approval; continue with deterministic gates and record that the model debate was skipped because routes were blocked.
 
@@ -163,7 +163,7 @@ The PR body should also state:
 - `pnpm modularity:guard -- --base <base_commit>` result
 - local static and required gate results
 - `pnpm slice:evidence -- --run-root <run_root>` result
-- for Tier 2, Tier 3, AI-affected, or protected-surface PRs with passing model access: `pnpm slice:evidence -- --run-root <run_root> --require-reviewers "claude48,claude47,sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"`
+- for Tier 2, Tier 3, AI-affected, or protected-surface PRs with passing model access: `pnpm slice:evidence -- --run-root <run_root> --require-reviewers "sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"`
 - for blocked model access: cite `reviews/model-review-access.md`, state that external reviewers were blocked and not counted as approval, and keep deterministic local gates mandatory
 - no `--allow-dry-run` as approval for Tier 2, Tier 3, AI-affected, or protected-surface PR evidence
 - when the run root exists locally, `PR_FINALIZER_VERIFY_SLICE_RUN_ROOT=1 pnpm pr:finalizer`

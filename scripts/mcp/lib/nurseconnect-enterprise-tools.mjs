@@ -110,7 +110,7 @@ export function createEnterpriseHandlers({ repoRoot, config, availableSuites, ru
   async function sliceEvidenceAudit(args = {}) {
     if (typeof args.runRoot !== "string" || !args.runRoot.trim()) return { status: "error", error: "runRoot is required" };
     const commandArgs = ["slice:evidence", "--", "--run-root", args.runRoot.trim()];
-    if (args.strict === true) commandArgs.push("--require-reviewers", "claude48,claude47,sonnet46,gemini,copilot", "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--must-fix-disposition", args.mustFixDisposition || "none");
+    if (args.strict === true) commandArgs.push("--require-reviewers", "sonnet46,gemini,copilot", "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--must-fix-disposition", args.mustFixDisposition || "none");
     const result = await runProcess("pnpm", commandArgs, repoRoot);
     return { status: result.exitCode === 0 ? "success" : "error", runRoot: args.runRoot.trim(), strict: args.strict === true, exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr };
   }

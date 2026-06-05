@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const requiredReviewers = ["claude48", "claude47", "sonnet46", "gemini", "copilot"];
+export const requiredReviewers = ["sonnet46", "gemini", "copilot"];
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export const goodEvidence = `
@@ -26,7 +26,7 @@ export const goodEvidence = `
 - [x] \`pnpm verify-slice -- --run-root <run-root> --static\` result: pass
 - [x] \`pnpm verify-slice -- --run-root <run-root> --required-gates\` result: pass
 - [x] \`pnpm slice:evidence -- --run-root <run-root>\` result: pass
-- [x] \`pnpm slice:evidence -- --run-root <run-root> --require-reviewers "claude48,claude47,sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "none"\` result: pass
+- [x] \`pnpm slice:evidence -- --run-root <run-root> --require-reviewers "sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "none"\` result: pass
 
 ### Logs
 - [x] Logs path: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/evidence/gates/\`
@@ -62,7 +62,21 @@ export function writeRunRoot(root, options = {}) {
     unresolvedMustFixCount: 0,
     mustFixDisposition: "none",
   }));
-  writeFileSync(join(root, "evidence/nurseconnect-qa.json"), json({ status: "success", availableTools: ["branch_status", "modularity_audit", "project_map", "scope_audit", "slice_evidence_audit"], branchStatus: { changedFileCount: 2 }, modularityAudit: { status: "success" } }));
+  writeFileSync(join(root, "evidence/nurseconnect-qa.json"), json({
+    status: "success",
+    mcpIdentity: {
+      canonical: "nurseconnect_qa",
+      requested: "nurseconnect_qa",
+      effective: "nurseconnect_qa",
+      aliases: ["nurse_qa"],
+      owned: ["nurseconnect_qa", "nurse_qa"],
+      forbidden: ["interdomestik_qa"],
+      configured: ["context7", "nurse_qa", "nurseconnect_qa", "playwright"],
+    },
+    availableTools: ["branch_status", "modularity_audit", "project_map", "scope_audit", "slice_evidence_audit"],
+    branchStatus: { changedFileCount: 2 },
+    modularityAudit: { status: "success" },
+  }));
   writeFileSync(join(root, "reviews/model-review-preflight.json"), json({ status: "pass", reviewers: requiredReviewers, results: requiredReviewers.map((reviewer) => ({ reviewer, status: "available" })) }));
   writeFileSync(join(root, "reviews/model-review-access.json"), json(options.access ?? { status: "pass", reviewers: requiredReviewers, completed: requiredReviewers, blocked: [] }));
   writeFileSync(join(root, "evidence/model-review.json"), json({
