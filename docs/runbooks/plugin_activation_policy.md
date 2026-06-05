@@ -64,6 +64,10 @@ plugin assumptions.
 - AI-affected: OpenAI Developers plus Codex Security; run model-review access
   checks before relying on external critique, and record blocked routes instead
   of counting them as approval.
+- Quota fallback: when external review is helpful but full debate is too heavy
+  or Claude/Gemini quota is exhausted, use `pnpm model-review -- --fallback-ladder`
+  with `claude48,claude47,sonnet46,gemini,copilot`. It records blocked
+  attempts and stops at the first completed review.
 
 ## Activation Evidence
 

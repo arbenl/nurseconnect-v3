@@ -20,6 +20,7 @@ const payload = {
   blocked: [],
   dryRun: [],
   debate: false,
+  fallback: { enabled: false },
   agreedMustFixCount: 0,
   debateVerdict: null,
   manifestPath: join(reviewDir, "model-review-manifest.json"),
@@ -32,6 +33,7 @@ async function loadManifest() {
   const results = Array.isArray(manifest.results) ? manifest.results : [];
   payload.reviewers = Array.isArray(manifest.reviewers) ? manifest.reviewers : results.map((result) => result.reviewer).filter(Boolean);
   payload.debate = Boolean(manifest.debate);
+  payload.fallback = manifest.fallback || { enabled: false };
   payload.completed = results.filter((result) => result.status === "complete").map((result) => result.reviewer);
   payload.dryRun = results.filter((result) => result.status === "dry-run").map((result) => result.reviewer);
   payload.blocked = results.filter((result) => result.status === "blocked").map((result) => result.reviewer);
@@ -58,6 +60,9 @@ function summary() {
     `- dry_run: \`${list(payload.dryRun)}\``,
     `- blocked: \`${list(payload.blocked)}\``,
     `- debate: \`${payload.debate ? "yes" : "no"}\``,
+    `- fallback_ladder: \`${payload.fallback.enabled ? "yes" : "no"}\``,
+    payload.fallback.enabled ? `- fallback_winner: \`${payload.fallback.winner || "none"}\`` : null,
+    payload.fallback.enabled ? `- fallback_skipped: \`${list(payload.fallback.skipped)}\`` : null,
     `- agreed_must_fix_count: \`${payload.agreedMustFixCount}\``,
     payload.debateVerdict ? `- debate_verdict: \`${payload.debateVerdict}\`` : null,
     "",

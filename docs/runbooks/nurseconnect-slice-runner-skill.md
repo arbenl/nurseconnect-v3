@@ -86,5 +86,10 @@ Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --de
 when a slice benefits from multi-model critique: Tier 2/Tier 3, AI-affected
 slices, broad Tier 1 tooling/gate changes, or reviewer disagreement.
 
+Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --fallback-ladder`
+when one advisory review is enough or provider quota is tight. The ladder tries
+Claude routes first, then Gemini, then Copilot Sonnet, records blocked attempts,
+and stops at the first completed review.
+
 The debate is advisory evidence. It must not receive PHI, secrets, raw
 production data, patient details, or unnecessary clinical details.

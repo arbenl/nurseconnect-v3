@@ -76,6 +76,7 @@ write_reviewer_plan() {
   echo "- Model route preflight: \`pnpm model-review -- --preflight --run-root \"$RUN_ROOT\" --reviewers \"$MODEL_REVIEWERS\"\`"
   echo "- Model access check: \`pnpm model-review -- --access-check --run-root \"$RUN_ROOT\" --reviewers \"$MODEL_REVIEWERS\"\`"
   echo "- Model review: \`pnpm model-review -- --packet <design-packet.md> --run-root \"$RUN_ROOT\" --reviewers \"$MODEL_REVIEWERS\" --debate\`"
+  echo "- Quota fallback review: \`pnpm model-review -- --packet <design-packet.md> --run-root \"$RUN_ROOT\" --reviewers \"$MODEL_REVIEWERS\" --fallback-ladder\`"
   echo "- Subagent results: \`pnpm subagent-results -- --run-root \"$RUN_ROOT\" --must-fix-disposition \"none\"\`"
   echo "- Evidence check: \`pnpm slice:evidence -- --run-root \"$RUN_ROOT\"\`"
   echo "- Tier 3 / AI external-route evidence check: \`pnpm slice:evidence -- --run-root \"$RUN_ROOT\" --require-reviewers \"$MODEL_REVIEWERS\" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition \"none\"\`"

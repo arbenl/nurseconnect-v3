@@ -63,6 +63,7 @@ describe("verify-slice workflow", () => {
       expect(reviewerPlan).toContain(`pnpm subagent-results -- --run-root "${runRoot}"`);
       expect(reviewerPlan).toContain("--preflight");
       expect(reviewerPlan).toContain("--access-check");
+      expect(reviewerPlan).toContain("--fallback-ladder");
       expect(reviewerPlan).toContain('--require-reviewers "claude48,claude47,sonnet46,gemini,copilot"');
       expect(reviewerPlan).toContain("--require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate");
       expect(manifest).toContain("base_refresh_status:");

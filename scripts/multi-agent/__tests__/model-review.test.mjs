@@ -40,6 +40,7 @@ describe("model-review runner", () => {
       execFileSync("node", [scriptPath, "--packet", packet, "--run-root", root, "--dry-run"], { cwd: repoRoot });
       const manifest = JSON.parse(readFileSync(join(root, "reviews/model-review-manifest.json"), "utf8"));
       expect(manifest.reviewers).toEqual(["claude48", "claude47", "sonnet46", "gemini", "copilot"]);
+      expect(manifest.fallback.enabled).toBe(false);
       expect(manifest.results.map((result) => result.model)).toEqual(["claude-opus-4-5", "claude-sonnet-4-6", "claude-sonnet-4-6", "gemini-3.1-pro-preview", "claude-sonnet-4.6"]);
       expect(readFileSync(join(root, "reviews/claude48.md"), "utf8")).toContain("Claude 4.8 enterprise architecture review");
     } finally {
