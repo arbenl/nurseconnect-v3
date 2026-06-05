@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,6 +33,24 @@ describe("verify-slice workflow", () => {
         join(runRoot, "prompts/orchestrator.md"),
         "utf8"
       );
+      const reviewerPrompt = readFileSync(
+        join(runRoot, "prompts/security_reviewer.md"),
+        "utf8"
+      );
+      const qaSummary = readFileSync(
+        join(runRoot, "evidence/nurseconnect-qa.md"),
+        "utf8"
+      );
+      const qaEvidence = JSON.parse(
+        readFileSync(join(runRoot, "evidence/nurseconnect-qa.json"), "utf8")
+      );
+      const modelReviewSummary = readFileSync(
+        join(runRoot, "evidence/model-review.md"),
+        "utf8"
+      );
+      const modelReviewEvidence = JSON.parse(
+        readFileSync(join(runRoot, "evidence/model-review.json"), "utf8")
+      );
 
       expect(reviewerPlan).toContain(`run_root: \`${runRoot}\``);
       expect(reviewerPlan).toContain(
@@ -41,13 +59,68 @@ describe("verify-slice workflow", () => {
       expect(reviewerPlan).toContain(
         `pnpm verify-slice -- --run-root "${runRoot}" --required-gates`
       );
+      expect(reviewerPlan).toContain(`pnpm slice:evidence -- --run-root "${runRoot}"`);
+      expect(reviewerPlan).toContain(`pnpm subagent-results -- --run-root "${runRoot}"`);
+      expect(reviewerPlan).toContain("--preflight");
+      expect(reviewerPlan).toContain("--access-check");
+      expect(reviewerPlan).toContain('--require-reviewers "claude48,claude47,sonnet46,gemini,copilot"');
+      expect(reviewerPlan).toContain("--require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate");
       expect(manifest).toContain("base_refresh_status:");
       expect(manifest).toContain("branch_status:");
+      expect(manifest).toContain("nurseconnect_qa_status:");
+      expect(manifest).toContain("model_review_status:");
+      expect(manifest).toContain("model_review_dry_run:");
+      expect(reviewerPlan).toContain("nurseconnect_qa_status:");
+      expect(reviewerPlan).toContain("model_review_status:");
+      expect(reviewerPlan).toContain("model_review_dry_run:");
+      expect(reviewerPrompt).toContain("nurseconnect-qa.md");
+      expect(reviewerPrompt).toContain("model-review.md");
       expect(orchestrator).toContain("reviewers are read-only");
+      expect(qaSummary).toContain("NurseConnect QA Evidence");
+      expect(qaSummary).toContain("modularity_audit_status");
+      expect(qaEvidence.availableTools).toContain("project_map");
+      expect(qaEvidence.availableTools).toContain("scope_audit");
+      expect(qaEvidence.availableTools).toContain("modularity_audit");
+      expect(qaEvidence.modularityAudit.status).toBe("success");
+      expect(modelReviewSummary).toContain("Model Review Evidence");
+      expect(modelReviewEvidence.status).toBe("not-run");
     } finally {
       rmSync(runRoot, { recursive: true, force: true });
     }
-  });
+  }, 15_000);
+
+  it("passes repeatable QA scope prefixes to the NurseConnect QA evidence run", () => {
+    const runRoot = mkdtempSync(join(tmpdir(), "nurseconnect-verify-slice-qa-"));
+
+    try {
+      execFileSync(
+        "bash",
+        [
+          scriptPath,
+          "--base",
+          "HEAD",
+          "--run-root",
+          runRoot,
+          "--allow-main",
+          "--qa-allowed-path",
+          "scripts",
+          "--qa-forbidden-path",
+          "apps",
+        ],
+        { cwd: repoRoot, encoding: "utf8" }
+      );
+
+      const qaEvidence = JSON.parse(
+        readFileSync(join(runRoot, "evidence/nurseconnect-qa.json"), "utf8")
+      );
+
+      expect(qaEvidence.allowedPaths).toEqual(["scripts"]);
+      expect(qaEvidence.forbiddenPaths).toEqual(["apps"]);
+      expect(["success", "error"]).toContain(qaEvidence.status);
+    } finally {
+      rmSync(runRoot, { recursive: true, force: true });
+    }
+  }, 15_000);
 
   it("static mode covers committed, staged, worktree, and untracked diff checks", () => {
     const script = readFileSync(scriptPath, "utf8");
@@ -60,43 +133,14 @@ describe("verify-slice workflow", () => {
     expect(script).toContain("run_untracked_diff_check");
     expect(script).toContain("mcp-preflight");
     expect(script).toContain("repo-hygiene");
+    expect(script).toContain("modularity-guard");
     expect(script).toContain("sentinel");
     expect(script).toContain("sonar-agent");
     expect(script).toContain("sentry-advisory");
+    expect(script).toContain("slice-evidence");
+    expect(script).toContain("model-review-preflight");
+    expect(script).toContain("model-review-access-check");
+    expect(script).toContain("claude48,claude47,sonnet46,gemini,copilot");
     expect(script).toContain("docs-only static path");
-  });
-
-  it("can attach model-review receipts to a run root", () => {
-    const runRoot = mkdtempSync(join(tmpdir(), "nurseconnect-verify-slice-model-"));
-    const packet = join(runRoot, "packet.md");
-    writeFileSync(packet, "Safe model review packet.");
-
-    try {
-      execFileSync(
-        "bash",
-        [
-          scriptPath,
-          "--base",
-          "HEAD",
-          "--run-root",
-          runRoot,
-          "--allow-main",
-          "--model-review-packet",
-          packet,
-          "--model-reviewers",
-          "claude",
-          "--model-review-dry-run",
-          "--model-review-debate",
-        ],
-        { cwd: repoRoot, encoding: "utf8" }
-      );
-
-      const receipt = readFileSync(join(runRoot, "reviews/claude.json"), "utf8");
-      const debate = readFileSync(join(runRoot, "reviews/debate.md"), "utf8");
-      expect(receipt).toContain("Claude Sonnet");
-      expect(debate).toContain("Model Critique Debate");
-    } finally {
-      rmSync(runRoot, { recursive: true, force: true });
-    }
   });
 });

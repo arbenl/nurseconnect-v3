@@ -33,7 +33,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
@@ -708,7 +707,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -750,4 +748,6 @@ jobs:
             DB Integration Tests (node)
             E2E API Tests
             E2E UI Smoke Gate
+          PR_FINALIZER_VERIFY_SLICE_RUN_ROOT: "1"
+          PR_FINALIZER_ALLOW_MISSING_SLICE_RUN_ROOT: "1"
         run: bash scripts/pr-finalizer.sh

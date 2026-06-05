@@ -40,6 +40,11 @@ function fetchJson(url, token) {
 async function main() {
   const args = parseArgv(process.argv.slice(2));
   const runRoot = evidenceRoot(asString(args["run-root"], ""));
+  const strict = args.strict === true || args.strict === "true";
+  if (process.env.CI === "1" && process.env.SENTRY_ADVISORY_MODE === "advisory") {
+    process.stderr.write("[sentry-advisory] FAIL: advisory mode is forbidden in CI\n");
+    process.exit(1);
+  }
   const outDir = path.join(runRoot, "evidence", "sentry");
   const token = process.env.SENTRY_AUTH_TOKEN || "";
   const org = process.env.SENTRY_ORG || "";
@@ -53,6 +58,7 @@ async function main() {
       "- note: configure Sentry variables to turn this into live unresolved-issue evidence.",
     ]);
     process.stdout.write("SENTRY_ADVISORY_STATUS: MISSING_CONFIG\n");
+    if (strict) process.exit(1);
     return;
   }
 
@@ -74,6 +80,7 @@ async function main() {
     `- project: \`${org}/${project}\``,
   ]);
   process.stdout.write(`SENTRY_ADVISORY_STATUS: ${issues.length > 0 ? "UNRESOLVED_ISSUES" : "PASS"}\n`);
+  if (strict && issues.length > 0) process.exit(1);
 }
 
 main().catch((error) => {

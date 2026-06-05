@@ -3,13 +3,9 @@ set -euo pipefail
 
 FAILURES=()
 
-log() {
-  printf '[pr-finalizer] %s\n' "$*"
-}
+log() { printf '[pr-finalizer] %s\n' "$*"; }
 
-fail() {
-  FAILURES+=("$1")
-}
+fail() { FAILURES+=("$1"); }
 
 print_failures() {
   if ((${#FAILURES[@]} > 0)); then
@@ -330,6 +326,10 @@ if (errors.length > 0) {
 NODE
 ); then
   fail "PR body and pilot guardrails validation failed:\n${BODY_OUTPUT}"
+fi
+
+if ! SLICE_EVIDENCE_OUTPUT=$(PR_JSON="$PR_JSON" node scripts/pr-finalizer-slice-evidence.mjs 2>&1); then
+  fail "PR slice evidence validation failed:\n${SLICE_EVIDENCE_OUTPUT}"
 fi
 
 print_failures

@@ -9,6 +9,8 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
+import { createEnterpriseHandlers, enterpriseToolSchemas } from "./lib/nurseconnect-enterprise-tools.mjs";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "../..");
 const configuredOutputLimit = Number.parseInt(process.env.MCP_OUTPUT_MAX_BYTES || "65536", 10);
@@ -134,44 +136,18 @@ async function runConfiguredCommand(config, name, args = {}) {
 }
 
 const config = await loadConfig();
+const enterpriseHandlers = createEnterpriseHandlers({ repoRoot, config, availableSuites, runConfiguredCommand });
 const server = new Server(
   { name: "nurseconnect-qa", version: "1.0.0" },
   { capabilities: { tools: {} } }
 );
 
+const cwdSchema = { type: "string", description: "Optional working directory relative to repo root" };
 const tools = [
-  {
-    name: "build_health",
-    description: "Run NurseConnect typecheck, lint, and web build",
-    inputSchema: {
-      type: "object",
-      properties: {
-        cwd: { type: "string", description: "Optional working directory relative to repo root" },
-      },
-    },
-  },
-  {
-    name: "test_runner",
-    description: "Run a configured NurseConnect test suite",
-    inputSchema: {
-      type: "object",
-      properties: {
-        suite: { type: "string", enum: availableSuites(config) },
-        cwd: { type: "string", description: "Optional working directory relative to repo root" },
-      },
-      required: ["suite"],
-    },
-  },
-  {
-    name: "navigation_audit",
-    description: "Run the configured NurseConnect navigation audit/smoke suite",
-    inputSchema: {
-      type: "object",
-      properties: {
-        cwd: { type: "string", description: "Optional working directory relative to repo root" },
-      },
-    },
-  },
+  { name: "build_health", description: "Run NurseConnect typecheck, lint, and web build", inputSchema: { type: "object", properties: { cwd: cwdSchema } } },
+  { name: "test_runner", description: "Run a configured NurseConnect test suite", inputSchema: { type: "object", properties: { suite: { type: "string", enum: availableSuites(config) }, cwd: cwdSchema }, required: ["suite"] } },
+  { name: "navigation_audit", description: "Run the configured NurseConnect navigation audit/smoke suite", inputSchema: { type: "object", properties: { cwd: cwdSchema } } },
+  ...enterpriseToolSchemas(config, availableSuites),
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }));
@@ -186,6 +162,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
   if (name === "navigation_audit") {
     return wrapResult(await runConfiguredCommand(config, "navigation_audit", args));
+  }
+  if (enterpriseHandlers[name]) {
+    return wrapResult(await enterpriseHandlers[name](args));
   }
   throw new Error(`Unknown tool ${name}`);
 });

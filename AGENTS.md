@@ -29,6 +29,7 @@ Do not assume MCP tooling or repo policies from other repositories apply here un
 - `context7` is the preferred current-docs tool for framework behavior that could have changed.
 - Notion MCP is allowed when the task explicitly includes Notion sync or documentation updates.
 - Do not assume tools like `interdomestik_qa` or other repo-specific QA servers apply to NurseConnect unless they are added to NurseConnect's local config.
+- Before activating optional plugins, apply `docs/runbooks/plugin_activation_policy.md` and record blockers for unavailable plugin routes.
 
 ## Editing Constraints
 
@@ -55,6 +56,12 @@ Use the NurseConnect slice workflow for product, platform, ops, and launch work:
 13. Sync local `main`, update Notion when the slice changes program state, and delete the local and remote branch.
 
 For tiny docs-only slices, a lightweight reviewer pool is acceptable only when the PR body explicitly explains the reduced review scope. Do not silently skip `verify-slice`. Docs-only `verify-slice --required-gates` and the pre-push guard use the docs/static hygiene path instead of the full `pnpm gate:release`; CI and PR Finalizer remain authoritative after the PR opens.
+
+## Modularity Guard
+
+- Keep every new checked source, script, workflow, config, and test file at or below 150 lines.
+- If a touched legacy file already exceeds 150 lines, do not make it larger; split the touched logical path into focused helpers.
+- `pnpm modularity:guard` is mandatory evidence for slice readiness and PR evidence.
 
 <!-- FAST-TOOLS PROMPT v1 | codex-mastery | watermark:do-not-alter -->
 
