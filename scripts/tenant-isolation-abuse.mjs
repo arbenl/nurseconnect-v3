@@ -75,10 +75,20 @@ export function validateContract(contract) {
   }
 
   const tableNames = new Set();
+  const boundaryTableNames = new Set();
+  for (const table of contract.expectedTenantBoundaryTables ?? []) {
+    if (!table.table) errors.push("expected tenant boundary table entry is missing table");
+    if (boundaryTableNames.has(table.table)) errors.push(`duplicate expected boundary table: ${table.table}`);
+    boundaryTableNames.add(table.table);
+  }
+
   for (const table of contract.expectedTenantOwnedTables ?? []) {
     if (!table.table) errors.push("expected table entry is missing table");
     if (tableNames.has(table.table)) errors.push(`duplicate expected table: ${table.table}`);
     tableNames.add(table.table);
+    if (boundaryTableNames.has(table.table)) {
+      errors.push(`table cannot be both tenant boundary and tenant owned: ${table.table}`);
+    }
     if (table.requiredTenantColumn !== contract.tenantKey) {
       errors.push(`${table.table} must require ${contract.tenantKey}`);
     }
@@ -230,6 +240,15 @@ function invalidAssertionRefs(contract) {
 
 export function evaluateTenantIsolation(contract, inventory) {
   validateContract(contract);
+  const boundaryResults = (contract.expectedTenantBoundaryTables ?? []).map((expected) => {
+    const actual = inventory.tables[expected.table];
+    return {
+      table: expected.table,
+      classification: expected.classification,
+      present: Boolean(actual),
+      ready: Boolean(actual),
+    };
+  });
   const tableResults = contract.expectedTenantOwnedTables.map((expected) => {
     const actual = inventory.tables[expected.table];
     const columns = new Set(actual?.columns ?? []);
@@ -254,14 +273,19 @@ export function evaluateTenantIsolation(contract, inventory) {
   });
 
   const schemaReady = tableResults.every((result) => result.ready);
+  const boundaryReady = boundaryResults.every((result) => result.ready);
+  const missingBoundaryTables = boundaryResults.filter((result) => !result.ready).map((result) => result.table);
   const unsafePartialTables = tableResults.filter((result) => result.unsafePartial).map((result) => result.table);
   const missingScenarios = missingScenarioRefs(contract);
   const invalidScenarioRefs = invalidAssertionRefs(contract);
   const scenarioReady = missingScenarios.length === 0 && invalidScenarioRefs.length === 0;
   const status =
-    schemaReady && scenarioReady
+    boundaryReady && schemaReady && scenarioReady
       ? STATUS_PASS
-      : unsafePartialTables.length > 0 || invalidScenarioRefs.length > 0 || (schemaReady && !scenarioReady)
+      : missingBoundaryTables.length > 0 ||
+          unsafePartialTables.length > 0 ||
+          invalidScenarioRefs.length > 0 ||
+          (boundaryReady && schemaReady && !scenarioReady)
         ? STATUS_FAIL
         : STATUS_PENDING_SCHEMA;
 
@@ -272,7 +296,9 @@ export function evaluateTenantIsolation(contract, inventory) {
     snapshotPath: inventory.snapshotPath,
     promotionTrigger: contract.promotionTrigger,
     tenantKey: contract.tenantKey,
+    boundaryResults,
     tableResults,
+    missingBoundaryTables,
     unsafePartialTables,
     missingScenarios,
     invalidScenarioRefs,
@@ -280,6 +306,8 @@ export function evaluateTenantIsolation(contract, inventory) {
     roleGuardrails: contract.roleGuardrails ?? [],
     summary: {
       expectedTables: tableResults.length,
+      readyBoundaryTables: boundaryResults.filter((result) => result.ready).length,
+      expectedBoundaryTables: boundaryResults.length,
       readyTables: tableResults.filter((result) => result.ready).length,
       missingScenarioAssertions: missingScenarios.length,
       invalidScenarioAssertions: invalidScenarioRefs.length,
@@ -307,8 +335,13 @@ function textReport(evaluation, mode) {
   if (evaluation.snapshotPath) lines.push(`[tenant-isolation] snapshot=${evaluation.snapshotPath}`);
   lines.push(`[tenant-isolation] promotion_trigger=${evaluation.promotionTrigger}`);
   lines.push(
-    `[tenant-isolation] tables=${evaluation.summary.readyTables}/${evaluation.summary.expectedTables} ready missing_scenario_assertions=${evaluation.summary.missingScenarioAssertions} invalid_scenario_assertions=${evaluation.summary.invalidScenarioAssertions}`,
+    `[tenant-isolation] boundary_tables=${evaluation.summary.readyBoundaryTables}/${evaluation.summary.expectedBoundaryTables} ready tables=${evaluation.summary.readyTables}/${evaluation.summary.expectedTables} ready missing_scenario_assertions=${evaluation.summary.missingScenarioAssertions} invalid_scenario_assertions=${evaluation.summary.invalidScenarioAssertions}`,
   );
+
+  for (const result of evaluation.boundaryResults) {
+    const gaps = result.present ? "none" : "missing_table";
+    lines.push(`[tenant-isolation] boundary_table=${result.table} ready=${result.ready} gaps=${gaps}`);
+  }
 
   for (const result of evaluation.tableResults) {
     const gaps = [

@@ -23,6 +23,13 @@ const contract = JSON.parse(readFileSync(join(repoRoot, "config/tenant-isolation
 
 function tableInventory(overrides = {}) {
   const tables = {};
+  for (const expected of contract.expectedTenantBoundaryTables ?? []) {
+    tables[expected.table] = {
+      columns: [],
+      rlsEnabled: false,
+      ...overrides[expected.table],
+    };
+  }
   for (const expected of contract.expectedTenantOwnedTables) {
     tables[expected.table] = {
       columns: [expected.requiredTenantColumn, ...(expected.requiredResourceColumns ?? [])],
@@ -47,55 +54,66 @@ function contractWithScenarioAssertions() {
 }
 
 describe("tenant isolation abuse harness", () => {
-  it("reports current pre-schema metadata as advisory pending schema, not pass", () => {
+  it("fails when the tenant boundary table expected by the contract is missing", () => {
     const evaluation = evaluateTenantIsolation(contract, { source: "test", tables: {} });
 
-    expect(evaluation.status).toBe(STATUS_PENDING_SCHEMA);
-    expect(evaluation.summary.readyTables).toBe(0);
-    expect(evaluation.tableResults.every((result) => result.ready === false)).toBe(true);
-    expect(evaluation.missingScenarios).toContain("tenant_a_cannot_read_tenant_b");
+    expect(evaluation.status).toBe(STATUS_FAIL);
+    expect(evaluation.missingBoundaryTables).toContain("organizations");
   });
 
-  it("fails once a tenant-owned table has tenant ownership without RLS", () => {
+  it("reports partial tenant-owned metadata as advisory pending schema, not pass", () => {
     const evaluation = evaluateTenantIsolation(contract, {
       source: "test",
       tables: {
-        service_requests: {
-          columns: ["organization_id", "facility_id"],
+        organizations: {
+          columns: [],
           rlsEnabled: false,
         },
-      },
-    });
-
-    expect(evaluation.status).toBe(STATUS_FAIL);
-    expect(evaluation.tableResults.find((result) => result.table === "service_requests")?.missingRls).toBe(true);
-  });
-
-  it("does not fail just because a table has non-tenant RLS before tenant columns exist", () => {
-    const evaluation = evaluateTenantIsolation(contract, {
-      source: "test",
-      tables: {
-        service_requests: {
-          columns: [],
+        org_memberships: {
+          columns: ["organization_id"],
           rlsEnabled: true,
         },
       },
     });
 
     expect(evaluation.status).toBe(STATUS_PENDING_SCHEMA);
+    expect(evaluation.summary.readyBoundaryTables).toBe(contract.expectedTenantBoundaryTables.length);
+    expect(evaluation.summary.readyTables).toBe(1);
+    expect(evaluation.tableResults.find((result) => result.table === "org_memberships")?.ready).toBe(true);
+    expect(evaluation.missingScenarios).toContain("tenant_a_cannot_read_tenant_b");
+  });
+
+  it("fails once a tenant-owned table has tenant ownership without RLS", () => {
+    const evaluation = evaluateTenantIsolation(contract, tableInventory({
+      service_requests: {
+        columns: ["organization_id", "facility_id"],
+        rlsEnabled: false,
+      },
+    }));
+
+    expect(evaluation.status).toBe(STATUS_FAIL);
+    expect(evaluation.tableResults.find((result) => result.table === "service_requests")?.missingRls).toBe(true);
+  });
+
+  it("does not fail just because a table has non-tenant RLS before tenant columns exist", () => {
+    const evaluation = evaluateTenantIsolation(contract, tableInventory({
+      service_requests: {
+        columns: [],
+        rlsEnabled: true,
+      },
+    }));
+
+    expect(evaluation.status).toBe(STATUS_PENDING_SCHEMA);
     expect(evaluation.tableResults.find((result) => result.table === "service_requests")?.tenantSchemaStarted).toBe(false);
   });
 
   it("does not start guard mode from a resource column without the tenant key", () => {
-    const evaluation = evaluateTenantIsolation(contract, {
-      source: "test",
-      tables: {
-        service_requests: {
-          columns: ["facility_id"],
-          rlsEnabled: false,
-        },
+    const evaluation = evaluateTenantIsolation(contract, tableInventory({
+      service_requests: {
+        columns: ["facility_id"],
+        rlsEnabled: false,
       },
-    });
+    }));
 
     expect(evaluation.status).toBe(STATUS_PENDING_SCHEMA);
     expect(evaluation.tableResults.find((result) => result.table === "service_requests")?.tenantSchemaStarted).toBe(false);
@@ -105,6 +123,7 @@ describe("tenant isolation abuse harness", () => {
     const evaluation = evaluateTenantIsolation(contractWithScenarioAssertions(), tableInventory());
 
     expect(evaluation.status).toBe(STATUS_PASS);
+    expect(evaluation.summary.readyBoundaryTables).toBe(contract.expectedTenantBoundaryTables.length);
     expect(evaluation.summary.readyTables).toBe(contract.expectedTenantOwnedTables.length);
     expect(evaluation.missingScenarios).toEqual([]);
   });

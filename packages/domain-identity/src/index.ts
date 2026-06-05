@@ -6,3 +6,5 @@ export * from "./profile-policy";
 export * from "./require-role";
 export * from "./session-user";
 export * from "./domain-user";
+export * from "./organization-membership";
+export * from "./organization-membership-bootstrap";
