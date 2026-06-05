@@ -7,5 +7,6 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.db.test.ts"],
     exclude: ["**/node_modules/**", "**/dist/**"],
+    fileParallelism: false,
   },
 });

@@ -3,7 +3,22 @@
   "tenantKey": "organization_id",
   "statusLabel": "ADVISORY_PASS_PENDING_SCHEMA",
   "promotionTrigger": "Add tenant:isolation guard mode to required gates in the PR that introduces the organizations table or the first domain-table organization_id tenant column. Promote to enforce mode only in the PR that completes the full tenant-owned schema, RLS policies, and executable scenario assertions for the staging restrictive fixture.",
+  "expectedTenantBoundaryTables": [
+    {
+      "table": "organizations",
+      "classification": "tenant boundary organization table",
+      "rlsRequired": false,
+      "rlsDecision": "RLS is intentionally deferred for organizations in NC-E2-02 because the table is the tenant boundary itself and has no organization_id discriminator. Runtime authorization helpers must not expose organization enumeration routes in this slice. Tenant-owned membership rows are RLS-protected through org_memberships.organization_id; organization read policy belongs to the tenant selection/admin-console authorization slice."
+    }
+  ],
   "expectedTenantOwnedTables": [
+    {
+      "table": "org_memberships",
+      "requiredTenantColumn": "organization_id",
+      "requiredResourceColumns": [],
+      "rlsRequired": true,
+      "classification": "tenant-owned organization membership"
+    },
     {
       "table": "service_requests",
       "requiredTenantColumn": "organization_id",
@@ -64,31 +79,37 @@
     {
       "id": "tenant_a_cannot_read_tenant_b",
       "description": "Organization A admin cannot read Organization B tenant-owned rows.",
+      "status": "unimplemented",
       "assertionRefs": []
     },
     {
       "id": "tenant_a_cannot_write_tenant_b",
       "description": "Organization A cannot create or update rows owned by Organization B.",
+      "status": "unimplemented",
       "assertionRefs": []
     },
     {
       "id": "wrong_tenant_negative_cases",
       "description": "Wrong-tenant request, patient, visit, audit, payment authorization, and facility access attempts fail.",
+      "status": "unimplemented",
       "assertionRefs": []
     },
     {
       "id": "shared_nurse_no_cross_tenant_inference",
       "description": "A shared nurse cannot expose or infer another organization's data through tenant-scoped surfaces.",
+      "status": "unimplemented",
       "assertionRefs": []
     },
     {
       "id": "platform_admin_explicit_audited_access",
       "description": "Platform-admin cross-tenant access is explicit and audited, not ordinary tenant-policy bypass.",
+      "status": "unimplemented",
       "assertionRefs": []
     },
     {
       "id": "pooled_connection_tenant_cleanup",
       "description": "Consecutive tenant-scoped requests that reuse one physical connection do not retain prior tenant context.",
+      "status": "implemented",
       "assertionRefs": [
         "packages/database/src/tenant-context.db.test.ts#does not leak sequential tenant contexts on one physical connection"
       ]

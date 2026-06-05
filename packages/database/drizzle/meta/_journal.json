@@ -106,6 +106,13 @@
       "when": 1776708613809,
       "tag": "0015_curved_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1780633776798,
+      "tag": "0016_ordinary_champions",
+      "breakpoints": true
     }
   ]
 }
