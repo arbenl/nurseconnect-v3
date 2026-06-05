@@ -9,11 +9,21 @@ ALLOW_MAIN=0
 RUN_STATIC=0
 RUN_REQUIRED=0
 MODEL_REVIEW_PACKET=""
-MODEL_REVIEWERS="codex,claude,gemini,copilot"
+MODEL_REVIEWERS="claude48,claude47,sonnet46,gemini,copilot"
 MODEL_REVIEW_DRY_RUN=0
 MODEL_REVIEW_DEBATE=0
+MODEL_REVIEW_STATUS="not-run"
+MODEL_REVIEW_COMPLETED="none"
+MODEL_REVIEW_DRY_RUN_ROUTES="none"
+MODEL_REVIEW_BLOCKED="none"
 FETCH_STATUS="ok"
 BRANCH_STATUS="ok"
+NURSECONNECT_QA_STATUS="not-run"
+QA_ALLOWED_PATHS=()
+QA_FORBIDDEN_PATHS=()
+
+source "$(dirname "$0")/verify-slice-support.sh"
+source "$(dirname "$0")/verify-slice-subagents.sh"
 
 usage() {
   cat <<'USAGE'
@@ -27,9 +37,11 @@ Options:
   --run-root <path>        Override output root
   --allow-main             Allow running on main/master
   --model-review-packet    Minimized design packet to send to model reviewers
-  --model-reviewers        Comma list for model-review routes (default: codex,claude,gemini,copilot)
+  --model-reviewers        Comma list for model-review routes (default: claude48,claude47,sonnet46,gemini,copilot)
   --model-review-debate    Write model debate synthesis receipts
   --model-review-dry-run   Write model review receipts without calling model CLIs
+  --qa-allowed-path <path>  Optional allowed changed-file path prefix for NurseConnect QA scope audit; repeatable
+  --qa-forbidden-path <p>   Optional forbidden changed-file path prefix for NurseConnect QA scope audit; repeatable
   --static                 Run static local gates
   --required-gates         Run required local release gates
   -h, --help               Show this help
@@ -179,6 +191,16 @@ while [[ $# -gt 0 ]]; do
       MODEL_REVIEW_DEBATE=1
       shift
       ;;
+    --qa-allowed-path)
+      [[ $# -ge 2 ]] || fail 'missing value for --qa-allowed-path'
+      QA_ALLOWED_PATHS+=("$2")
+      shift 2
+      ;;
+    --qa-forbidden-path)
+      [[ $# -ge 2 ]] || fail 'missing value for --qa-forbidden-path'
+      QA_FORBIDDEN_PATHS+=("$2")
+      shift 2
+      ;;
     --static)
       RUN_STATIC=1
       shift
@@ -302,6 +324,8 @@ if all_changed_files_match '^(AGENTS\.md|README\.md|HANDOVER\.md|GEMINI\.md|IMPO
   docs_only="yes"
 fi
 
+run_nurseconnect_qa_evidence
+
 reviewers=(security_reviewer architecture_reviewer qa_reviewer ops_reviewer)
 if [[ "$performance_touched" == "yes" ]]; then
   reviewers+=(performance_reviewer)
@@ -321,6 +345,11 @@ write_manifest() {
 - base_ref: \`$BASE_REF\`
 - authoritative_base_commit: \`$BASE_COMMIT\`
 - base_refresh_status: \`$FETCH_STATUS\`
+- nurseconnect_qa_status: \`$NURSECONNECT_QA_STATUS\`
+- model_review_status: \`$MODEL_REVIEW_STATUS\`
+- model_review_completed: \`$MODEL_REVIEW_COMPLETED\`
+- model_review_dry_run: \`$MODEL_REVIEW_DRY_RUN_ROUTES\`
+- model_review_blocked: \`$MODEL_REVIEW_BLOCKED\`
 - changed_file_count: \`$changed_count\`
 - committed_changed_file_count: \`$committed_changed_count\`
 - worktree_changed_file_count: \`$worktree_changed_count\`
@@ -343,6 +372,17 @@ See \`$CHANGED_FILES\`.
 ## Diff Stat
 
 See \`$DIFF_STAT\`.
+
+## NurseConnect QA Evidence
+
+- Summary: \`$RUN_ROOT/evidence/nurseconnect-qa.md\`
+- Raw JSON: \`$RUN_ROOT/evidence/nurseconnect-qa.json\`
+
+## Model Review Evidence
+
+- Access: \`$RUN_ROOT/reviews/model-review-access.md\`
+- Summary: \`$RUN_ROOT/evidence/model-review.md\`
+- Raw JSON: \`$RUN_ROOT/evidence/model-review.json\`
 EOF
 }
 
@@ -359,6 +399,8 @@ Review the current NurseConnect slice before PR.
 - Base: \`$BASE_COMMIT...HEAD\` from \`$BASE_REF\`
 - Changed-file inventory: \`$CHANGED_FILES\`
 - Diff stat: \`$DIFF_STAT\`
+- NurseConnect QA evidence: \`$RUN_ROOT/evidence/nurseconnect-qa.md\`
+- Model review evidence: \`$RUN_ROOT/evidence/model-review.md\`
 - Include committed branch changes plus staged, unstaged, and untracked local files from the changed-file inventory.
 - Review only the slice diff and directly impacted execution paths.
 - Do not request unrelated refactors or documentation churn.
@@ -385,35 +427,7 @@ If there are no material findings, say that plainly and list residual test risk.
 EOF
 }
 
-write_orchestration_prompt() {
-  cat >"$RUN_ROOT/prompts/orchestrator.md" <<EOF
-# Pre-PR Reviewer Pool Orchestrator
-
-Use this run root: \`$RUN_ROOT\`
-
-Spawn the selected reviewers in parallel:
-$(printf -- '- `%s`\n' "${reviewers[@]}")
-
-Rules:
-- reviewers are read-only and must not modify product code
-- reviewers read only \`$BASE_COMMIT...HEAD\` and directly impacted paths
-- reviewers must include staged, unstaged, and untracked local files listed in \`$CHANGED_FILES\`
-- collect MUST_FIX / SHOULD_FIX / NICE_TO_HAVE findings
-- deduplicate overlapping findings
-- produce one final verdict: \`READY FOR PR\`, \`READY FOR PR AFTER MUST-FIX ITEMS\`, or \`NOT READY FOR PR\`
-- any MUST_FIX finding must be fixed or explicitly rejected with technical reasoning before PR
-
-Conditional signals:
-- ui_touched: \`$ui_touched\`
-- performance_touched: \`$performance_touched\`
-- contracts_touched: \`$contracts_touched\`
-- ops_touched: \`$ops_touched\`
-- security_touched: \`$security_touched\`
-- database_touched: \`$database_touched\`
-- docs_only: \`$docs_only\`
-EOF
-}
-
+summarize_model_review_evidence
 write_manifest
 write_reviewer_prompt "security_reviewer" "Security Reviewer" "Find auth/session, role, admin API, patient/nurse/referral partner boundary, PHI/privacy, webhook, secret, and payment/payout regressions introduced by this slice."
 write_reviewer_prompt "architecture_reviewer" "Architecture Reviewer" "Find package-boundary drift, apps/web leakage, domain ownership mistakes, route/access-control bypasses, overbroad refactors, and scope creep introduced by this slice."
@@ -422,59 +436,37 @@ write_reviewer_prompt "ops_reviewer" "Ops Reviewer" "Find launch runbook, monito
 write_reviewer_prompt "performance_reviewer" "Performance Reviewer" "Find query, dispatch, queue, polling, hot path, unbounded work, cache, rendering, and bundle-cost regressions introduced by this slice."
 write_reviewer_prompt "contracts_reviewer" "Contracts Reviewer" "Find API, contract schema, database migration, script, workflow, environment, and package boundary drift introduced by this slice."
 write_orchestration_prompt
-
-{
-  echo "# Verify Slice Reviewer Plan"
-  echo
-  echo "- run_root: \`$RUN_ROOT\`"
-  echo "- branch_status: \`$BRANCH_STATUS\`"
-  echo "- base_refresh_status: \`$FETCH_STATUS\`"
-  echo "- selected_reviewers: \`${reviewers[*]}\`"
-  echo "- changed_file_count: \`$changed_count\`"
-  echo "- committed_changed_file_count: \`$committed_changed_count\`"
-  echo "- worktree_changed_file_count: \`$worktree_changed_count\`"
-  echo "- untracked_file_count: \`$untracked_count\`"
-  echo
-  echo "## Recommended Dispatch"
-  echo
-  for reviewer in "${reviewers[@]}"; do
-    echo "- \`$reviewer\`: \`$RUN_ROOT/prompts/$reviewer.md\`"
-  done
-  echo
-  echo "## Reusable Reviewer Assets"
-  echo
-  echo "- Config: \`$ROOT_DIR/config/reviewers\`"
-  echo "- Prompts: \`$ROOT_DIR/prompts/reviewers\`"
-  echo
-  echo "## Deterministic Gate Options"
-  echo
-  echo "Use the same run root for all reviewer evidence and gate logs:"
-  echo
-  echo "- Static: \`pnpm verify-slice -- --run-root \"$RUN_ROOT\" --static\`"
-  echo "- Required local gates: \`pnpm verify-slice -- --run-root \"$RUN_ROOT\" --required-gates\`"
-  echo "- Model review: \`pnpm model-review -- --packet <design-packet.md> --run-root \"$RUN_ROOT\" --debate\`"
-  if [[ "$docs_only" == "yes" ]]; then
-    echo "- Docs-only required gates: required-gates uses docs/static hygiene checks instead of \`pnpm gate:release\`."
-  fi
-} >"$RUN_ROOT/reviewer-plan.md"
+write_subagent_handoff
+write_reviewer_plan
 
 if [[ -n "$MODEL_REVIEW_PACKET" ]]; then
+  if [[ "$MODEL_REVIEW_DRY_RUN" != "1" ]]; then
+    run_gate "model-review-preflight" "pnpm model-review -- --preflight --run-root \"$RUN_ROOT\" --reviewers \"$MODEL_REVIEWERS\""
+    run_gate "model-review-access-check" "pnpm model-review -- --access-check --run-root \"$RUN_ROOT\" --reviewers \"$MODEL_REVIEWERS\""
+  fi
   model_review_cmd="pnpm model-review -- --packet \"$MODEL_REVIEW_PACKET\" --run-root \"$RUN_ROOT\" --reviewers \"$MODEL_REVIEWERS\""
   [[ "$MODEL_REVIEW_DRY_RUN" -ne 1 ]] || model_review_cmd="$model_review_cmd --dry-run"
   [[ "$MODEL_REVIEW_DEBATE" -ne 1 ]] || model_review_cmd="$model_review_cmd --debate"
   run_gate "model-review" "$model_review_cmd"
+  summarize_model_review_evidence
+  write_manifest
+  write_reviewer_plan
 fi
 
 if [[ "$RUN_STATIC" -eq 1 ]]; then
   run_gate "mcp-preflight" "pnpm mcp:preflight"
   run_gate "env-check" "pnpm env:check"
   run_gate "repo-hygiene" "pnpm repo:hygiene"
+  run_gate "modularity-guard" "pnpm modularity:guard -- --base \"$BASE_COMMIT\""
   run_gate "git-diff-check-committed" "git diff --check $BASE_COMMIT...HEAD"
   run_gate "git-diff-check-staged" "git diff --cached --check"
   run_gate "git-diff-check-worktree" "git diff --check"
   run_untracked_diff_check
   run_gate "sentinel" "bash scripts/multi-agent/sentinel-agent.sh --run-root \"$RUN_ROOT\" --base \"$BASE_REF\""
-  run_gate "sentry-advisory" "node scripts/multi-agent/sentry-advisory.mjs --run-root \"$RUN_ROOT\""
+  sentry_flags="--strict"
+  [[ "${SENTRY_ADVISORY_MODE:-strict}" == "advisory" ]] && sentry_flags=""
+  run_gate "sentry-advisory" "node scripts/multi-agent/sentry-advisory.mjs --run-root \"$RUN_ROOT\" $sentry_flags"
+  run_gate "slice-evidence" "pnpm slice:evidence -- --run-root \"$RUN_ROOT\""
   if [[ "$docs_only" == "yes" ]]; then
     printf '[verify-slice] docs-only static path: skipping type-check, lint, web build, sonar advisory, and launch readiness\n'
   else

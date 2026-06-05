@@ -38,21 +38,15 @@ Do not start implementation until the slice design has been reviewed or explicit
 - tests and verification commands
 - acceptance criteria that can fail deterministically
 
-Use configured model reviewers as advisory reviewers, not authority. Prefer this order when callable in the active runtime:
+Use configured model reviewers as advisory reviewers, not authority. Default route order is `claude48`, `claude47`, `sonnet46`, Gemini Pro, Copilot Pro+, then a local Codex route when configured.
 
-- Codex for implementation critique and local-change coherence
-- Claude for architecture, coupling, feasibility, and test-plan critique
-- Gemini Pro for product, workflow, UX, accessibility, and copy critique
-- Copilot Pro+ for implementation-risk and PR-review style critique
+Before relying on external reviewer routes, run `pnpm model-review -- --preflight --run-root <run_root> --reviewers claude48,claude47,sonnet46,gemini,copilot`, then `pnpm model-review -- --access-check --run-root <run_root> --reviewers claude48,claude47,sonnet46,gemini,copilot`. Keep `<run_root>/reviews/model-review-preflight.*` and `model-review-access.*`; blocked model ids, auth, quota, or provider failures are not approval and must be recorded as blocked external-review evidence.
 
-Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --debate` when the slice needs multi-model critique. It writes individual receipts plus `<run_root>/reviews/debate.md` and `<run_root>/reviews/debate.json`. If a reviewer is unavailable, blocked, unauthenticated, or quota-limited, record the blocker and either use the strongest available fallback or ask the user for the external review result. Accepted findings must update the design before branch creation. Rejected findings need a short technical rationale.
+If an installed route uses an unavailable model id, override only that route with `CLAUDE_48_REVIEW_MODEL`, `CLAUDE_47_REVIEW_MODEL`, `CLAUDE_SONNET_46_REVIEW_MODEL`, `GEMINI_REVIEW_MODEL`, or `COPILOT_REVIEW_MODEL`, then re-run access check.
 
-Default debate triggers:
+Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --reviewers claude48,claude47,sonnet46,gemini,copilot --debate` for multi-model critique when access check passes. It writes receipts plus `reviews/debate.*`; accepted findings update the design, and rejected findings need technical rationale.
 
-- Tier 2 or Tier 3 implementation slices
-- AI-affected slices
-- broad Tier 1 tooling/gate changes
-- any slice where reviewers disagree or the user requests deeper critique
+Default debate triggers: Tier 2/Tier 3 implementation, AI-affected slices, broad Tier 1 tooling/gate changes, reviewer disagreement, or explicit user request. If external routes are blocked, do not fabricate approval; continue with deterministic gates and record that the model debate was skipped because routes were blocked.
 
 ## Verify Slice
 
@@ -78,12 +72,13 @@ pnpm verify-slice -- --run-root tmp/multi-agent/verify-slice/<run-id> --required
 pnpm mcp:preflight
 pnpm env:check
 pnpm repo:hygiene
+pnpm modularity:guard
 git diff --check
 git diff --cached --check
 git diff --check <base>...HEAD
 temporary-index diff check for untracked files
 sentinel advisory
-sentry advisory
+sentry advisory (strict unless `SENTRY_ADVISORY_MODE=advisory`)
 ```
 
 For non-docs slices, `--static` also runs:
@@ -155,21 +150,25 @@ Include the `verify-slice` run root in the PR body:
 
 ```text
 tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md
+tmp/multi-agent/verify-slice/<run-id>/reviews/subagent-handoff.md and reviews/subagent-results.md
+tmp/multi-agent/verify-slice/<run-id>/reviews/model-review-preflight.md and reviews/model-review-access.md
+tmp/multi-agent/verify-slice/<run-id>/evidence/nurseconnect-qa.md and evidence/model-review.md
 tmp/multi-agent/verify-slice/<run-id>/evidence/gates/
 ```
 
 The PR body should also state:
 
-- selected reviewers
-- `MUST_FIX` count
-- whether every `MUST_FIX` was fixed or technically rejected
-- local static gate result
-- local required gate result
+- tracker ID, selected reviewers, subagent results, and model route preflight result or docs-only/dry-run skip reason
+- `MUST_FIX: <count> (none|all fixed|rejected:<reason>)`
+- `pnpm modularity:guard -- --base <base_commit>` result
+- local static and required gate results
+- `pnpm slice:evidence -- --run-root <run_root>` result
+- for Tier 2, Tier 3, AI-affected, or protected-surface PRs with passing model access: `pnpm slice:evidence -- --run-root <run_root> --require-reviewers "claude48,claude47,sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"`
+- for blocked model access: cite `reviews/model-review-access.md`, state that external reviewers were blocked and not counted as approval, and keep deterministic local gates mandatory
+- no `--allow-dry-run` as approval for Tier 2, Tier 3, AI-affected, or protected-surface PR evidence
+- when the run root exists locally, `PR_FINALIZER_VERIFY_SLICE_RUN_ROOT=1 pnpm pr:finalizer`
 
-The PR body must keep the `Evidence`, `Logs`, `Screenshots`, `Runbook`, and
-`Pilot guardrails` sections from `.github/PULL_REQUEST_TEMPLATE.md`; `PR
-Finalizer` parses those sections and fails the PR when required evidence is
-missing.
+The PR body must keep the `Evidence`, `Logs`, `Screenshots`, `Runbook`, and `Pilot guardrails` sections from `.github/PULL_REQUEST_TEMPLATE.md`; `PR Finalizer` parses them and fails missing slice evidence, model-review/debate evidence, or protected-surface guardrails.
 
 ## Merge Gate Artifacts
 

@@ -48,4 +48,70 @@ describe("nurseconnect QA MCP server", () => {
       await rm(fakeRoot, { recursive: true, force: true });
     }
   });
+
+  it("exposes enterprise inspection tools for NurseConnect slices", async () => {
+    const client = new Client({ name: "nurseconnect-mcp-tools-test", version: "1.0.0" });
+    const transport = new StdioClientTransport({
+      command: "bash",
+      args: ["scripts/start-repo-qa.sh"],
+      cwd: repoRoot,
+      env: { ...process.env },
+    });
+
+    try {
+      await client.connect(transport);
+      const { tools } = await client.listTools();
+      const toolNames = tools.map((tool) => tool.name);
+
+      expect(toolNames).toContain("project_map");
+      expect(toolNames).toContain("code_search");
+      expect(toolNames).toContain("branch_status");
+      expect(toolNames).toContain("scope_audit");
+      expect(toolNames).toContain("modularity_audit");
+      expect(toolNames).toContain("slice_evidence_audit");
+      expect(toolNames).toContain("repo_verify");
+    } finally {
+      await client.close().catch(() => {});
+    }
+  });
+
+  it("returns a bounded project map and code search result through MCP", async () => {
+    const client = new Client({ name: "nurseconnect-mcp-search-test", version: "1.0.0" });
+    const transport = new StdioClientTransport({
+      command: "bash",
+      args: ["scripts/start-repo-qa.sh"],
+      cwd: repoRoot,
+      env: { ...process.env },
+    });
+
+    try {
+      await client.connect(transport);
+      const projectMap = await client.callTool({ name: "project_map", arguments: {} });
+      const projectPayload = JSON.parse(projectMap.content[0].text);
+
+      expect(projectPayload.repo).toBe("nurseconnect-v3");
+      expect(projectPayload.configuredSuites).toContain("release");
+      expect(projectPayload.keyDocs).toContain("AGENTS.md");
+
+      const search = await client.callTool({
+        name: "code_search",
+        arguments: {
+          query: "nurseconnect_qa",
+          globs: ["scripts/mcp/**", ".codex/config.toml", ".mcp-toolkit.json"],
+          maxResults: 20,
+        },
+      });
+      const searchPayload = JSON.parse(search.content[0].text);
+
+      expect(searchPayload.status).toBe("success");
+      expect(searchPayload.results.join("\n")).toContain("nurseconnect_qa");
+      expect(searchPayload.results.length).toBeLessThanOrEqual(20);
+
+      const modularity = await client.callTool({ name: "modularity_audit", arguments: { base: "HEAD" } });
+      const modularityPayload = JSON.parse(modularity.content[0].text);
+      expect(modularityPayload.status).toBe("success");
+    } finally {
+      await client.close().catch(() => {});
+    }
+  });
 });

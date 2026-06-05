@@ -28,6 +28,36 @@ describe("sentry advisory", () => {
     }
   });
 
+  it("fails missing config in strict mode", () => {
+    const root = mkdtempSync(join(tmpdir(), "nurseconnect-sentry-"));
+    try {
+      const result = spawnSync("node", [scriptPath, "--run-root", root, "--strict"], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        env: { PATH: process.env.PATH },
+      });
+      expect(result.status).not.toBe(0);
+      expect(result.stdout).toContain("MISSING_CONFIG");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("forbids advisory mode in CI", () => {
+    const root = mkdtempSync(join(tmpdir(), "nurseconnect-sentry-"));
+    try {
+      const result = spawnSync("node", [scriptPath, "--run-root", root], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        env: { PATH: process.env.PATH, CI: "1", SENTRY_ADVISORY_MODE: "advisory" },
+      });
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("advisory mode is forbidden in CI");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("blocks accidental Interdomestik Sentry configuration", () => {
     const root = mkdtempSync(join(tmpdir(), "nurseconnect-sentry-"));
     try {
