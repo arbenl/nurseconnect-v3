@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { parseArgv } from "./lib/cli.mjs";
 import { writeDebate } from "./lib/model-review-debate.mjs";
+import { runFallbackLadder } from "./lib/model-review-fallback.mjs";
 import { writeAccessCheck, writePreflight } from "./lib/model-review-route-checks.mjs";
 import { runRoute, safeResult, writeReceipt } from "./lib/model-review-runner.mjs";
 import { splitReviewers } from "./lib/model-review-routes.mjs";
@@ -24,6 +25,7 @@ Options:
   --preflight                Check selected reviewer CLI routes and write route-readiness evidence
   --access-check             Call selected reviewer routes with a minimal non-sensitive prompt
   --debate                   Write a critique debate synthesis from reviewer receipts
+  --fallback-ladder          Try reviewers in order and stop at first completed route
   --dry-run                  Write receipts without calling model CLIs
   --allow-sensitive          Allow packet despite PHI/secret pattern matches
 `;
@@ -46,17 +48,32 @@ async function runReview({ args, runRoot, reviewDir, selected }) {
   const matches = sensitiveMatches(packet);
   if (matches.length > 0 && !args["allow-sensitive"]) fail(`packet matched sensitive patterns: ${matches.join(", ")}`);
   const prompt = args.debate ? debatePrompt(packet, selected) : packet;
-  const results = [];
-  for (const reviewer of selected) {
-    const result = await runRoute(reviewer, prompt, { dryRun: Boolean(args["dry-run"]) }, repoRoot);
-    results.push(result);
-    writeReceipt(reviewDir, result);
+  const options = { dryRun: Boolean(args["dry-run"]) };
+  const fallbackResult = args["fallback-ladder"]
+    ? await runFallbackLadder({ selected, prompt, options, repoRoot, reviewDir })
+    : null;
+  const results = fallbackResult?.results || [];
+  if (!fallbackResult) {
+    for (const reviewer of selected) {
+      const result = await runRoute(reviewer, prompt, options, repoRoot);
+      results.push(result);
+      writeReceipt(reviewDir, result);
+    }
   }
   if (args.debate) writeDebate(reviewDir, results);
-  const manifest = { packetPath, runRoot, reviewers: selected, debate: Boolean(args.debate), results: results.map(safeResult) };
+  const manifest = {
+    packetPath,
+    runRoot,
+    reviewers: selected,
+    debate: Boolean(args.debate),
+    fallback: fallbackResult?.fallback || { enabled: false },
+    results: results.map(safeResult),
+  };
   writeFileSync(path.join(reviewDir, "model-review-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   process.stdout.write(`[model-review] run_root=${runRoot}\n[model-review] reviewers=${selected.join(" ")}\n`);
+  if (fallbackResult?.fallback.enabled) process.stdout.write(`[model-review] fallback_winner=${fallbackResult.fallback.winner || "none"}\n`);
   if (args.debate) process.stdout.write(`[model-review] debate=${path.join(reviewDir, "debate.md")}\n`);
+  if (fallbackResult?.fallback.exhausted) process.exitCode = 1;
 }
 
 async function main() {

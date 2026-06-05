@@ -29,9 +29,17 @@ args = [
 ]
 
 [mcp_servers.nurseconnect_qa]
-command = "/bin/bash"
+command = "bash"
 args = ["scripts/start-repo-qa.sh"]
 cwd = "."
+
+[mcp_servers.nurse_qa]
+command = "bash"
+args = ["scripts/start-repo-qa.sh"]
+cwd = "."
+
+[mcp_servers.nurse_qa.tools.slice_evidence_audit]
+approval_mode = "approve"
 
 [roles.scribe]
 config = ".codex/agents/scribe.toml"

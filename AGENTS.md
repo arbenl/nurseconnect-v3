@@ -28,7 +28,7 @@ Do not assume MCP tooling or repo policies from other repositories apply here un
 - `playwright` is the preferred browser-validation tool for this repo.
 - `context7` is the preferred current-docs tool for framework behavior that could have changed.
 - Notion MCP is allowed when the task explicitly includes Notion sync or documentation updates.
-- Do not assume tools like `interdomestik_qa` or other repo-specific QA servers apply to NurseConnect unless they are added to NurseConnect's local config.
+- Use repo-owned `nurseconnect_qa`; `nurse_qa` is an alias to the same server. Do not assume tools like `interdomestik_qa` or other repo-specific QA servers apply to NurseConnect unless they are added to NurseConnect's local config.
 - Before activating optional plugins, apply `docs/runbooks/plugin_activation_policy.md` and record blockers for unavailable plugin routes.
 
 ## Editing Constraints

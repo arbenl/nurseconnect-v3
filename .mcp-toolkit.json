@@ -4,7 +4,8 @@
     "root": "/Users/arbenlila/development/nurseconnect-v3",
     "devPort": 3010,
     "ownedMcpServers": [
-      "nurseconnect_qa"
+      "nurseconnect_qa",
+      "nurse_qa"
     ],
     "forbiddenMcpServers": [
       "interdomestik_qa"

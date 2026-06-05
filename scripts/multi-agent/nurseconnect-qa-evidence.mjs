@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -33,6 +33,33 @@ function oneLine(value) {
   return value || "none";
 }
 
+async function loadMcpIdentity() {
+  const [toolkitRaw, codexConfig] = await Promise.all([readFile(".mcp-toolkit.json", "utf8"), readFile(".codex/config.toml", "utf8")]);
+  const toolkit = JSON.parse(toolkitRaw);
+  const requested = process.env.QA_IDENTITY || "nurseconnect_qa";
+  return {
+    canonical: "nurseconnect_qa",
+    requested,
+    effective: requested === "nurse_qa" ? "nurseconnect_qa" : requested,
+    aliases: ["nurse_qa"],
+    owned: toolkit.identity?.ownedMcpServers || [],
+    forbidden: toolkit.identity?.forbiddenMcpServers || [],
+    configured: [...codexConfig.matchAll(/^\[mcp_servers\.([^\]]+)\]/gm)].map((match) => match[1]).sort(),
+  };
+}
+
+function validateMcpIdentity(identity) {
+  if (identity.forbidden.includes(identity.requested)) throw new Error(`runtime QA identity is forbidden: ${identity.requested}`);
+  if (![identity.canonical, ...identity.aliases].includes(identity.requested)) throw new Error(`runtime QA identity is not owned: ${identity.requested}`);
+  if (identity.effective !== identity.canonical) throw new Error(`runtime QA identity did not normalize to ${identity.canonical}`);
+  for (const name of [identity.canonical, ...identity.aliases]) {
+    if (!identity.owned.includes(name)) throw new Error(`repo toolkit does not own ${name}`);
+    if (!identity.configured.includes(name)) throw new Error(`repo config does not wire ${name}`);
+  }
+  if (!identity.forbidden.includes("interdomestik_qa")) throw new Error("repo toolkit must forbid interdomestik_qa");
+  if (identity.configured.includes("interdomestik_qa")) throw new Error("repo config must not wire interdomestik_qa");
+}
+
 const payload = {
   status: "blocked",
   generatedUtc: new Date().toISOString(),
@@ -40,6 +67,7 @@ const payload = {
   allowedPaths: listFromEnv("QA_ALLOWED_PATHS"),
   forbiddenPaths: listFromEnv("QA_FORBIDDEN_PATHS"),
   availableTools: [],
+  mcpIdentity: null,
   projectMap: null,
   branchStatus: null,
   scopeAudit: null,
@@ -56,6 +84,8 @@ const transport = new StdioClientTransport({
 });
 
 async function collect() {
+  payload.mcpIdentity = await loadMcpIdentity();
+  validateMcpIdentity(payload.mcpIdentity);
   await client.connect(transport);
   const { tools } = await client.listTools();
   payload.availableTools = tools.map((tool) => tool.name).sort();
@@ -82,6 +112,9 @@ function summary() {
     `- status: \`${payload.status}\``,
     `- base: \`${payload.base}\``,
     `- available_tools: \`${oneLine(payload.availableTools)}\``,
+    `- mcp_owned: \`${oneLine(payload.mcpIdentity?.owned)}\``,
+    `- mcp_forbidden: \`${oneLine(payload.mcpIdentity?.forbidden)}\``,
+    `- mcp_configured: \`${oneLine(payload.mcpIdentity?.configured)}\``,
     `- changed_file_count: \`${payload.branchStatus?.changedFileCount ?? payload.scopeAudit?.changedFileCount ?? "unknown"}\``,
     `- allowed_paths: \`${oneLine(payload.allowedPaths)}\``,
     `- forbidden_paths: \`${oneLine(payload.forbiddenPaths)}\``,

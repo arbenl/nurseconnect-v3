@@ -1,4 +1,4 @@
-export const defaultReviewers = ["claude48", "claude47", "sonnet46", "gemini", "copilot"];
+export const defaultReviewers = ["sonnet46", "gemini", "copilot"];
 
 function claudeRoute({ label, model, role, overrideEnv }) {
   return {
@@ -23,7 +23,7 @@ export const routes = {
   },
   claude48: claudeRoute({
     label: "Claude 4.8 enterprise architecture review",
-    model: process.env.CLAUDE_48_REVIEW_MODEL || "claude-opus-4-5",
+    model: process.env.CLAUDE_48_REVIEW_MODEL || "claude-opus-4-8",
     role: "strongest configured Claude review",
     overrideEnv: "CLAUDE_48_REVIEW_MODEL",
   }),

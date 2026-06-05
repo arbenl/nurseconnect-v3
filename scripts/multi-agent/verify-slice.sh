@@ -9,7 +9,7 @@ ALLOW_MAIN=0
 RUN_STATIC=0
 RUN_REQUIRED=0
 MODEL_REVIEW_PACKET=""
-MODEL_REVIEWERS="claude48,claude47,sonnet46,gemini,copilot"
+MODEL_REVIEWERS="sonnet46,gemini,copilot"
 MODEL_REVIEW_DRY_RUN=0
 MODEL_REVIEW_DEBATE=0
 MODEL_REVIEW_STATUS="not-run"
@@ -37,7 +37,7 @@ Options:
   --run-root <path>        Override output root
   --allow-main             Allow running on main/master
   --model-review-packet    Minimized design packet to send to model reviewers
-  --model-reviewers        Comma list for model-review routes (default: claude48,claude47,sonnet46,gemini,copilot)
+  --model-reviewers        Comma list for model-review routes (default: sonnet46,gemini,copilot; add claude47/claude48 for escalation)
   --model-review-debate    Write model debate synthesis receipts
   --model-review-dry-run   Write model review receipts without calling model CLIs
   --qa-allowed-path <path>  Optional allowed changed-file path prefix for NurseConnect QA scope audit; repeatable

@@ -13,8 +13,29 @@ export async function checkNurseConnectQa(runRoot) {
   const requiredTools = ["project_map", "branch_status", "scope_audit", "modularity_audit", "slice_evidence_audit"];
   const missingTools = requiredTools.filter((tool) => !availableTools.includes(tool));
   if (missingTools.length > 0) return fail("nurseconnect_qa evidence is missing required tools", { path: file, missingTools });
+  const missingIdentity = missingMcpIdentity(evidence.mcpIdentity);
+  if (missingIdentity.length > 0) return fail("nurseconnect_qa MCP identity evidence is incomplete", { path: file, missingIdentity });
   if (evidence.modularityAudit?.status !== "success") return fail("nurseconnect_qa modularity audit did not pass", { path: file, modularityStatus: evidence.modularityAudit?.status ?? "missing" });
   return pass("nurseconnect_qa evidence passed", { path: file, changedFileCount: evidence.branchStatus?.changedFileCount ?? evidence.scopeAudit?.changedFileCount ?? null });
+}
+
+function missingMcpIdentity(identity = {}) {
+  const aliases = Array.isArray(identity.aliases) ? identity.aliases : [];
+  const configured = Array.isArray(identity.configured) ? identity.configured : [];
+  const forbidden = Array.isArray(identity.forbidden) ? identity.forbidden : [];
+  const owned = Array.isArray(identity.owned) ? identity.owned : [];
+  const missing = [];
+  if (identity.canonical !== "nurseconnect_qa") missing.push("canonical:nurseconnect_qa");
+  if (identity.effective !== "nurseconnect_qa") missing.push("effective:nurseconnect_qa");
+  if (!aliases.includes("nurse_qa")) missing.push("alias:nurse_qa");
+  for (const name of ["nurseconnect_qa", "nurse_qa"]) {
+    if (!owned.includes(name)) missing.push(`owned:${name}`);
+    if (!configured.includes(name)) missing.push(`configured:${name}`);
+  }
+  if (!forbidden.includes("interdomestik_qa")) missing.push("forbidden:interdomestik_qa");
+  if (forbidden.includes(identity.requested)) missing.push(`requested-forbidden:${identity.requested}`);
+  if (configured.includes("interdomestik_qa")) missing.push("configured-forbidden:interdomestik_qa");
+  return missing;
 }
 
 export async function checkSubagentHandoff(runRoot) {
@@ -72,7 +93,8 @@ export async function checkModelReview(runRoot, options) {
   const reviewers = Array.isArray(evidence.reviewers) ? evidence.reviewers : [];
   const acceptableReviewers = [...completed, ...(options.allowDryRun ? dryRun : [])];
   const agreedMustFixCount = Number.isFinite(Number(evidence.agreedMustFixCount)) ? Number(evidence.agreedMustFixCount) : 0;
-  if (blocked.length > 0 && (options.requireModelReview || options.requiredReviewers.length > 0)) return fail("model-review has blocked reviewer routes", { path: file, blocked });
+  const blockedRequired = blocked.filter((reviewer) => options.requiredReviewers.includes(reviewer));
+  if (blockedRequired.length > 0) return fail("model-review has blocked required reviewer routes", { path: file, blocked: blockedRequired });
   if (options.requireModelReview && acceptableReviewers.length === 0) {
     return fail("required model-review receipts are missing", { path: file, evidenceStatus: evidence.status || "unknown", completed, dryRun, allowDryRun: options.allowDryRun });
   }
@@ -84,7 +106,7 @@ export async function checkModelReview(runRoot, options) {
   if (!validMustFixDisposition(options.mustFixDisposition, agreedMustFixCount)) {
     return fail("model-review MUST_FIX candidates require explicit fixed or rejected disposition", { path: file, agreedMustFixCount, mustFixDisposition: options.mustFixDisposition || "" });
   }
-  return pass("model-review evidence passed", { path: file, evidenceStatus: evidence.status || "unknown", completed, blocked, dryRun, debate: Boolean(evidence.debate), agreedMustFixCount, mustFixDisposition: options.mustFixDisposition || (agreedMustFixCount === 0 ? "none" : "") });
+  return pass(blocked.length > 0 ? "model-review evidence passed with blocked optional routes" : "model-review evidence passed", { path: file, evidenceStatus: evidence.status || "unknown", completed, blocked, dryRun, debate: Boolean(evidence.debate), agreedMustFixCount, mustFixDisposition: options.mustFixDisposition || (agreedMustFixCount === 0 ? "none" : "") });
 }
 
 export async function checkModelPreflight(runRoot, options) {
@@ -95,7 +117,8 @@ export async function checkModelPreflight(runRoot, options) {
   const results = Array.isArray(evidence.results) ? evidence.results : [];
   const available = results.filter((result) => result.status === "available").map((result) => result.reviewer);
   const blocked = results.filter((result) => result.status === "blocked").map((result) => result.reviewer);
-  if ((blocked.length > 0 || evidence.status === "blocked") && (options.requireModelPreflight || options.requiredReviewers.length > 0)) return fail("model-review preflight has blocked reviewer routes", { path: file, blocked });
+  const blockedRequired = options.requiredReviewers.length > 0 ? blocked.filter((reviewer) => options.requiredReviewers.includes(reviewer)) : blocked;
+  if ((blockedRequired.length > 0 || (evidence.status === "blocked" && options.requiredReviewers.length === 0)) && (options.requireModelPreflight || options.requiredReviewers.length > 0)) return fail("model-review preflight has blocked reviewer routes", { path: file, blocked: blockedRequired });
   if (options.requiredReviewers.length > 0) {
     const missing = missingRequired(available, options.requiredReviewers);
     if (missing.length > 0) return fail("model-review preflight is missing required available routes", { path: file, requiredReviewers: options.requiredReviewers, availableReviewers: available, missingReviewers: missing });
@@ -111,9 +134,10 @@ export async function checkModelAccess(runRoot, options) {
   const completed = Array.isArray(evidence.completed) ? evidence.completed : [];
   const blockedItems = Array.isArray(evidence.blocked) ? evidence.blocked : [];
   const blocked = blockedItems.map((result) => result.reviewer);
-  if (blocked.length > 0 || evidence.status === "blocked") {
+  const blockedRequired = options.requiredReviewers.length > 0 ? blocked.filter((reviewer) => options.requiredReviewers.includes(reviewer)) : blocked;
+  if (blockedRequired.length > 0 || (evidence.status === "blocked" && options.requiredReviewers.length === 0)) {
     if (!options.requireModelAccess && options.requiredReviewers.length === 0) return pass("model-review access-check recorded blocked optional routes", { path: file, blocked, remediation: blockedItems.map((item) => item.remediation).filter(Boolean) });
-    return fail("model-review access-check has blocked reviewer routes", { path: file, blocked, remediation: blockedItems.map((item) => item.remediation).filter(Boolean) });
+    return fail("model-review access-check has blocked reviewer routes", { path: file, blocked: blockedRequired, remediation: blockedItems.map((item) => item.remediation).filter(Boolean) });
   }
   if (options.requiredReviewers.length > 0) {
     const missing = missingRequired(completed, options.requiredReviewers);

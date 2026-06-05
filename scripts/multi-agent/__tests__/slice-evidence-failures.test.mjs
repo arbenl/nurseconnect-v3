@@ -26,7 +26,43 @@ describe("slice evidence failure reporting", () => {
       const result = runSliceEvidence(root, ["--require-reviewers", requiredReviewers.join(","), "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--allow-dry-run", "--must-fix-disposition", "none"]);
       const report = JSON.parse(result.stdout);
       expect(result.status).not.toBe(0);
-      expect(report.checks.modelReview.missingReviewers).toEqual(["claude47", "sonnet46", "copilot"]);
+      expect(report.checks.modelReview.missingReviewers).toEqual(["sonnet46", "copilot"]);
+    } finally {
+      cleanup(root);
+    }
+  });
+
+  it("fails when required enterprise reviewer routes are blocked", () => {
+    const root = makeRoot();
+    try {
+      writeRunRoot(root, {
+        preflight: passPreflight(),
+        access: passAccess(),
+        modelReview: { status: "blocked", reviewers: requiredReviewers, completed: requiredReviewers.slice(1), dryRun: [], blocked: ["sonnet46"], debate: true, agreedMustFixCount: 0 },
+      });
+      const result = runSliceEvidence(root, ["--require-reviewers", requiredReviewers.join(","), "--require-model-review", "--require-debate", "--must-fix-disposition", "none"]);
+      const report = JSON.parse(result.stdout);
+      expect(result.status).not.toBe(0);
+      expect(report.checks.modelReview.blocked).toEqual(["sonnet46"]);
+    } finally {
+      cleanup(root);
+    }
+  });
+
+  it("fails when nurseconnect_qa identity evidence does not prove the nurse_qa alias", () => {
+    const root = makeRoot();
+    try {
+      writeRunRoot(root, {
+        qa: {
+          status: "success",
+          mcpIdentity: { canonical: "nurseconnect_qa", effective: "nurseconnect_qa", aliases: [], owned: ["nurseconnect_qa"], forbidden: [], configured: ["nurseconnect_qa"] },
+          availableTools: ["branch_status", "modularity_audit", "project_map", "scope_audit", "slice_evidence_audit"],
+          branchStatus: { changedFileCount: 2 },
+          modularityAudit: { status: "success" },
+        },
+      });
+      const report = JSON.parse(runSliceEvidence(root).stdout);
+      expect(report.checks.nurseconnectQa.missingIdentity).toEqual(["alias:nurse_qa", "owned:nurse_qa", "configured:nurse_qa", "forbidden:interdomestik_qa"]);
     } finally {
       cleanup(root);
     }
