@@ -11,10 +11,36 @@ type BootstrapRow = {
   membership_user_id: string | null;
 };
 
+type DefaultOrganizationSlugRow = {
+  id: string;
+};
+
+export class DefaultOrganizationSlugConflictError extends Error {
+  constructor(existingOrganizationId: string) {
+    super(
+      `Default organization slug "${DEFAULT_ORGANIZATION_SLUG}" already belongs to organization "${existingOrganizationId}", expected "${DEFAULT_ORGANIZATION_ID}".`,
+    );
+    this.name = "DefaultOrganizationSlugConflictError";
+  }
+}
+
 export async function bootstrapDefaultOrganizationMemberships(
   database?: TenantTransactionalDatabase,
 ): Promise<{ organizationId: string; grantedMemberships: number }> {
   const executor = database ?? (await defaultDatabase());
+  const slugOwner = rowsFrom<DefaultOrganizationSlugRow>(
+    await executor.execute(sql`
+      SELECT id
+      FROM organizations
+      WHERE slug = ${DEFAULT_ORGANIZATION_SLUG}
+      LIMIT 1
+    `),
+  ).at(0);
+
+  if (slugOwner && slugOwner.id !== DEFAULT_ORGANIZATION_ID) {
+    throw new DefaultOrganizationSlugConflictError(slugOwner.id);
+  }
+
   await executor.execute(sql`
     INSERT INTO organizations (id, name, slug, status)
     VALUES (

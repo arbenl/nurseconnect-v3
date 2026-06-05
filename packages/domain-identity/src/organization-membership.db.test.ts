@@ -9,7 +9,9 @@ import {
 } from "./organization-membership";
 import {
   bootstrapDefaultOrganizationMemberships,
+  DefaultOrganizationSlugConflictError,
   DEFAULT_ORGANIZATION_ID,
+  DEFAULT_ORGANIZATION_SLUG,
 } from "./organization-membership-bootstrap";
 
 const { orgMemberships, organizations, users } = schema;
@@ -211,5 +213,11 @@ describe("organization membership helpers", () => {
         requireOrganizationMembership({ userId: nurse.id, organizationId: DEFAULT_ORGANIZATION_ID }, tx),
       ).rejects.toThrow(OrganizationMembershipRequiredError);
     });
+  });
+
+  it("fails bootstrap with a clear error when the default slug belongs to another organization", async () => {
+    await insertOrganization({ id: orgA, slug: DEFAULT_ORGANIZATION_SLUG });
+
+    await expect(bootstrapDefaultOrganizationMemberships()).rejects.toThrow(DefaultOrganizationSlugConflictError);
   });
 });
