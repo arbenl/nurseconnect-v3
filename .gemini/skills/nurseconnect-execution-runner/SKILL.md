@@ -51,8 +51,9 @@ Never mark a slice, task, or tracker row complete without Step 9 evidence.
 
 1. Draft the slice design (scope, files, falsifiable exit criteria copied from
    the tracker row, threat surface) in `docs/plans/<slice-id>-design.md`.
-2. Request the configured external review (Claude / Gemini Pro / Copilot Pro+
-   where callable); apply accepted findings to the design BEFORE branching.
+2. STOP and request design review from Fable (the Chief Senior Engineer).
+   You must receive explicit permission from Fable, and apply accepted findings,
+   BEFORE branching.
 
 ## Step 2 — Branch (via slice-manager once it lands)
 
@@ -101,7 +102,11 @@ violation; report it instead.
 
 Run the pre-PR reviewer pool from
 `tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md`. Fix every `MUST_FIX`
-or record a written technical rejection. No silent dismissals.
+or record a written technical rejection.
+
+Then, STOP and present the slice to Fable (the Chief Senior Engineer). You must
+receive explicit permission from Fable before proceeding to open the PR.
+No silent dismissals.
 
 ## Step 8 — Required gates
 
