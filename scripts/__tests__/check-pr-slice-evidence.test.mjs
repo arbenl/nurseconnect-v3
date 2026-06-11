@@ -24,12 +24,21 @@ describe("PR slice evidence validator", () => {
       files: [],
     });
     expect(result.status).toBe("fail");
-    expect(result.errors).toContain("PR body must include a NurseConnect tracker ID like NC-E2-03.");
+    expect(result.errors).toContain("PR body must include a NurseConnect tracker ID like NC-E2-03 or NC-EG-00.");
     expect(result.errors).toContain("Evidence section missing reviewer plan.");
     expect(result.errors).toContain("Evidence section missing subagent handoff.");
     expect(result.errors).toContain("Evidence section missing plugin activation.");
     expect(result.errors).toContain("Evidence section missing modularity guard.");
     expect(result.errors).toContain('Evidence section must include MUST_FIX disposition like "MUST_FIX: 0 (none)" or "MUST_FIX: 2 (all fixed)".');
+  });
+
+  it("accepts Phase C band tracker IDs (NC-EG/NC-TB/NC-CQ) and still rejects unknown bands", () => {
+    for (const id of ["NC-EG-00", "NC-TB-01", "NC-CQ-05", "NC-E2-03"]) {
+      const result = validatePrSliceEvidence({ body: goodEvidence.replace(/NC-E\d+-\d+/, id), files: [] });
+      expect(result.errors).not.toContain("PR body must include a NurseConnect tracker ID like NC-E2-03 or NC-EG-00.");
+    }
+    const bogus = validatePrSliceEvidence({ body: goodEvidence.replace(/NC-E\d+-\d+/, "NC-XX-99"), files: [] });
+    expect(bogus.errors).toContain("PR body must include a NurseConnect tracker ID like NC-E2-03 or NC-EG-00.");
   });
 
   it("requires live model evidence or an explicit blocked-route disposition for protected files", () => {
