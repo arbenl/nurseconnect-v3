@@ -45,9 +45,9 @@ controls.
   (PR #91).
 - **NC-E2 (identity/authz, in progress):** centralized current-user resolution +
   AST boundary guard (PR #93); `organizations` + `org_memberships` schema with
-  fail-closed RLS and membership helpers (PR #96). **Next slice: amended
-  `NC-E2-03 / platform-authz` — policy functions *plus* phantom-type guards
-  (`AuthorizedTransition`, `MedicalEvidence`).**
+  fail-closed RLS and membership helpers (PR #96). **Next slice in this band
+  (after NC-EG merges): amended `NC-E2-03 / platform-authz` — policy functions
+  *plus* phantom-type guards (`AuthorizedTransition`, `MedicalEvidence`).**
 
 ### Honest current-state limits (do not paper over these)
 
@@ -75,7 +75,7 @@ controls.
 - `packages/domain-*` — identity, request, dispatch, nurse, admin-ops, payments,
   visit, referral.
 - `packages/platform-telemetry`, `packages/ui`, `packages/tsconfig`.
-- `docs/` — ADRs (001–004), runbooks (RLS, backfill, DR, slice workflow),
+- `docs/` — ADRs (001–005), runbooks (RLS, backfill, DR, slice workflow),
   plans/trackers, reviews, `enterprise-readiness-report.md` (2026-06-02 baseline).
 
 Key conventions: contract-first APIs; route handlers do telemetry → authz →
@@ -125,7 +125,8 @@ Prereqs: Node ≥ 20, pnpm ≥ 9, Docker.
 Local lanes: `pnpm -w type-check` · `pnpm lint` · `pnpm test:ci` ·
 `pnpm --filter web test:api` · `pnpm gate:e2e-api` · `pnpm gate:release` (full).
 
-Slice contract (`AGENTS.md` + `docs/runbooks/slice_workflow.md`): design review →
+Slice contract (the `nurseconnect-execution-runner` SOP, which takes precedence;
+`docs/runbooks/slice_workflow.md` is the legacy reference): design review →
 `codex/<slice>` branch → `pnpm verify-slice` (keep `run_root`) → `--static` →
 reviewer pool → fix `MUST_FIX` → `--required-gates` → PR with evidence → merge
 only when CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke are green.

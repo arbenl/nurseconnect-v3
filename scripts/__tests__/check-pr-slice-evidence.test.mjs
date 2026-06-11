@@ -35,10 +35,13 @@ describe("PR slice evidence validator", () => {
   it("accepts Phase C band tracker IDs (NC-EG/NC-TB/NC-CQ) and still rejects unknown bands", () => {
     for (const id of ["NC-EG-00", "NC-TB-01", "NC-CQ-05", "NC-E2-03"]) {
       const result = validatePrSliceEvidence({ body: goodEvidence.replace(/NC-E\d+-\d+/, id), files: [] });
-      expect(result.errors).not.toContain("PR body must include a NurseConnect tracker ID like NC-E2-03 or NC-EG-00.");
+      expect(result.errors.filter((e) => e.includes("tracker ID"))).toEqual([]);
+      expect(result.status).toBe("pass");
     }
-    const bogus = validatePrSliceEvidence({ body: goodEvidence.replace(/NC-E\d+-\d+/, "NC-XX-99"), files: [] });
-    expect(bogus.errors).toContain("PR body must include a NurseConnect tracker ID like NC-E2-03 or NC-EG-00.");
+    for (const id of ["NC-XX-99", "nc-eg-00", "NC-EGG-01"]) {
+      const bogus = validatePrSliceEvidence({ body: goodEvidence.replace(/NC-E\d+-\d+/, id), files: [] });
+      expect(bogus.errors).toContain("PR body must include a NurseConnect tracker ID like NC-E2-03 or NC-EG-00.");
+    }
   });
 
   it("requires live model evidence or an explicit blocked-route disposition for protected files", () => {

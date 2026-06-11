@@ -1,6 +1,6 @@
 ---
 name: nurseconnect-execution-runner
-description: Standard Operating Procedure for any AI agent executing a slice of the NurseConnect Phase C Enterprise Upgrade (ENTERPRISE_UPGRADE_TRACKER.md or current-tracker.md). Use whenever asked to implement, execute, or close out a tracker slice (NC-EG, NC-E2, NC-TB, NC-E3, NC-CQ, NC-E5), or to open a PR in nurseconnect-v3. Enforces the Four Mandates, MCP-first investigation, slice-manager lifecycle mediation, and the fail-closed verify-slice gate contract.
+description: Standard Operating Procedure for any AI agent executing a slice of the NurseConnect Phase C Enterprise Upgrade (ENTERPRISE_UPGRADE_TRACKER.md or current-tracker.md). Use whenever asked to implement, execute, or close out a tracker slice (NC-EG, NC-E2, NC-TB, NC-E3, NC-CQ, NC-E5), or to open a PR in nurseconnect-v3. Enforces the Four Mandates, MCP-first investigation, ADR-005 three-plane lifecycle mediation, and the fail-closed verify-slice gate contract.
 ---
 
 # NurseConnect Execution Runner (Phase C SOP)
@@ -21,14 +21,15 @@ Never mark a slice, task, or tracker row complete without Step 9 evidence.
   notes BEFORE any shell fallback. Wasting context on raw dumps is an SOP
   violation: it burns quota and degrades execution quality.
 
-## Lifecycle mediation (slice-manager doctrine)
+## Lifecycle mediation (ADR-005 three-plane doctrine)
 
-- **Once `NC-EG-05 / slice-manager` merges:** `slice-manager start <id>`,
-  `slice-manager finish`, and `slice-manager closeout` are the ONLY permitted
-  mechanisms for slice branch creation, tracker status changes, lifecycle PR
-  opening, and closeout recording. Manual `git checkout -b`, manual tracker
-  status edits, and manual `gh pr create` for slice lifecycle are
-  constitutional violations once the tool exists.
+- **Once `NC-EG-05 / lifecycle-three-planes` merges:** slice promotion runs
+  through the thin, authority-free `start <id>` client (plane 3 — validate
+  promotion, create branch, open promotion PR); tracker `completed`/closeout
+  rows are written ONLY by the server-side plane-1 bot on merge events. Agents
+  NEVER write tracker statuses or closeout after that point — manual tracker
+  status edits become constitutional violations. Enforcement lives in the
+  required PR Finalizer check (plane 2), never in agent-side tooling.
 - **Until NC-EG-05 merges:** perform Steps 2 and 9 manually and exactly as
   written. Interim hard rules either way: never auto-merge; never `git add .`
   (stage files explicitly); never write `completed` before merge evidence
@@ -50,12 +51,14 @@ Never mark a slice, task, or tracker row complete without Step 9 evidence.
 ## Step 1 — Design before branch
 
 1. Draft the slice design (scope, files, falsifiable exit criteria copied from
-   the tracker row, threat surface) in `docs/plans/<slice-id>-design.md`.
+   the tracker row, threat surface) in
+   `docs/plans/<slice-id>-<slice-name>-design.md`.
 2. STOP and request design review from Fable (the Chief Senior Engineer).
    You must receive explicit permission from Fable, and apply accepted findings,
-   BEFORE branching.
+   BEFORE branching. Record the approval as a `**Fable approval:** granted
+   <date>` status line in the design doc — unrecorded approval is no approval.
 
-## Step 2 — Branch (via slice-manager once it lands)
+## Step 2 — Branch (via the plane-3 `start` client once NC-EG-05 lands)
 
 Create exactly one branch: `codex/<slice-name>`. Implement only the promoted
 slice. Out-of-scope findings go in a note for a future slice, not in the diff.
@@ -106,7 +109,8 @@ or record a written technical rejection.
 
 Then, STOP and present the slice to Fable (the Chief Senior Engineer). You must
 receive explicit permission from Fable before proceeding to open the PR.
-No silent dismissals.
+Record it as a `- [x] Fable pre-PR approval: granted <date>` line in the PR
+body's Evidence section. No silent dismissals.
 
 ## Step 8 — Required gates
 
@@ -117,7 +121,7 @@ pnpm verify-slice -- --run-root <run_root> --required-gates
 This must pass — including the ent-gate stage once NC-EG-01 is merged — BEFORE
 opening a PR. A PR opened without this evidence violates Mandate 4.
 
-## Step 9 — PR, merge, closeout (via slice-manager once it lands)
+## Step 9 — PR, merge, closeout (plane-1 bot owns closeout once NC-EG-05 lands)
 
 1. Open ONE PR; body includes: slice ID, verify-slice `run_root` + evidence
    paths, gate manifest (+ sha), threat-model path (if `ent-tm: required`), and

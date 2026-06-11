@@ -62,6 +62,7 @@ required for at minimum:
 /.github/workflows/**
 /scripts/multi-agent/**
 /scripts/ent-gates/**
+/scripts/lib/** (incl. pr-slice-evidence.mjs — the plane-2 validator itself)
 /config/ent-gate-paths.json
 /docs/plans/**
 /.codex/skills/** /.claude/skills/** /.gemini/skills/**
