@@ -15,7 +15,7 @@ and PR Finalizer so no PR can be opened without explicit, evidenced
 
 ## 2. Mechanism (grounded in current `verify-slice.sh`)
 
-Observed wiring points (`scripts/multi-agent/verify-slice.sh`, 496 lines):
+Observed wiring points (`scripts/multi-agent/verify-slice.sh`):
 gates execute via `run_gate "<name>" "<cmd>"`; the `--static` lane runs
 mcp-preflight → env-check → repo-hygiene → modularity-guard → diff checks →
 sentinel → sentry-advisory → slice-evidence (+ type-check/lint/build when not
