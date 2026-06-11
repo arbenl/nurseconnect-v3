@@ -87,7 +87,7 @@ Zod parse → `server/*` → domain packages; domain logic stays pure in package
 
 ```bash
 pnpm install
-docker compose up -d        # local Postgres (+ Sonar)
+docker compose up -d        # local Postgres (Sonar: docker compose --profile sonar up -d)
 pnpm db:migrate
 pnpm dev
 curl -s http://localhost:3000/api/health/db
