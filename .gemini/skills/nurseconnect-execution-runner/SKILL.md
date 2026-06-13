@@ -14,12 +14,9 @@ Never mark a slice, task, or tracker row complete without Step 9 evidence.
 - Investigate with repo-scoped MCP tools FIRST: `nurseconnect_qa` (alias
   `nurse_qa`), project map, targeted code search, and scoped file reads.
 - NEVER dump bulk content into context: no bare `cat` of whole files, no
-  recursive `grep`/`grep -r`, no `ls -R`, no unscoped tree dumps. When MCP
-  lacks the capability, use targeted `rg -n -A 3 -B 3` with explicit paths and
-  cap any single read at 250 lines (AGENTS.md fast-tools policy).
-- If an MCP tool is blocked or errors, record the exact blocker/error in your
-  notes BEFORE any shell fallback. Wasting context on raw dumps is an SOP
-  violation: it burns quota and degrades execution quality.
+  recursive `grep`/`grep -r`, no `ls -R`, no unscoped tree dumps. If MCP lacks
+  a capability, use targeted `rg -n -A 3 -B 3` and cap reads at 250 lines.
+- If MCP is blocked, record the exact blocker/error before shell fallback.
 
 ## Lifecycle mediation (ADR-005 three-plane doctrine)
 
@@ -40,23 +37,19 @@ Never mark a slice, task, or tracker row complete without Step 9 evidence.
 
 ## Step 0 — Constitution check (every session, before touching code)
 
-1. Read `AGENTS.md` (Four Mandates) and the authority chain:
-   `docs/plans/current-program.md` → `docs/plans/current-tracker.md` →
-   `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`.
-2. Confirm the requested slice is the promoted next slice, or all its
-   prerequisites in the tracker dependency graph are `completed`. If not,
-   STOP and report the conflict instead of executing.
+1. Read `AGENTS.md` and the authority chain: `docs/plans/current-program.md` →
+   `docs/plans/current-tracker.md` → `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`.
+2. Confirm the requested slice is promoted next, or all dependencies are
+   `completed`. If not, STOP and report the conflict instead of executing.
 3. Start from clean, synced `main` (`git status` clean, `git pull` fresh).
 
 ## Step 1 — Design before branch
 
-1. Draft the slice design (scope, files, falsifiable exit criteria copied from
-   the tracker row, threat surface) in
-   `docs/plans/<slice-id>-<slice-name>-design.md`.
-2. STOP and request design review from Fable (the Chief Senior Engineer).
-   You must receive explicit permission from Fable, and apply accepted findings,
-   BEFORE branching. Record the approval as a `**Fable approval:** granted
-   <date>` status line in the design doc — unrecorded approval is no approval.
+1. Draft the slice design (scope, files, falsifiable exit criteria, threat
+   surface) in `docs/plans/<slice-id>-<slice-name>-design.md`.
+2. STOP and request Fable review. Apply accepted findings and record
+   `**Fable approval:** granted <date>` before branching; unrecorded approval is
+   no approval.
 
 ## Step 2 — Branch (via the plane-3 `start` client once NC-EG-05 lands)
 
@@ -123,16 +116,23 @@ opening a PR. A PR opened without this evidence violates Mandate 4.
 
 ## Step 9 — PR, merge, closeout (plane-1 bot owns closeout once NC-EG-05 lands)
 
-1. Open ONE PR; body includes: slice ID, verify-slice `run_root` + evidence
-   paths, gate manifest (+ sha), threat-model path (if `ent-tm: required`), and
-   the tracker's falsifiable exit criteria with proof for each.
-2. Fix CI, Sonar, GitGuardian, Copilot, and reviewer findings. Merge only when
-   ALL required checks including PR Finalizer are green. Never self-merge with
-   `--auto` to skip the review loop.
-3. After merge only: sync `main`, delete local+remote branch, record closeout
-   (PR #, merge commit, gate summary) in `current-tracker.md` AND
-   `ENTERPRISE_UPGRADE_TRACKER.md`, set the slice `completed`, promote the next
-   slice from clean `main`.
+1. Open ONE PR with slice ID, final `run_root`, evidence paths, gate manifest
+   (+ sha), threat-model path if required, and proof for each exit criterion.
+2. Monitor the PR until terminal: use `gh pr checks --watch`, inspect failing
+   Actions logs, and watch Copilot/Sentry/Sonar/GitGuardian/reviewer threads.
+3. Fix every failing check and actionable Sonar/Copilot/reviewer comment in the
+   same branch; rerun focused local checks, `verify-slice --required-gates` when
+   evidence changed, push, and keep monitoring. Do not hand off a red PR.
+4. When all required checks are green, PR Finalizer passes, and review threads
+   are resolved, merge the PR. Never self-merge with `--auto` to skip review.
+5. After merge only: sync `main`, verify it is clean, delete the local branch,
+   delete the remote branch, and prune stale refs.
+6. Record closeout (PR #, merge commit, gate summary, `run_root`) in
+   `current-tracker.md` and `ENTERPRISE_UPGRADE_TRACKER.md`; set the slice
+   `completed`, promote the next slice, and commit/push that closeout if
+   NC-EG-05 plane-1 automation has not taken ownership yet.
+7. Resume from Step 0 for the promoted next slice only after clean synced
+   `main`; if closeout or promotion fails, STOP as `blocked`.
 
 ## Completion rule (absolute)
 
