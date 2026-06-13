@@ -31,19 +31,30 @@ verification_command: pnpm verify-slice
 | `NC-E1-04` | `completed` | platform + database | Tenant isolation abuse tests. | PR #91 merged at `81035fad9d1fea3e17c0d43731d8ab9fdcf31901`; versioned tenant-isolation contract, readiness/guard/enforce harness modes, focused script tests, pooled-connection assertion reference, runbook, model-review disposition, verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E2-01` | `completed` | identity + platform | Move current-user resolution into one platform identity boundary. | PR #93 merged at `b46861d353cc196ffbfaf1a456952414ff28bae0`; `/api/me/profile` and `/api/me/notifications` now use centralized current-user/role resolution; the legacy cached-user helper was removed; AST guard coverage blocks direct `users.authId` current-user lookups outside approved identity/schema/test boundaries; Copilot findings were fixed and resolved; verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E2-02` | `completed` | identity + platform + database | Add org membership model after tenant shape decision. | PR #96 merged at `b0fa47381b3daa6db2c744cbc80b20a59ffdd54f`; organizations and org_memberships schema/migration landed; org_memberships has fail-closed RLS; tenant-scoped membership helpers and default-org admin bootstrap are tested; tenant-isolation contract/harness understands tenant boundary tables; Copilot bootstrap slug finding was fixed; local verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
-| `NC-E2-03` | `ready` | identity + platform | Add in-process tenant/resource-aware policy functions. | Policy matrix covers allow/deny/cross-tenant/PHI field cases. |
+| `NC-EG-00` | `in_progress` | platform + architecture | Land Phase C governing docs: Enterprise Constitution (`AGENTS.md`), `CLAUDE.md`/`GEMINI.md`, rewritten `HANDOVER.md`/`project_architecture.md`, `ENTERPRISE_UPGRADE_TRACKER.md`, the `nurseconnect-execution-runner` SOP in `.codex/`/`.claude/`/`.gemini/` skills, `ADR-005-slice-lifecycle-automation.md`, and the NC-EG-01 design doc. Docs plus one disclosed gate amendment (finalizer tracker-ID regex for Phase C bands + regression test). | One PR; byte-identical SKILL.md copies (sha in PR body); planning docs agree next slice = NC-EG-01; docs-only verify-slice static + required gates, CI, and PR Finalizer pass. |
+| `NC-EG-01` | `ready` | platform + qa | Fail-closed ent-gate framework in `verify-slice --required-gates` + PR Finalizer (`slice-gates.yaml` manifest; `ent-tm`/`ent-dlv`/`ent-perf` declarations). Design: `docs/plans/nc-eg-01-ent-gate-framework-design.md`. | Running `--required-gates` without a manifest fails; `n/a` without justification fails; guarded-path `n/a` declarations fail; docs-only path still runs the ent-gate; negative tests committed; PR Finalizer rejects missing gate evidence. |
+| `NC-E2-03` | `ready` | identity + platform | Add in-process tenant/resource-aware policy functions **plus phantom-type guards** (`AuthorizedTransition` brand; branded `PolicyDecision`) per the Phase C amendment in `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`. | Policy matrix covers allow/deny/cross-tenant/PHI field cases; negative type-test proves direct `service_requests.status` writes fail `tsc` without an `AuthorizedTransition`. |
+
+> Phase C Enterprise Upgrade bands (ent-* gates, type-level guards, tenant
+> backfill execution, outbox, CQRS repair, PHI lifecycle) are mapped in
+> `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`, which defers to this tracker and
+> to `current-program.md` on conflict.
 
 ## Next Slice
 
 ```text
-NC-E2-03 / codex/platform-authz
+NC-EG-00 / codex/constitution-deployment   (in progress, docs-only)
+then: NC-EG-01 / codex/ent-gate-framework
 ```
 
 Rationale:
 
-- PR #96 completed `NC-E2-02 / tenant-memberships` at `b0fa47381b3daa6db2c744cbc80b20a59ffdd54f`.
-- Tenant membership state and fail-closed membership helpers now exist, so tenant/resource-aware authorization policies can be designed against a concrete membership boundary.
-- `NC-E2-03 / platform-authz` is the next smallest safe step before applying tenant-aware policy checks to product routes or PHI-bearing resources.
+- Phase C ordering (ENTERPRISE_UPGRADE_TRACKER.md): the ent-* gate band lands
+  first so every subsequent slice — including the amended `NC-E2-03 /
+  platform-authz` — is born under fail-closed `ent-tm`/`ent-dlv`/`ent-perf`
+  gating.
+- PR #96 completed `NC-E2-02 / tenant-memberships`, so `NC-E2-03` remains ready
+  and is promoted immediately after the NC-EG band merges.
 
 ## Recent Closeout Evidence
 

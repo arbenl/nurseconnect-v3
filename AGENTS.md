@@ -1,67 +1,89 @@
-# NurseConnect AGENTS.md
+# NurseConnect Enterprise Constitution (AGENTS.md)
 
-This file defines repo-scoped guidance for agentic coding agents working on `nurseconnect-v3`.
+Binding, repo-scoped doctrine for every agentic coding agent (Codex, Claude,
+Gemini, Copilot) working on `nurseconnect-v3`. These instructions apply to this
+repository only; do not import policies from other repositories.
 
-## Scope
+## Authority Chain (read in this order, lower defers to higher)
 
-These instructions apply to this repository only.
+1. `docs/plans/current-program.md` — singular source of truth
+2. `docs/plans/current-tracker.md` — active slice queue
+3. `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md` — Phase C execution map
+4. This file — execution constitution
+5. Skill SOP: `nurseconnect-execution-runner` (in `.codex/`, `.claude/`, `.gemini/` skills)
 
-Do not assume MCP tooling or repo policies from other repositories apply here unless they are explicitly configured in this repo.
+The repo is mid **Phase C Enterprise Upgrade**. `HANDOVER.md` and
+`project_architecture.md` describe current reality; pre-2026-06 roadmaps are void.
 
-## MCP-First Tooling
+## The Four Mandates (non-negotiable)
 
-- Prefer repo-scoped MCP tools over shell-only fallbacks when equivalent capability exists in this repo.
-- Use Playwright MCP first for browser validation, UI smoke checks, and watched flows.
-- Use `context7` for current framework guidance when Next.js, React, Playwright, or other framework behavior may have changed.
-- Use Notion MCP when the user explicitly asks to sync, create, or update Notion pages.
-- If an MCP tool is blocked or unavailable, report the exact blocker and exact error before falling back to shell-only alternatives.
+1. **No bare-row mutations.** All domain state changes must co-commit their
+   evidence in the same transaction: today that means an appended
+   `service_request_events` / audit row; once `NC-E3-02 (platform-events)`
+   merges, **all state changes must append to the Transactional Outbox** and
+   all side effects move to outbox consumers. Effective immediately: adding any
+   NEW inline side effect inside a `db.transaction` is a constitutional
+   violation, even before the outbox exists.
+2. **No cross-domain SQL joins. Read models only.** Domain packages may not
+   join or import another domain's tables. The three legacy violations
+   (`domain-referral`, `domain-visit`, `domain-nurse`) are quarantined debt
+   owned by band NC-CQ — do not extend them, do not copy the pattern. New
+   cross-domain reads go through owned read models or published contracts.
+3. **No raw string states.** Core state mutations require phantom-typed proof
+   tokens: `AuthorizedTransition` for `service_requests.status` (NC-E2-03),
+   `MedicalEvidence` / `VerifiedCredentialEvidence` for `nurses.status` and
+   clinical writes (NC-E2-04), branded `OrganizationId` for tenant context
+   (live now). Effective immediately: never add a new write site that sets a
+   status/state column from a raw string outside its owning domain's
+   transition functions.
+4. **No PR without gates.** A PR may not be opened unless
+   `pnpm verify-slice -- --run-root <run_root> --required-gates` passed,
+   including the ent-gate stage once NC-EG-01 merges (`ent-tm` threat-model and
+   `ent-dlv` data-lifecycle/erasure assertions are mandatory; `n/a` requires
+   written justification in `slice-gates.yaml`). Never relax, skip, or
+   reinterpret a gate to make a slice pass — fix the slice or amend the gate in
+   its own reviewed slice.
 
-## Repo-Scoped MCP Source Of Truth
-
-- The repo-local MCP wiring for this codebase lives in `.codex/config.toml`.
-- Do not modify `~/.codex/config.toml` to make NurseConnect tooling work.
-- Do not reuse repo-specific MCP servers from other repositories unless NurseConnect is explicitly wired to them.
-- Configure any Codex repo trust decision in your own local Codex setup; do not commit per-user `[project."..."]` trust blocks into this repository.
-
-## MCP Guidance For NurseConnect
-
-- `playwright` is the preferred browser-validation tool for this repo.
-- `context7` is the preferred current-docs tool for framework behavior that could have changed.
-- Notion MCP is allowed when the task explicitly includes Notion sync or documentation updates.
-- Use repo-owned `nurseconnect_qa`; `nurse_qa` is an alias to the same server. Do not assume tools like `interdomestik_qa` or other repo-specific QA servers apply to NurseConnect unless they are added to NurseConnect's local config.
-- Before activating optional plugins, apply `docs/runbooks/plugin_activation_policy.md` and record blockers for unavailable plugin routes.
-
-## Editing Constraints
-
-- Keep repo-scoped tooling changes local to this repository.
-- Prefer adding or updating files under this repository rather than changing user-global Codex configuration.
-- If a new NurseConnect-specific MCP server is needed later, add it to this repo's `.codex/config.toml` instead of repointing another repo's server.
+Standing invariants (from `current-program.md`): notifications are post-commit
+and non-PHI; never log or message PHI; tenant isolation targets shared-schema
+RLS; Interdomestik is a reference to copy-and-own, never a dependency; slice
+acceptance must be falsifiable.
 
 ## Slice Workflow
 
-Use the NurseConnect slice workflow for product, platform, ops, and launch work:
+Execute slices only via the `nurseconnect-execution-runner` SOP. Summary:
 
-1. Start from clean, synced `main`.
-2. Define the slice and create a fresh `codex/<slice-name>` branch.
-3. Implement only that slice.
-4. Run focused deterministic local checks while developing.
-5. Run `pnpm verify-slice` and keep the printed `run_root`.
-6. Run `pnpm verify-slice -- --run-root <run_root> --static`.
-7. Run the pre-PR reviewer pool from the generated `tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md`.
-8. Fix all `MUST_FIX` findings, or document a technical rejection before PR.
-9. Run `pnpm verify-slice -- --run-root <run_root> --required-gates`.
-10. Open a PR with verify-slice evidence paths.
-11. Fix CI, Sonar if present, Copilot, and other PR review findings.
-12. Merge only after all required checks pass, including PR Finalizer.
-13. Sync local `main`, update Notion when the slice changes program state, and delete the local and remote branch.
+1. Start from clean, synced `main`; confirm the promoted slice in the trackers.
+2. Draft slice design; request configured external review; apply accepted findings.
+3. Create one fresh `codex/<slice-name>` branch; implement only that slice.
+4. Run focused deterministic checks while developing.
+5. `pnpm verify-slice` — keep the printed `run_root`.
+6. `pnpm verify-slice -- --run-root <run_root> --static`.
+7. Run the reviewer pool from `tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md`.
+8. Fix every `MUST_FIX` or document a technical rejection before PR.
+9. `pnpm verify-slice -- --run-root <run_root> --required-gates`.
+10. Open one PR with verify-slice evidence paths; fix CI, Sonar, Copilot, review findings.
+11. Merge only after all required checks pass, including PR Finalizer.
+12. Sync `main`, record closeout in the trackers, delete branches, promote next slice.
 
-For tiny docs-only slices, a lightweight reviewer pool is acceptable only when the PR body explicitly explains the reduced review scope. Do not silently skip `verify-slice`. Docs-only `verify-slice --required-gates` and the pre-push guard use the docs/static hygiene path instead of the full `pnpm gate:release`; CI and PR Finalizer remain authoritative after the PR opens.
+Docs-only slices may use the docs/static hygiene path, never a silent skip of
+`verify-slice`; the PR body must state the reduced scope. CI and PR Finalizer
+remain authoritative after the PR opens.
 
 ## Modularity Guard
 
-- Keep every new checked source, script, workflow, config, and test file at or below 150 lines.
-- If a touched legacy file already exceeds 150 lines, do not make it larger; split the touched logical path into focused helpers.
-- `pnpm modularity:guard` is mandatory evidence for slice readiness and PR evidence.
+- Every new checked source/script/workflow/config/test file ≤ 150 lines.
+- Never grow a >150-line legacy file; split the touched path into helpers.
+- `pnpm modularity:guard` and `pnpm architecture:boundaries` are mandatory PR evidence.
+
+## MCP-First Tooling
+
+- Repo-local MCP wiring lives in `.codex/config.toml`; never modify user-global
+  config or reuse other repos' servers (no `interdomestik_qa`; use `nurseconnect_qa`).
+- Playwright MCP first for browser validation; `context7` for current framework
+  docs; Notion MCP only when explicitly asked to sync Notion.
+- If an MCP tool is blocked, report the exact blocker/error before shell fallback.
+- Before activating optional plugins, apply `docs/runbooks/plugin_activation_policy.md`.
 
 <!-- FAST-TOOLS PROMPT v1 | codex-mastery | watermark:do-not-alter -->
 

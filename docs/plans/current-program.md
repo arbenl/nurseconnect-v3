@@ -22,7 +22,7 @@ The active architecture program is:
 
 - Program: `docs/plans/nurseconnect-enterprise-architecture-program.md`
 - Tracker: `docs/plans/nurseconnect-enterprise-architecture-tracker.md`
-- ADRs: `docs/adr/ADR-001-tenant-model.md`, `ADR-002-identity-model.md`, `ADR-003-authorization-model.md`, `ADR-004-outbox-and-jobs.md`
+- ADRs: `docs/adr/ADR-001-tenant-model.md`, `ADR-002-identity-model.md`, `ADR-003-authorization-model.md`, `ADR-004-outbox-and-jobs.md`, `ADR-005-slice-lifecycle-automation.md`
 - Baseline report: `docs/enterprise-readiness-report.md`
 - Phase 0 slice plan: `docs/plans/phase-0-stabilization-slices.md`
 - Slice philosophy: `docs/runbooks/slice_development_philosophy.md`
@@ -103,10 +103,18 @@ Decision scope:
 - multi-country production rollout requires regional/data-residency topology review
   before launch
 
-The next implementation slice is:
+The program now executes under the **Phase C Enterprise Upgrade** map
+(`docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`): the enterprise verification gate
+band (`NC-EG`) lands before further implementation slices, so all subsequent
+work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating. `NC-E2-03 /
+platform-authz` is amended (phantom-type guards) and is promoted immediately
+after the NC-EG band merges.
+
+The next implementation slices are:
 
 ```text
-NC-E2-03 / codex/platform-authz
+NC-EG-00 / codex/constitution-deployment   (in progress, docs-only)
+NC-EG-01 / codex/ent-gate-framework
 ```
 
 ## Slice Execution Contract

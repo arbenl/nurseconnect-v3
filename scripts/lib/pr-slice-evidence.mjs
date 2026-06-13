@@ -98,7 +98,7 @@ export function validatePrSliceEvidence({ body, files = [] }) {
   const errors = [];
   const evidence = extractSection(body, "Evidence");
   const highRisk = isHighRisk(body, files);
-  if (!/\bNC-E\d+-\d+\b/.test(body)) errors.push("PR body must include a NurseConnect tracker ID like NC-E2-03.");
+  if (!/\bNC-(?:E\d+|EG|TB|CQ)-\d+\b/.test(body)) errors.push("PR body must include a NurseConnect tracker ID like NC-E2-03 or NC-EG-00.");
   if (!evidence) return { status: "fail", highRisk, errors: [...errors, 'PR body missing required "Evidence" section.'] };
   requireEvidence(errors, evidence);
   checkDisposition(errors, evidence);
