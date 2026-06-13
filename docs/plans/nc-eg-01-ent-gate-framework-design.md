@@ -15,14 +15,15 @@ and PR Finalizer so no PR can be opened without explicit, evidenced
 
 ## 2. Mechanism (grounded in current `verify-slice.sh`)
 
-Observed wiring points (`scripts/multi-agent/verify-slice.sh`):
-gates execute via `run_gate "<name>" "<cmd>"`; the `--static` lane runs
-mcp-preflight → env-check → repo-hygiene → modularity-guard → diff checks →
-sentinel → sentry-advisory → slice-evidence (+ type-check/lint/build when not
-docs-only); the `--required-gates` lane runs `pnpm gate:release`, or a reduced
-docs path when `docs_only=yes`.
+Observed wiring points (`scripts/multi-agent/verify-slice.sh`): gates execute
+via `run_gate`; `--static` runs MCP/env/hygiene/modularity/diff/advisory/evidence
+checks; `--required-gates` runs `gate:release` or a reduced docs path.
 
 ### 2.1 Manifest: `slice-gates.yaml` (repo root, tracked)
+
+The manifest is a **single mutable root file**. Each slice rewrites
+`slice-gates.yaml` as its first tracked change after branch creation. NC-EG-00
+lands `slice: NC-EG-00`; after promotion, NC-EG-01 rewrites it to:
 
 ```yaml
 slice: NC-EG-01            # must match promoted slice in current-tracker.md
@@ -38,13 +39,25 @@ Rules (enforced by validator, all fail-closed):
 - `status` ∈ `required | n/a`. `required` ⇒ `evidence` path must exist and be
   in the slice diff. `n/a` ⇒ non-empty `justification` (≥ 20 chars).
 - `slice` must equal the promoted slice ID in `docs/plans/current-tracker.md`
-  (parsed deterministically from the Next Slice block) — blocks rogue slices.
+  when running on a slice branch or PR lane. Parser grammar:
+  `## Next Slice` block, first non-empty fenced `text` line matching
+  ``<ID> / codex/<slice-name>`` is the current promoted slice; a following
+  `then: <ID> / codex/<slice-name>` line is advisory only until the first line
+  changes after closeout. Mismatch fails closed.
+- On `main` outside a PR/slice branch, a stale manifest from the just-merged
+  slice must not fail a healthy post-merge gate. The validator runs in
+  informational mode on `main`: it verifies parse/schema/justification and
+  writes evidence, but skips promoted-slice equality unless a PR branch,
+  non-`main` branch, or explicit `--enforce-promotion` flag is present.
 - **Guarded-path overrides** (`config/ent-gate-paths.json`): if the diff
   (`$BASE_COMMIT...HEAD` + staged/worktree, same inventory verify-slice already
   computes) touches a guarded pattern, `n/a` is illegal for the mapped gate:
   - `ent-tm`: `apps/web/src/server/auth/**`, `packages/domain-identity/**`,
     `packages/database/src/tenant-context*`, `packages/database/src/schema/**`,
-    `packages/domain-payments/**`, `apps/web/src/app/api/**`
+    `packages/domain-payments/**`, `apps/web/src/app/api/**`,
+    `scripts/ent-gates/**`, `scripts/multi-agent/verify-slice.sh`,
+    `scripts/multi-agent/finalizer.mjs`, `scripts/lib/pr-slice-evidence.mjs`,
+    `config/ent-gate-paths.json`
   - `ent-dlv`: `packages/database/src/schema/**`, `packages/database/drizzle/**`
   - `ent-perf`: `apps/web/src/server/requests/**`, `packages/domain-dispatch/**`
 - Until NC-EG-02/03/04 land, `required` is satisfied by evidence-file existence
@@ -57,16 +70,13 @@ Rules (enforced by validator, all fail-closed):
    — inserted after `slice-evidence`, **before** the `docs_only` branch so the
    docs-only path cannot skip it.
 2. `--required-gates` lane: `run_gate "ent-gates-required" "node scripts/ent-gates/check.mjs --mode full ..."`
-   — added to **both** branches of the `docs_only` conditional (the reduced
-   docs path currently runs only mcp-preflight/env/hygiene/diff; the ent-gate
-   joins it).
+   — added to **both** branches of the `docs_only` conditional.
 3. PR Finalizer (`scripts/multi-agent/finalizer.mjs`): reject unless the PR
    body contains the gate-evidence block (`ent-gates: PASS @ <run_root>` +
    manifest sha) and the manifest in HEAD matches that sha.
 
-Validator writes `"$RUN_ROOT"/evidence/ent-gates.md` (+ `.json`) — declaration
-table, diff-classifier hits, verdict — so reviewer prompts and the PR body can
-reference it like existing model-review evidence.
+Validator writes `"$RUN_ROOT"/evidence/ent-gates.md` (+ `.json`) with
+declarations, classifier hits, and verdict for reviewer/PR evidence.
 
 ### 2.3 New files (each ≤ 150 lines, modularity guard)
 
@@ -129,12 +139,9 @@ acceptance evidence (constitution: falsifiable slices).
 4. Rollback: gate stage is a single `run_gate` line per lane; revert = remove
    lines + script dir. No schema, no runtime impact.
 
-## 7. Open questions for design review
+## 7. Resolved Design Questions
 
-1. YAML vs JSON for the manifest (JSON avoids a parser dependency; YAML is
-   friendlier for justifications). Default: YAML if a yaml dep already exists
-   in the workspace, else JSON.
-2. Should `ent-perf` guarded paths include `apps/web/src/app/**` page routes
-   now, or wait for NC-EG-04's budget definitions? Default: wait.
-3. Manifest location: repo root vs `docs/gates/<slice>.yaml`. Root chosen for
-   discoverability; review may prefer the namespaced dir.
+Manifest format is YAML at repo-root `slice-gates.yaml`; each later slice
+rewrites it. `ent-perf` excludes `apps/web/src/app/**` until NC-EG-04 defines
+route/bundle budgets. Root location stays for discoverability and finalizer sha
+pinning.
