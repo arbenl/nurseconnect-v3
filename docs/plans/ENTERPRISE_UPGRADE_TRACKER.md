@@ -36,7 +36,7 @@ depend on the outbox/read-model backbone (NC-E3) for event-fed projections.
 
 | ID | Status | Slice | Work | Acceptance Criteria (falsifiable) | Risk |
 |---|---|---|---|---|---|
-| `NC-EG-00` | `in_progress` | `constitution-deployment` | Land the Phase C governing docs: rewritten `AGENTS.md` (Four Mandates), `CLAUDE.md`, `GEMINI.md`, `HANDOVER.md`, `project_architecture.md`, this tracker, the `nurseconnect-execution-runner` SOP deployed identically to `.codex/`, `.claude/`, `.gemini/` skills, `ADR-005-slice-lifecycle-automation.md`, and the NC-EG-01 design doc. Docs **plus one disclosed gate amendment**: finalizer tracker-ID regex extended to the Phase C band namespace (`scripts/lib/pr-slice-evidence.mjs` + regression test). | One PR lands all governing docs; the three SKILL.md copies are byte-identical (sha recorded in PR body); `current-program.md`/`current-tracker.md`/this tracker agree on next slice = NC-EG-01; docs-only verify-slice static + required gates pass; CI + PR Finalizer green. | Low |
+| `NC-EG-00` | `completed` | `constitution-deployment` | Land the Phase C governing docs: rewritten `AGENTS.md` (Four Mandates), `CLAUDE.md`, `GEMINI.md`, `HANDOVER.md`, `project_architecture.md`, this tracker, the `nurseconnect-execution-runner` SOP deployed identically to `.codex/`, `.claude/`, `.gemini/` skills, `ADR-005-slice-lifecycle-automation.md`, and the NC-EG-01 design doc. Docs **plus one disclosed gate amendment**: finalizer tracker-ID regex extended to the Phase C band namespace (`scripts/lib/pr-slice-evidence.mjs` + regression test). | PR #101 merged at `b2baa0a80572a2eb10471dcd02c1c945928fc0ef`; three SKILL.md copies are byte-identical; `current-program.md`/`current-tracker.md`/this tracker agree on next slice = NC-EG-01; docs-only verify-slice static + required gates passed with run root `tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`; CI + PR Finalizer green. | Low |
 | `NC-EG-01` | `ready` | `ent-gate-framework` | Add a fail-closed ent-gate stage to `verify-slice --required-gates` and PR Finalizer. Each slice declares a `slice-gates.yaml` manifest (`ent-tm`, `ent-dlv`, `ent-perf`: `required\|n/a + justification`). | Running `--required-gates` without a manifest fails; `n/a` without justification fails; PR Finalizer rejects PRs missing gate evidence paths. Negative test committed proving the fail-closed path. | Medium |
 | `NC-EG-02` | `planned` | `ent-tm-gate` | Threat-model gate: any slice touching auth, tenancy, PHI surfaces, or money requires a STRIDE-lite threat model doc (`docs/threat-models/<slice>.md`) from a checked template; gate verifies existence + section completeness deterministically. | Slice diff touching guarded paths (path-classifier list) without a threat model fails the gate; template sections are machine-checked; first real threat model lands for NC-E2-03. | Medium |
 | `NC-EG-03` | `planned` | `ent-dlv-gate` | Data-lifecycle gate: machine-readable PHI/data-class manifest (`packages/database/data-classification.json`). Gate diffs Drizzle schema vs manifest: every column must declare class (`phi\|pii\|operational`), retention, and erasure strategy (`crypto-shred\|delete\|retain-legal`). | Adding a schema column without a manifest entry fails CI; manifest entries with `phi` but no erasure strategy fail; baseline manifest covers all 16 existing schema files at merge. | High |
@@ -102,6 +102,12 @@ NC-TB-01 ──► NC-TB-02 ──► NC-TB-03 ──► NC-E5-02/04 (RLS before
 NC-E3-02 ──► NC-E3-03 ──► NC-E3-04/05 ──► NC-CQ-02/03/04 (event-fed projections)
 NC-EG-03 ──► NC-E5-01 ──► NC-E5-03 ──► NC-E5-04 ──► NC-E5-05
 ```
+
+## Recent Closeout Evidence
+
+| Slice | PR | Merge Commit | Gate Summary |
+|---|---|---|---|
+| `NC-EG-00 / constitution-deployment` | `https://github.com/arbenl/nurseconnect-v3/pull/101` | `b2baa0a80572a2eb10471dcd02c1c945928fc0ef` | Phase C governing docs and ADR-005 merged; docs-only verify-slice static + required gates passed with run root `tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`; CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, and pre-push strict release gate passed. |
 
 ## Closeout discipline
 

@@ -85,6 +85,9 @@ Completed closeout evidence:
 - `NC-E2-02 / tenant-memberships` merged in PR #96 on 2026-06-05.
 - Merge commit: `b0fa47381b3daa6db2c744cbc80b20a59ffdd54f`.
 - Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, focused identity unit/DB tests, tenant-isolation contract tests, model-review disposition, Copilot finding fix, verify-slice static, verify-slice required gates, and pre-push strict release gate.
+- `NC-EG-00 / constitution-deployment` merged in PR #101 on 2026-06-13.
+- Merge commit: `b2baa0a80572a2eb10471dcd02c1c945928fc0ef`.
+- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, E2E API, UI smoke, docs-only verify-slice static, docs-only verify-slice required gates, and pre-push strict release gate. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`.
 
 Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
 ADR-001 Decision B:
@@ -113,8 +116,8 @@ after the NC-EG band merges.
 The next implementation slices are:
 
 ```text
-NC-EG-00 / codex/constitution-deployment   (in progress, docs-only)
-NC-EG-01 / codex/ent-gate-framework
+NC-EG-01 / codex/ent-gate-framework   (promoted next)
+then: NC-E2-03 / codex/platform-authz
 ```
 
 ## Slice Execution Contract
