@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { validatePrSliceEvidence } from "../check-pr-slice-evidence.mjs";
-import { goodEvidence } from "./pr-slice-evidence-helpers.mjs";
+import { entGateFiles, goodEvidence, manifestSha } from "./pr-slice-evidence-helpers.mjs";
 
 describe("PR slice evidence validator", () => {
   it("passes a Tier 3 PR body with QA, model-review, debate, and slice evidence entries", () => {
-    const result = validatePrSliceEvidence({ body: goodEvidence, files: ["apps/web/src/app/api/admin/users/route.ts"] });
+    const result = validatePrSliceEvidence({ body: goodEvidence, files: [...entGateFiles, "apps/web/src/app/api/admin/users/route.ts"] });
     expect(result.status).toBe("pass");
     expect(result.highRisk).toBe(true);
     expect(result.errors).toEqual([]);
@@ -29,12 +29,13 @@ describe("PR slice evidence validator", () => {
     expect(result.errors).toContain("Evidence section missing subagent handoff.");
     expect(result.errors).toContain("Evidence section missing plugin activation.");
     expect(result.errors).toContain("Evidence section missing modularity guard.");
+    expect(result.errors).toContain("Evidence section missing ent-gates PASS.");
     expect(result.errors).toContain('Evidence section must include MUST_FIX disposition like "MUST_FIX: 0 (none)" or "MUST_FIX: 2 (all fixed)".');
   });
 
   it("accepts Phase C band tracker IDs (NC-EG/NC-TB/NC-CQ) and still rejects unknown bands", () => {
     for (const id of ["NC-EG-00", "NC-TB-01", "NC-CQ-05", "NC-E2-03"]) {
-      const result = validatePrSliceEvidence({ body: goodEvidence.replace(/NC-E\d+-\d+/, id), files: [] });
+      const result = validatePrSliceEvidence({ body: goodEvidence.replace(/NC-E\d+-\d+/, id), files: entGateFiles });
       expect(result.errors.filter((e) => e.includes("tracker ID"))).toEqual([]);
       expect(result.status).toBe("pass");
     }
@@ -77,7 +78,7 @@ describe("PR slice evidence validator", () => {
       .replace(/- \[x\] Subagent results:[^\n]+\n/, "")
       .replace(/- \[x\] Model debate:[^\n]+\n/, "- [x] Model debate skipped: model access blocked; external reviewers were not counted as approval.\n")
       .replace(/- \[x\] `pnpm slice:evidence -- --run-root <run-root> --require-reviewers[^\n]+\n/, "");
-    const result = validatePrSliceEvidence({ body, files: ["scripts/multi-agent/model-review.mjs"] });
+    const result = validatePrSliceEvidence({ body, files: [...entGateFiles, "scripts/multi-agent/model-review.mjs"] });
     expect(result.status).toBe("pass");
   });
 
@@ -98,28 +99,30 @@ describe("PR slice evidence validator", () => {
 - [x] Model access check evidence: blocked quota/auth route recorded and not counted as approval.
 - [x] Codex senior review: \`tmp/multi-agent/verify-slice/verify-slice-20260616T084558Z-d41802/reviews/codex-senior-review.md\`
 - [x] Model review evidence: blocked/silent routes remained blockers and no approval counted.
+- [x] ent-gates: PASS @ \`tmp/multi-agent/verify-slice/verify-slice-20260616T084558Z-d41802/evidence/ent-gates.md\`
+- [x] manifest sha256: \`${manifestSha}\`
 - [x] MUST_FIX: 0 (none)
 - [x] \`pnpm modularity:guard\`: pass
 - [x] \`pnpm verify-slice -- --run-root tmp/multi-agent/verify-slice/verify-slice-20260616T084558Z-d41802 --static\`: pass
 - [x] Required gates covered by the strict release gate: type-check, lint, build, tests, API E2E, UI smoke.
 - [x] Slice evidence check: pass.
 `,
-      files: ["scripts/multi-agent/lib/model-review-runner.mjs"],
+      files: [...entGateFiles, "scripts/multi-agent/lib/model-review-runner.mjs"],
     });
     expect(result.status).toBe("pass");
   });
 
   it("rejects inconsistent MUST_FIX disposition counts and dry-run allowance", () => {
-    const nonzeroNone = validatePrSliceEvidence({ body: goodEvidence.replace("MUST_FIX: 0 (none)", "MUST_FIX: 2 (none)"), files: [] });
-    const zeroFixed = validatePrSliceEvidence({ body: goodEvidence.replace("MUST_FIX: 0 (none)", "MUST_FIX: 0 (all fixed)"), files: [] });
-    const dryRun = validatePrSliceEvidence({ body: goodEvidence.replace('--must-fix-disposition "none"` result: pass', '--must-fix-disposition "none" --allow-dry-run` result: pass'), files: ["apps/web/src/app/api/admin/users/route.ts"] });
+    const nonzeroNone = validatePrSliceEvidence({ body: goodEvidence.replace("MUST_FIX: 0 (none)", "MUST_FIX: 2 (none)"), files: entGateFiles });
+    const zeroFixed = validatePrSliceEvidence({ body: goodEvidence.replace("MUST_FIX: 0 (none)", "MUST_FIX: 0 (all fixed)"), files: entGateFiles });
+    const dryRun = validatePrSliceEvidence({ body: goodEvidence.replace('--must-fix-disposition "none"` result: pass', '--must-fix-disposition "none" --allow-dry-run` result: pass'), files: [...entGateFiles, "apps/web/src/app/api/admin/users/route.ts"] });
     expect(nonzeroNone.errors).toContain('Evidence section cannot use "none" disposition when MUST_FIX count is greater than 0.');
     expect(zeroFixed.errors).toContain('Evidence section should use "MUST_FIX: 0 (none)" when there are no MUST_FIX findings.');
     expect(dryRun.errors).toContain("Tier 2/3 or protected-file PRs must not use --allow-dry-run in strict slice:evidence evidence.");
   });
 
   it("rejects Copilot inside the strict local reviewer list", () => {
-    const escalated = validatePrSliceEvidence({ body: goodEvidence.replace('--require-reviewers "sonnet46,gemini"', '--require-reviewers "sonnet46,gemini,claude48"'), files: ["scripts/lib/pr-slice-evidence.mjs"] });
+    const escalated = validatePrSliceEvidence({ body: goodEvidence.replace('--require-reviewers "sonnet46,gemini"', '--require-reviewers "sonnet46,gemini,claude48"'), files: entGateFiles });
     const body = goodEvidence
       .replace('--require-reviewers "sonnet46,gemini"', '--require-reviewers "sonnet46,copilot"')
       .replace("Model review evidence:", "Model review evidence: gemini mentioned outside the reviewer flag;");
@@ -130,7 +133,7 @@ describe("PR slice evidence validator", () => {
   });
 
   it("requires a standalone debate receipt for protected files", () => {
-    const result = validatePrSliceEvidence({ body: goodEvidence.replace(/- \[x\] Model debate:[^\n]+\n/, ""), files: ["apps/web/src/app/api/admin/users/route.ts"] });
+    const result = validatePrSliceEvidence({ body: goodEvidence.replace(/- \[x\] Model debate:[^\n]+\n/, ""), files: [...entGateFiles, "apps/web/src/app/api/admin/users/route.ts"] });
     expect(result.status).toBe("fail");
     expect(result.errors).toContain("Strict Tier 2/3 or protected-file PR evidence must include model debate receipt evidence.");
   });

@@ -71,7 +71,7 @@ if [[ -z "$pr_number" || "$pr_number" == "null" ]]; then
 fi
 
 log "Resolving PR metadata for #$pr_number"
-PR_JSON=$(gh pr view "$pr_number" --json number,title,body,statusCheckRollup,files 2>/dev/null || true)
+PR_JSON=$(gh pr view "$pr_number" --json number,title,body,statusCheckRollup,files,baseRefName,baseRefOid 2>/dev/null || true)
 if [[ -z "$PR_JSON" ]]; then
   fail "Failed to read PR metadata with gh pr view #$pr_number"
   print_failures

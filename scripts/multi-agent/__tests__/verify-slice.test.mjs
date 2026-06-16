@@ -145,5 +145,6 @@ describe("verify-slice workflow", () => {
     expect(script).toContain("model-review-access-check");
     expect(script).toContain("sonnet46,gemini");
     expect(script).toContain("docs-only static path");
+    expect(script).toMatch(/ent-gates-static[\s\S]*--policy-base[\s\S]*ent-gates-required[\s\S]*--policy-base/);
   });
 });

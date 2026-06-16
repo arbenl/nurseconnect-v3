@@ -1,0 +1,40 @@
+{
+  "gates": {
+    "ent-tm": [
+      "apps/web/src/server/auth/**",
+      "apps/web/src/server/payments/**",
+      "apps/web/src/lib/auth/**",
+      "apps/web/src/app/api/**",
+      "apps/web/src/middleware.*",
+      "packages/domain-identity/**",
+      "packages/contracts/**",
+      "packages/database/src/tenant-context*",
+      "packages/database/src/schema/**",
+      "packages/domain-payments/**",
+      "packages/database/src/db.ts",
+      "packages/database/src/pool-config.ts",
+      "packages/database/src/rls-role-assertion.ts",
+      "scripts/ent-gates/**",
+      "scripts/multi-agent/**",
+      "scripts/mcp/**",
+      "scripts/lib/pr-slice-evidence.mjs",
+      "scripts/lib/pr-ent-gate-evidence.mjs",
+      "scripts/pr-finalizer.sh",
+      "scripts/pr-finalizer-slice-evidence.mjs",
+      "scripts/check-pr-slice-evidence.mjs",
+      ".github/workflows/**",
+      "package.json",
+      "config/ent-gate-paths.json",
+      "slice-gates.yaml"
+    ],
+    "ent-dlv": [
+      "packages/database/src/schema/**",
+      "packages/database/drizzle/**",
+      "packages/database/**/*.sql"
+    ],
+    "ent-perf": [
+      "apps/web/src/server/requests/**",
+      "packages/domain-dispatch/**"
+    ]
+  }
+}
