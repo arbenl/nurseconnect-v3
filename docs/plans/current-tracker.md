@@ -32,7 +32,7 @@ verification_command: pnpm verify-slice
 | `NC-E2-01` | `completed` | identity + platform | Move current-user resolution into one platform identity boundary. | PR #93 merged at `b46861d353cc196ffbfaf1a456952414ff28bae0`; `/api/me/profile` and `/api/me/notifications` now use centralized current-user/role resolution; the legacy cached-user helper was removed; AST guard coverage blocks direct `users.authId` current-user lookups outside approved identity/schema/test boundaries; Copilot findings were fixed and resolved; verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E2-02` | `completed` | identity + platform + database | Add org membership model after tenant shape decision. | PR #96 merged at `b0fa47381b3daa6db2c744cbc80b20a59ffdd54f`; organizations and org_memberships schema/migration landed; org_memberships has fail-closed RLS; tenant-scoped membership helpers and default-org admin bootstrap are tested; tenant-isolation contract/harness understands tenant boundary tables; Copilot bootstrap slug finding was fixed; local verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-EG-00` | `completed` | platform + architecture | Land Phase C governing docs: Enterprise Constitution (`AGENTS.md`), `CLAUDE.md`/`GEMINI.md`, rewritten `HANDOVER.md`/`project_architecture.md`, `ENTERPRISE_UPGRADE_TRACKER.md`, the `nurseconnect-execution-runner` SOP in `.codex/`/`.claude/`/`.gemini/` skills, `ADR-005-slice-lifecycle-automation.md`, and the NC-EG-01 design doc. Docs plus one disclosed gate amendment (finalizer tracker-ID regex for Phase C bands + regression test). | PR #101 merged at `b2baa0a80572a2eb10471dcd02c1c945928fc0ef`; byte-identical SKILL.md copies; planning docs agree next slice = NC-EG-01; docs-only verify-slice static + required gates passed with run root `tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`; CI, Sonar, GitGuardian, E2E API, UI smoke, and PR Finalizer passed. |
-| `NC-EG-01` | `ready` | platform + qa | Fail-closed ent-gate framework in `verify-slice --required-gates` + PR Finalizer (`slice-gates.yaml` manifest; `ent-tm`/`ent-dlv`/`ent-perf` declarations). Design: `docs/plans/nc-eg-01-ent-gate-framework-design.md`. | Running `--required-gates` without a manifest fails; `n/a` without justification fails; guarded-path `n/a` declarations fail; docs-only path still runs the ent-gate; negative tests committed; PR Finalizer rejects missing gate evidence. |
+| `NC-EG-01` | `completed` | platform + qa | Fail-closed ent-gate framework in `verify-slice --required-gates` + PR Finalizer (`slice-gates.yaml` manifest; `ent-tm`/`ent-dlv`/`ent-perf` declarations). Design: `docs/plans/nc-eg-01-ent-gate-framework-design.md`. | PR #105 merged at `246b74e6f569cd20464f6ec82fce7d4bfae5c740`; PR #106 follow-up merged at `08fbced6a586353aa3884a1cfcf238bfa60bca96`; ent-gates, branch-protection audit parity, evidence parser hardening, CI, Sonar, GitGuardian, PR Finalizer, E2E API, and UI smoke passed. |
 | `NC-E2-03` | `ready` | identity + platform | Add in-process tenant/resource-aware policy functions **plus phantom-type guards** (`AuthorizedTransition` brand; branded `PolicyDecision`) per the Phase C amendment in `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`. | Policy matrix covers allow/deny/cross-tenant/PHI field cases; negative type-test proves direct `service_requests.status` writes fail `tsc` without an `AuthorizedTransition`. |
 
 > Phase C Enterprise Upgrade bands (ent-* gates, type-level guards, tenant
@@ -43,19 +43,15 @@ verification_command: pnpm verify-slice
 ## Next Slice
 
 ```text
-NC-EG-01 / codex/ent-gate-framework   (ready, promoted next)
+NC-E2-03 / codex/platform-authz   (ready, promoted next)
 ```
 
 Rationale:
 
-- Phase C ordering (ENTERPRISE_UPGRADE_TRACKER.md): the ent-* gate band lands
-  first so every subsequent slice — including the amended `NC-E2-03 /
-  platform-authz` — is born under fail-closed `ent-tm`/`ent-dlv`/`ent-perf`
-  gating.
-- PR #101 completed `NC-EG-00 / constitution-deployment`, so `NC-EG-01` is now
-  the single promoted next slice.
-- PR #96 completed `NC-E2-02 / tenant-memberships`, so `NC-E2-03` remains ready
-  and is promoted immediately after NC-EG-01 lands.
+- PR #105 completed `NC-EG-01 / ent-gate-framework`; PR #106 synchronized the
+  repo branch-protection evidence with the live green-check merge policy.
+- `NC-E2-03 / platform-authz` is the next Phase C slice born under fail-closed
+  `ent-tm`/`ent-dlv`/`ent-perf` gating.
 
 ## Recent Closeout Evidence
 
@@ -74,6 +70,7 @@ Rationale:
 | `NC-E2-01 / platform-identity` | `https://github.com/arbenl/nurseconnect-v3/pull/93` | `b46861d353cc196ffbfaf1a456952414ff28bae0` | Central current-user resolver adoption for `/api/me/profile`, centralized role guard for `/api/me/notifications`, legacy cached-user helper removal, AST current-user boundary guard, Copilot finding fixes, local verify-slice static/required gates, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-E2-02 / tenant-memberships` | `https://github.com/arbenl/nurseconnect-v3/pull/96` | `b0fa47381b3daa6db2c744cbc80b20a59ffdd54f` | Organizations and org_memberships schema/migration, fail-closed org_memberships RLS, tenant-scoped membership helpers, default-org admin bootstrap, tenant-isolation contract updates, model-review disposition, Copilot bootstrap slug fix, local verify-slice static/required gates, pre-push strict release gate, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke passed. |
 | `NC-EG-00 / constitution-deployment` | `https://github.com/arbenl/nurseconnect-v3/pull/101` | `b2baa0a80572a2eb10471dcd02c1c945928fc0ef` | Phase C governing docs, ADR-005, all three agent SOP copies, NC-EG-01 design, finalizer Phase C tracker-ID amendment, Fable M1 design amendment, docs-only verify-slice static/required gates (`tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`), CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and pre-push strict release gate passed. |
+| `NC-EG-01 / ent-gate-framework` | `https://github.com/arbenl/nurseconnect-v3/pull/105` + `https://github.com/arbenl/nurseconnect-v3/pull/106` | `246b74e6f569cd20464f6ec82fce7d4bfae5c740` + `08fbced6a586353aa3884a1cfcf238bfa60bca96` | Ent-gate framework, PR evidence/finalizer hardening, live branch-protection audit parity, Copilot finding fixes, local verify-slice static/required gates, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, E2E API, and UI smoke passed. |
 
 ## Status Rules
 

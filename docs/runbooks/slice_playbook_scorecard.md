@@ -59,11 +59,46 @@ Keep these as mandatory final evidence:
 If a local parity gate fails from resources after mandatory gates pass, record
 the exact blocker instead of mixing it with product regressions.
 
+## GitHub Feedback Sequencing
+
+Once a PR is open, stop broad gate reruns and merge attempts when GitHub shows
+Sonar failures, Copilot/Sentry review comments, unresolved review threads, or
+PR Finalizer evidence failures. Inspect and fix that feedback first, then rerun
+the remote required checks.
+
+For review-thread sequencing, do not weaken merge readiness. If a bot thread is
+already fixed locally but blocks publishing the amended commit, a narrow
+`STRICT_GUARD_SKIP=1 git push --force-with-lease ...` is allowed only after:
+
+- focused proof for the fix passed
+- `verify-slice --required-gates` or the equivalent required local gate passed
+  on the amended worktree
+- unresolved threads are known to be addressed, not ignored
+- the PR is still held until CI, Sonar, GitGuardian, review threads, and PR
+  Finalizer are green on the pushed head
+
+Do not use the bypass for product failures, skipped evidence, red CI, missing
+Sonar, or unresolved findings that have not been technically addressed.
+
 ## Closeout
 
 A slice is not complete until the PR is merged green, local `main` is synced and
 clean, branches are deleted, closeout evidence is recorded, and the next slice
 is promoted only from fresh `main`.
+
+## Current Maturity
+
+Measured after PR #105 and PR #106:
+
+| Dimension | Score | Evidence / Remaining Gap |
+|---|---:|---|
+| Governance/playbook design | 9.0 | Authority chain, tracker promotion, branch protection audit, and finalizer evidence are encoded; lifecycle automation is still manual. |
+| Parser/finalizer robustness | 9.1 | PR evidence parser handles semantic labels and branch-protection drift; Finalizer blocked missing evidence correctly. |
+| Reviewer route handling | 8.7 | Sonnet/Gemini/Codex senior routes and blocked-route evidence exist; review-fix publish sequencing still needs a first-class command. |
+| CI/release gate efficiency | 8.6 | Focused proof precedes broad gates and strict release evidence is real; pre-push can still duplicate expensive CI work. |
+| Future-thread skill enforcement | 8.8 | Skill and scorecard encode stop-on-feedback and gate authority; future compliance still depends on agents reading them. |
+| Enterprise readiness | 8.6 | Gates, auditability, and protected merge policy improved; clinical/PHI, outbox, CQRS, and RLS hardening remain ahead. |
+| Overall maturity | 8.8 | Technically stronger than narrative maturity, but not 9+ until review-fix publish and tracker closeout are automated. |
 
 ## Measurement Notes
 
