@@ -13,6 +13,7 @@ export function validateEntGateEvidence(errors, evidence, manifestPath = "slice-
 
   const actual = createHash("sha256").update(readFileSync(manifestPath)).digest("hex");
   if (cited !== actual) errors.push(`slice-gates manifest sha mismatch: cited ${cited}, actual ${actual}.`);
+  if (files.length === 0) return;
   const args = [
     "scripts/ent-gates/check.mjs",
     "--run-root",
