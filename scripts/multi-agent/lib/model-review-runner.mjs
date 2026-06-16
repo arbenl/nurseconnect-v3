@@ -14,6 +14,16 @@ export function safeResult(result) {
   return { ...result, args: result.args.map((arg) => (arg.length > 240 ? `${arg.slice(0, 240)}...` : arg)) };
 }
 
+function blockerReason({ stdout, stderr, exitCode, timedOut }) {
+  const text = `${stdout || ""}\n${stderr || ""}`.toLowerCase();
+  if (text.includes("quota") || text.includes("rate limit") || text.includes("rate_limit")) return "quota_or_rate_limit";
+  if (text.includes("auth") || text.includes("oauth") || text.includes("login") || text.includes("unauthorized")) return "auth_required";
+  if (text.includes("model") && (text.includes("not found") || text.includes("unavailable") || text.includes("unknown"))) return "model_unavailable";
+  if (timedOut || text.includes("timed out") || (exitCode === 0 && text.trim() === "")) return "timeout_or_no_output";
+  if (exitCode !== 0) return "route_exit_nonzero";
+  return null;
+}
+
 function killProcessGroup(child) {
   if (!child.pid) return false;
   try {
@@ -65,7 +75,7 @@ export function runRoute(name, prompt, options, repoRoot) {
     };
     const timer = setTimeout(() => {
       const suffix = `Timed out after ${limitMs}ms; killed reviewer process group`;
-      timeoutResult = makeResult(name, route, args, stdout, `${stderr}\n${suffix}`.trim(), -1);
+      timeoutResult = makeResult(name, route, args, stdout, `${stderr}\n${suffix}`.trim(), -1, { timedOut: true });
       killProcessGroup(child);
       settleTimer = setTimeout(() => done(timeoutResult), 1_000);
     }, limitMs);
@@ -76,10 +86,13 @@ export function runRoute(name, prompt, options, repoRoot) {
   });
 }
 
-function makeResult(name, route, args, stdout, stderr, exitCode) {
+function makeResult(name, route, args, stdout, stderr, exitCode, options = {}) {
+  const hasOutput = `${stdout || ""}${stderr || ""}`.trim().length > 0;
+  const status = exitCode === 0 && hasOutput ? "complete" : "blocked";
   return {
     reviewer: name,
-    status: exitCode === 0 ? "complete" : "blocked",
+    status,
+    blockerReason: status === "blocked" ? blockerReason({ stdout, stderr, exitCode, timedOut: options.timedOut }) : null,
     label: route.label,
     provider: route.provider,
     model: route.model,
@@ -101,6 +114,7 @@ export function writeReceipt(reviewDir, result) {
       `# ${result.reviewer} Review`,
       "",
       `- status: \`${result.status}\``,
+      result.blockerReason ? `- blocker_reason: \`${result.blockerReason}\`` : null,
       `- label: \`${result.label || result.reviewer}\``,
       `- provider: \`${result.provider || "unknown"}\``,
       `- model: \`${result.model || "unknown"}\``,
@@ -112,6 +126,6 @@ export function writeReceipt(reviewDir, result) {
       "",
       "## stderr",
       result.stderr || "",
-    ].join("\n"),
+    ].filter((line) => line !== null && line !== undefined).join("\n"),
   );
 }

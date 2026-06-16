@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -22,7 +22,6 @@ describe("nurseconnect QA evidence collector", () => {
   it("records repo-owned nurse QA MCP identity", () => {
     const runRoot = mkdtempSync(join(tmpdir(), "nurseconnect-qa-evidence-"));
     try {
-      mkdirSync(join(runRoot, "evidence"), { recursive: true });
       const result = spawnSync("node", [join(repoRoot, "scripts/multi-agent/nurseconnect-qa-evidence.mjs")], {
         cwd: repoRoot,
         encoding: "utf8",
@@ -43,7 +42,6 @@ describe("nurseconnect QA evidence collector", () => {
   it("fails forbidden runtime QA identity overrides", () => {
     const runRoot = mkdtempSync(join(tmpdir(), "nurseconnect-qa-evidence-"));
     try {
-      mkdirSync(join(runRoot, "evidence"), { recursive: true });
       const result = spawnSync("node", [join(repoRoot, "scripts/multi-agent/nurseconnect-qa-evidence.mjs")], {
         cwd: repoRoot,
         encoding: "utf8",

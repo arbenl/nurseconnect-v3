@@ -85,6 +85,8 @@ write_reviewer_plan() {
   echo "- Model review evidence: \`$RUN_ROOT/evidence/model-review.md\`"
   echo "- Subagent reviewer handoff: \`$RUN_ROOT/reviews/subagent-handoff.md\`"
   echo "- Subagent reviewer results: \`$RUN_ROOT/reviews/subagent-results.md\`"
+  echo "- Slice playbook scorecard: \`docs/runbooks/slice_playbook_scorecard.md\`"
+  echo "- Code review defaults: \`code_review.md\`"
   [[ "$docs_only" != "yes" ]] || echo "- Docs-only required gates: required-gates uses docs/static hygiene checks instead of \`pnpm gate:release\`."
   } >"$RUN_ROOT/reviewer-plan.md"
 }

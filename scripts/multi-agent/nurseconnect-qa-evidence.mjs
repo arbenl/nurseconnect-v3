@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -141,6 +141,7 @@ try {
   await client.close().catch(() => {});
 }
 
+await mkdir(join(runRoot, "evidence"), { recursive: true });
 await writeFile(rawFile, `${JSON.stringify(payload, null, 2)}\n`);
 await writeFile(summaryFile, `${summary()}\n`);
 process.exit(exitCode);

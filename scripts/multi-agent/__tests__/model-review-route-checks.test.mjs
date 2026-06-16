@@ -70,7 +70,9 @@ describe("model-review route checks", () => {
       const markdown = readFileSync(join(failRun.root, "reviews/model-review-access.md"), "utf8");
       expect(result.status).toBe(1);
       expect(report.blocked[0].reviewer).toBe("claude48");
+      expect(report.blocked[0].blockerReason).toBe("model_unavailable");
       expect(report.blocked[0].remediation.overrideEnv).toBe("CLAUDE_48_REVIEW_MODEL");
+      expect(markdown).toContain("blocker_reason");
       expect(markdown).toContain("Set CLAUDE_48_REVIEW_MODEL");
     } finally {
       rmSync(failRun.root, { recursive: true, force: true });

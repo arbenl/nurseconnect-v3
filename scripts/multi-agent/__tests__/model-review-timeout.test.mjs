@@ -84,6 +84,7 @@ describe("model-review route timeout cleanup", () => {
 
       expect(result.status).toBe("blocked");
       expect(result.exitCode).toBe(-1);
+      expect(result.blockerReason).toBe("timeout_or_no_output");
       expect(result.stderr).toContain("killed reviewer process group");
       expect(beforeTimeout.length).toBeGreaterThan(0);
       expect(afterTimeout.length).toBeGreaterThan(beforeTimeout.length);
@@ -92,4 +93,5 @@ describe("model-review route timeout cleanup", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
 });

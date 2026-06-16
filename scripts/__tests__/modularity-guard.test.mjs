@@ -9,9 +9,10 @@ import { describe, expect, it } from "vitest";
 import { evaluateModularityGuard, parseNameStatus } from "../lib/modularity-guard.mjs";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
+const gitEnv = { PATH: "/usr/bin:/bin:/usr/sbin:/sbin" };
 
 function git(root, args) {
-  return execFileSync("/usr/bin/git", args, { cwd: root, encoding: "utf8" }).trim();
+  return execFileSync("/usr/bin/git", args, { cwd: root, encoding: "utf8", env: gitEnv }).trim();
 }
 
 function write(root, file, text) {
@@ -135,6 +136,7 @@ describe("modularity guard", () => {
   });
 
   it("uses the current repository root in import paths", () => {
-    expect(repoRoot).toContain("nurseconnect-v3");
+    const gitRoot = git(repoRoot, ["rev-parse", "--show-toplevel"]);
+    expect(repoRoot.replace(/\/$/, "")).toBe(gitRoot);
   });
 });
