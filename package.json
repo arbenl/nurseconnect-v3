@@ -72,6 +72,7 @@
     "launch:browser-rehearsal:headed": "bash scripts/launch-browser-rehearsal-headed.sh",
     "launch:monitor": "node scripts/launch-monitor.mjs",
     "launch:auth-monitor": "node scripts/launch-auth-monitor.mjs",
+    "branch-protection:audit": "node scripts/check-branch-protection.mjs",
     "auth:email-verification-report": "node scripts/auth-email-verification.mjs report",
     "auth:email-verification-backfill": "node scripts/auth-email-verification.mjs apply",
     "identity:reconcile": "node scripts/identity/reconcile-auth-bridge.mjs",

@@ -35,7 +35,7 @@ if [[ -z "$REPO_ROOT" ]]; then
 fi
 cd "$REPO_ROOT"
 
-REQUIRED_LOCAL_COMMANDS="${PR_FINALIZER_LOCAL_COMMANDS:-$'pnpm type-check\npnpm test:ci'}"
+REQUIRED_LOCAL_COMMANDS="${PR_FINALIZER_LOCAL_COMMANDS:-$'pnpm type-check\npnpm test:ci\npnpm branch-protection:audit'}"
 REQUIRED_CHECKS="${PR_FINALIZER_REQUIRED_CHECKS:-$'Type Check & Lint\nUnit Tests (jsdom)\nDB Integration Tests (node)\nE2E API Tests\nE2E UI Smoke Gate'}"
 
 if [[ -n "$(git status --porcelain)" ]]; then
