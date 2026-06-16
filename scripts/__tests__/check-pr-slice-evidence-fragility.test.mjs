@@ -15,12 +15,18 @@ describe("PR slice evidence parser fragility", () => {
   });
 
   it("accepts strict release gate wording as required-gates evidence", () => {
+    const previousComplete = process.env.PR_FILES_COMPLETE;
     const body = goodEvidence.replace(
       /- \[x\] `pnpm verify-slice -- --run-root <run-root> --required-gates` result: pass\n/,
       "- [x] Required gates covered by the pre-push strict release gate.\n"
     );
-    const result = validatePrSliceEvidence({ body, files: [] });
-
-    expect(result.status).toBe("pass");
+    try {
+      process.env.PR_FILES_COMPLETE = "1";
+      const result = validatePrSliceEvidence({ body, files: [] });
+      expect(result.status).toBe("pass");
+    } finally {
+      if (previousComplete === undefined) delete process.env.PR_FILES_COMPLETE;
+      else process.env.PR_FILES_COMPLETE = previousComplete;
+    }
   });
 });

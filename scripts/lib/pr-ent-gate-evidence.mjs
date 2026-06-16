@@ -20,7 +20,7 @@ export function validateEntGateEvidence(errors, evidence, manifestPath = "slice-
   ];
   if (process.env.BASE_COMMIT) args.push("--base", process.env.BASE_COMMIT);
   else if (files.length > 0) args.push("--base", "HEAD", "--enforce-promotion", "false");
-  if (process.env.PR_FILES_COMPLETE === "1" || (files.length > 0 && !process.env.BASE_COMMIT)) args.push("--changed-files-complete");
+  if (files.length > 0 && (process.env.PR_FILES_COMPLETE === "1" || !process.env.BASE_COMMIT)) args.push("--changed-files-complete");
   for (const file of files) args.push("--changed-file", file);
   const check = spawnSync("node", args, { encoding: "utf8" });
   if (check.status !== 0) errors.push(`ent-gates checkout verification failed:\n${check.stdout || ""}${check.stderr || ""}`.trim());
