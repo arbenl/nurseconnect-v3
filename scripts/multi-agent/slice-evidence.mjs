@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { asBoolean, asString, parseArgv, printHelpAndExit, printJson } from "./lib/cli.mjs";
+import { checkCodexSeniorReview } from "./lib/codex-senior-review-check.mjs";
 import { checkModelAccess, checkModelPreflight, checkModelReview, checkNurseConnectQa, checkSubagentHandoff, checkSubagentResults } from "./lib/slice-evidence-checks.mjs";
 import { checkFile, fail, pass, resolveRepoPath, splitList } from "./lib/slice-evidence-shared.mjs";
 
@@ -19,10 +20,13 @@ Options:
   --require-model-access        Fail unless model route access-check evidence passed
   --require-model-review        Fail unless model-review receipts exist
   --require-subagent-results    Fail unless subagent reviewer result receipts pass
+  --require-codex-senior-review Fail unless Codex senior review receipt passed
+  --allow-codex-senior-blocked Count a structured Codex blocker as fallback evidence
   --require-reviewers <list>    Comma list of model reviewer routes that must be present
   --require-debate              Fail unless debate evidence exists
   --allow-dry-run               Count dry-run model-review receipts as acceptable
   --must-fix-disposition <text> Required when model debate found MUST_FIX candidates
+  --codex-must-fix-disposition <text> Required when Codex senior review found blockers
   --output <path>               Optional JSON report path
 `;
 
@@ -32,10 +36,13 @@ function optionsFrom(parsed) {
     requireModelAccess: asBoolean(parsed["require-model-access"], false),
     requireModelReview: asBoolean(parsed["require-model-review"], false),
     requireSubagentResults: asBoolean(parsed["require-subagent-results"], false),
+    requireCodexSeniorReview: asBoolean(parsed["require-codex-senior-review"], false),
+    allowCodexSeniorBlocked: asBoolean(parsed["allow-codex-senior-blocked"], false),
     requiredReviewers: splitList(parsed["require-reviewers"]),
     requireDebate: asBoolean(parsed["require-debate"], false),
     allowDryRun: asBoolean(parsed["allow-dry-run"], false),
     mustFixDisposition: asString(parsed["must-fix-disposition"], ""),
+    codexMustFixDisposition: asString(parsed["codex-must-fix-disposition"], ""),
   };
 }
 
@@ -60,6 +67,7 @@ async function main() {
     checks.modelPreflight = await checkModelPreflight(runRoot, options);
     checks.modelAccess = await checkModelAccess(runRoot, options);
     checks.modelReview = await checkModelReview(runRoot, options);
+    checks.codexSeniorReview = await checkCodexSeniorReview(runRoot, options);
   }
   const report = { status: Object.values(checks).every((check) => check.status === "pass") ? "pass" : "fail", runRoot, options, checks };
   const output = resolveRepoPath(repoRoot, asString(parsed.output, ""));

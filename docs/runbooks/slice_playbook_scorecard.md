@@ -31,7 +31,7 @@ Every slice thread must report:
 ## Reviewer Routes
 
 - Default strict external model reviewers are `sonnet46,gemini`.
-- Codex senior review is recorded separately when callable.
+- Codex senior review uses `pnpm codex:senior-review` and records a structured receipt.
 - A route blocked by auth, model id, quota, rate limit, timeout, or no output is
   not approval.
 - Do not retry a quota-limited or silent route repeatedly in the same slice.

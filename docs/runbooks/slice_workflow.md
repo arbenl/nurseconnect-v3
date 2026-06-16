@@ -38,7 +38,7 @@ Do not start implementation until the slice design has been reviewed or explicit
 - tests and verification commands
 - acceptance criteria that can fail deterministically
 
-Use configured model reviewers as advisory reviewers, not authority. Default strict external route set is `sonnet46,gemini`; local Codex senior review is recorded separately when callable. Do not count Copilot as local reviewer approval.
+Use configured model reviewers as advisory reviewers, not authority. Default strict external route set is `sonnet46,gemini`; local Codex senior review uses `pnpm codex:senior-review`. Do not count Copilot as local reviewer approval.
 
 Before relying on external reviewer routes, run `pnpm model-review -- --preflight --run-root <run_root> --reviewers sonnet46,gemini`, then `pnpm model-review -- --access-check --run-root <run_root> --reviewers sonnet46,gemini`. Keep `<run_root>/reviews/model-review-preflight.*` and `model-review-access.*`; blocked model ids, auth, quota, or provider failures are not approval and must be recorded as blocked external-review evidence.
 
@@ -161,14 +161,14 @@ The PR body should also state:
 - tracker ID, selected reviewers, subagent results, and model route preflight result or docs-only/dry-run skip reason
 - `MUST_FIX: <count> (none|all fixed|rejected:<reason>)`
 - `pnpm modularity:guard -- --base <base_commit>` result
-- local static and required gate results
+- local static/required gate results and `pnpm codex:senior-review -- --run-root <run_root>`
 - `pnpm slice:evidence -- --run-root <run_root>` result
-- for Tier 2, Tier 3, AI-affected, or protected-surface PRs with passing model access: `pnpm slice:evidence -- --run-root <run_root> --require-reviewers "sonnet46,gemini" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"`
+- for Tier 2, Tier 3, AI-affected, or protected-surface PRs with passing model access: `pnpm slice:evidence -- --run-root <run_root> --require-reviewers "sonnet46,gemini" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-codex-senior-review --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"`
 - for blocked model access: cite `reviews/model-review-access.md`, state that external reviewers were blocked and not counted as approval, and keep deterministic local gates mandatory
 - no `--allow-dry-run` as approval for Tier 2, Tier 3, AI-affected, or protected-surface PR evidence
 - when the run root exists locally, `PR_FINALIZER_VERIFY_SLICE_RUN_ROOT=1 pnpm pr:finalizer`
 
-The PR body must keep the `Evidence`, `Logs`, `Screenshots`, `Runbook`, and `Pilot guardrails` sections from `.github/PULL_REQUEST_TEMPLATE.md`; `PR Finalizer` parses them and fails missing slice evidence, model-review/debate evidence, or protected-surface guardrails.
+The PR body must keep the `Evidence`, `Logs`, `Screenshots`, `Runbook`, and `Pilot guardrails` sections from `.github/PULL_REQUEST_TEMPLATE.md`; `PR Finalizer` parses them and fails missing slice evidence, Codex senior review, model-review/debate evidence, or protected-surface guardrails.
 
 ## Merge Gate Artifacts
 

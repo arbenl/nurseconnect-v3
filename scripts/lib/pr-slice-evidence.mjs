@@ -42,7 +42,7 @@ function mustFixDisposition(text) {
 }
 
 function hasStrictCommand(evidence) {
-  const required = ["--require-reviewers", "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--must-fix-disposition"];
+  const required = ["--require-reviewers", "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-codex-senior-review", "--require-debate", "--must-fix-disposition"];
   const text = String(evidence || "");
   return required.every((flag) => new RegExp(flag, "i").test(text)) && reviewerListMatchesStrict(text);
 }
@@ -100,6 +100,7 @@ function checkHighRisk(errors, evidence) {
   if (!hasEvidence(evidence, /reviews\/model-review-preflight\.(md|json)/i, /model route preflight/i)) errors.push("Tier 2/3 or protected-file PRs must include model route preflight evidence.");
   if (!hasEvidence(evidence, /reviews\/model-review-access\.(md|json)/i, /model (?:access check|route access)/i)) errors.push("Tier 2/3 or protected-file PRs must include model route access-check evidence.");
   if (!hasEvidence(evidence, /evidence\/model-review\.(md|json)/i, /model[- ]review evidence/i)) errors.push("Tier 2/3 or protected-file PRs must include model-review receipt evidence.");
+  if (!hasEvidence(evidence, /reviews\/codex-senior-review\.(md|json)/i, /codex senior review/i)) errors.push("Tier 2/3 or protected-file PRs must include Codex senior review receipt evidence.");
   if (hasStrictCommand(evidence)) {
     if (!/reviews\/subagent-results\.(md|json)/i.test(evidence)) errors.push("Strict Tier 2/3 or protected-file PR evidence must include subagent reviewer result evidence.");
     if (!/reviews\/debate\.(md|json)/i.test(evidence)) errors.push("Strict Tier 2/3 or protected-file PR evidence must include model debate receipt evidence.");

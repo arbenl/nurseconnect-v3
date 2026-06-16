@@ -27,6 +27,17 @@ export function writeRunRoot(root, overrides = {}) {
   writeFileSync(join(root, "run-manifest.md"), "# Manifest\n");
   writeFileSync(join(root, "reviewer-plan.md"), "# Reviewer Plan\n");
   writeFileSync(join(root, "reviews/subagents/security_reviewer.md"), "# Security Reviewer\n");
+  writeFileSync(join(root, "reviews/codex-senior-review.md"), "# Codex Senior Review\n");
+  writeFileSync(join(root, "reviews/codex-senior-review.json"), json(overrides.codexSeniorReview ?? {
+    status: "pass",
+    reviewer: "codex-senior",
+    baseSha: "base",
+    headSha: "head",
+    changedFiles: ["scripts/example.mjs"],
+    receiptPath: "reviews/codex-senior-review.md",
+    mustFixCount: 0,
+    mustFixDisposition: "none",
+  }));
   writeFileSync(join(root, "reviews/subagent-handoff.json"), json(overrides.subagentHandoff ?? {
     status: "pass",
     reviewers: [{ reviewer: "security_reviewer", prompt: join(root, "prompts/security_reviewer.md") }],

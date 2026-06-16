@@ -120,7 +120,7 @@ is tight. The ladder records completed and blocked routes without treating block
 Protected-surface PR evidence with passing model access must include:
 
 ```text
-pnpm slice:evidence -- --run-root <run_root> --require-reviewers "sonnet46,gemini" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"
+pnpm slice:evidence -- --run-root <run_root> --require-reviewers "sonnet46,gemini" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-codex-senior-review --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"
 ```
 
 If model access is blocked, cite `reviews/model-review-access.*`, state blocked
@@ -128,9 +128,10 @@ routes were not counted as approval, still generate `evidence/model-review.*`
 from any available-route review or explicit not-run summary, and keep
 deterministic gates mandatory.
 
-Codex is optional escalation evidence. If it is quota-limited, rate-limited, or
-silent, record the blocker reason once and continue with the available external
-routes instead of retrying it throughout the same slice.
+Codex senior review uses `pnpm codex:senior-review -- --run-root <run_root>`;
+schema/RLS/auth-provider slices use `pnpm codex:senior-review:supabase`.
+Quota, auth, rate-limit, and no-output blockers are recorded once as structured
+evidence and must not be counted as approval.
 
 The debate is advisory evidence. It must not receive PHI, secrets, raw
 production data, patient details, or unnecessary clinical details.

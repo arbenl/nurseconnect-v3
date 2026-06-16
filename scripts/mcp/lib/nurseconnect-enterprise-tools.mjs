@@ -55,12 +55,15 @@ export function enterpriseToolSchemas(config, availableSuites) {
 export function createEnterpriseHandlers({ repoRoot, config, availableSuites, runConfiguredCommand }) {
   const git = (args) => runProcess("git", args, repoRoot);
   async function changedFiles(base = "origin/main") {
+    const baseDiff = await git(["diff", "--name-only", `${base}...HEAD`]);
+    if (baseDiff.exitCode !== 0) return { status: "error", files: [], error: baseDiff.stderr || `unable to diff ${base}...HEAD` };
     const files = new Set();
-    for (const args of [["diff", "--name-only", `${base}...HEAD`], ["diff", "--name-only"], ["diff", "--cached", "--name-only"], ["ls-files", "--others", "--exclude-standard"]]) {
+    baseDiff.stdout.split(/\r?\n/).filter(Boolean).forEach((file) => files.add(file));
+    for (const args of [["diff", "--name-only"], ["diff", "--cached", "--name-only"], ["ls-files", "--others", "--exclude-standard"]]) {
       const result = await git(args);
       if (result.exitCode === 0) result.stdout.split(/\r?\n/).filter(Boolean).forEach((file) => files.add(file));
     }
-    return [...files].sort();
+    return { status: "success", files: [...files].sort(), error: "" };
   }
   async function branchStatus(args = {}) {
     const base = typeof args.base === "string" && args.base.trim() ? args.base.trim() : "origin/main";
@@ -70,16 +73,17 @@ export function createEnterpriseHandlers({ repoRoot, config, availableSuites, ru
       git(["merge-base", "HEAD", base]),
       changedFiles(base),
     ]);
-    return { status: branch.exitCode === 0 && status.exitCode === 0 ? "success" : "error", branch: branch.stdout.trim(), base, mergeBase: mergeBase.exitCode === 0 ? mergeBase.stdout.trim() : null, changedFileCount: files.length, changedFiles: files.slice(0, 200), statusShort: status.stdout.trim().split(/\r?\n/), errors: [branch.stderr, status.stderr, mergeBase.stderr].filter(Boolean) };
+    return { status: branch.exitCode === 0 && status.exitCode === 0 && files.status === "success" ? "success" : "error", branch: branch.stdout.trim(), base, mergeBase: mergeBase.exitCode === 0 ? mergeBase.stdout.trim() : null, changedFileCount: files.files.length, changedFiles: files.files.slice(0, 200), statusShort: status.stdout.trim().split(/\r?\n/), errors: [branch.stderr, status.stderr, mergeBase.stderr, files.error].filter(Boolean) };
   }
   async function scopeAudit(args = {}) {
     const base = typeof args.base === "string" && args.base.trim() ? args.base.trim() : "origin/main";
     const allowedPaths = Array.isArray(args.allowedPaths) ? args.allowedPaths.filter(Boolean) : [];
     const forbiddenPaths = Array.isArray(args.forbiddenPaths) ? args.forbiddenPaths.filter(Boolean) : [];
-    const files = await changedFiles(base);
-    const outsideAllowed = allowedPaths.length === 0 ? [] : files.filter((file) => !allowedPaths.some((prefix) => pathMatchesPrefix(file, prefix)));
-    const forbidden = files.filter((file) => forbiddenPaths.some((prefix) => pathMatchesPrefix(file, prefix)));
-    return { status: outsideAllowed.length === 0 && forbidden.length === 0 ? "success" : "error", base, changedFileCount: files.length, allowedPaths, forbiddenPaths, outsideAllowed, forbidden, changedFiles: files };
+    const diff = await changedFiles(base);
+    if (diff.status !== "success") return { status: "error", base, changedFileCount: 0, allowedPaths, forbiddenPaths, outsideAllowed: [], forbidden: [], changedFiles: [], error: diff.error };
+    const outsideAllowed = allowedPaths.length === 0 ? [] : diff.files.filter((file) => !allowedPaths.some((prefix) => pathMatchesPrefix(file, prefix)));
+    const forbidden = diff.files.filter((file) => forbiddenPaths.some((prefix) => pathMatchesPrefix(file, prefix)));
+    return { status: outsideAllowed.length === 0 && forbidden.length === 0 ? "success" : "error", base, changedFileCount: diff.files.length, allowedPaths, forbiddenPaths, outsideAllowed, forbidden, changedFiles: diff.files };
   }
   async function projectMap() {
     const [rootPackageRaw, trackedRaw] = await Promise.all([readFile(resolve(repoRoot, "package.json"), "utf8"), git(["ls-files"])]);
@@ -110,7 +114,7 @@ export function createEnterpriseHandlers({ repoRoot, config, availableSuites, ru
   async function sliceEvidenceAudit(args = {}) {
     if (typeof args.runRoot !== "string" || !args.runRoot.trim()) return { status: "error", error: "runRoot is required" };
     const commandArgs = ["slice:evidence", "--", "--run-root", args.runRoot.trim()];
-    if (args.strict === true) commandArgs.push("--require-reviewers", "sonnet46,gemini", "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--must-fix-disposition", args.mustFixDisposition || "none");
+    if (args.strict === true) commandArgs.push("--require-reviewers", "sonnet46,gemini", "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-codex-senior-review", "--require-debate", "--must-fix-disposition", args.mustFixDisposition || "none");
     const result = await runProcess("pnpm", commandArgs, repoRoot);
     return { status: result.exitCode === 0 ? "success" : "error", runRoot: args.runRoot.trim(), strict: args.strict === true, exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr };
   }

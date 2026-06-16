@@ -34,6 +34,8 @@
     "multiagent:sentinel": "bash scripts/multi-agent/sentinel-agent.sh",
     "multiagent:sonar": "bash scripts/multi-agent/sonar-agent.sh",
     "model-review": "node scripts/multi-agent/model-review.mjs",
+    "codex:senior-review": "node scripts/multi-agent/codex-senior-review.mjs",
+    "codex:senior-review:supabase": "node scripts/multi-agent/codex-senior-review.mjs --mode supabase",
     "repo:hygiene": "node scripts/repo-hygiene.mjs",
     "identity:current-user-boundary": "node scripts/current-user-boundary.mjs",
     "tenant:isolation": "node scripts/tenant-isolation-abuse.mjs",
