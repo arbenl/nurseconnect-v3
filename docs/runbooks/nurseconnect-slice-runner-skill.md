@@ -60,7 +60,7 @@ Follow `docs/runbooks/slice_workflow.md`:
     and applicable local Sonar evidence under `run_root`; PR Sonar remains blocking.
 11. Reviewer pool; fix or reject every `MUST_FIX`.
 12. `pnpm verify-slice -- --run-root <run_root> --required-gates`.
-13. PR, CI/Sonar/Copilot/finalizer monitoring, merge, main sync, branch deletion.
+13. PR, CI/Sonar/review-bot/finalizer monitoring, merge, main sync, branch deletion.
 14. Closeout evidence, measurement notes, and next-slice promotion only from clean synced `main`.
 
 ## Risk Tier Defaults
@@ -98,30 +98,29 @@ RUN_ROOT=<run_root> BASE_REF=<base> node scripts/multi-agent/nurseconnect-qa-evi
 ## Critique Debate
 
 Before relying on model reviewers, run preflight and access checks for the
-cost-aware default `sonnet46,gemini,copilot`. For Tier 2/Tier 3, AI-affected,
+strict external default `sonnet46,gemini`. For Tier 2/Tier 3, AI-affected,
 protected, or gate/tooling slices, use debate mode with those routes and keep
 `reviews/model-review-preflight.*`,
 `reviews/model-review-access.*`, `reviews/<reviewer>.{json,md}`,
 `evidence/model-review.{json,md}`, and `reviews/debate.{json,md}`.
-Escalate to `claude47,claude48,sonnet46,gemini,copilot` only for high-trust
+Escalate beyond the default only for high-trust
 surfaces, unresolved disagreement, or user request.
 
 ```text
-pnpm model-review -- --preflight --run-root <run_root> --reviewers sonnet46,gemini,copilot
-pnpm model-review -- --access-check --run-root <run_root> --reviewers sonnet46,gemini,copilot
-pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --reviewers sonnet46,gemini,copilot --debate
+pnpm model-review -- --preflight --run-root <run_root> --reviewers sonnet46,gemini
+pnpm model-review -- --access-check --run-root <run_root> --reviewers sonnet46,gemini
+pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --reviewers sonnet46,gemini --debate
 RUN_ROOT=<run_root> node scripts/multi-agent/model-review-summary.mjs
 ```
 
 Use `pnpm model-review -- --packet <design-packet.md> --run-root <run_root> --fallback-ladder`
 only for lower-risk slices where one advisory review is enough or provider quota
-is tight. The ladder tries Claude routes first, then Gemini, then Copilot
-Sonnet, records blocked attempts, and stops at the first completed review.
+is tight. The ladder records completed and blocked routes without treating blocked access as approval.
 
 Protected-surface PR evidence with passing model access must include:
 
 ```text
-pnpm slice:evidence -- --run-root <run_root> --require-reviewers "sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"
+pnpm slice:evidence -- --run-root <run_root> --require-reviewers "sonnet46,gemini" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-codex-senior-review --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"
 ```
 
 If model access is blocked, cite `reviews/model-review-access.*`, state blocked
@@ -129,9 +128,10 @@ routes were not counted as approval, still generate `evidence/model-review.*`
 from any available-route review or explicit not-run summary, and keep
 deterministic gates mandatory.
 
-Codex is optional escalation evidence. If it is quota-limited, rate-limited, or
-silent, record the blocker reason once and continue with the available external
-routes instead of retrying it throughout the same slice.
+Codex senior review uses `pnpm codex:senior-review -- --run-root <run_root>`;
+schema/RLS/auth-provider slices use `pnpm codex:senior-review:supabase`.
+Quota, auth, rate-limit, and no-output blockers are recorded once as structured
+evidence and must not be counted as approval.
 
 The debate is advisory evidence. It must not receive PHI, secrets, raw
 production data, patient details, or unnecessary clinical details.

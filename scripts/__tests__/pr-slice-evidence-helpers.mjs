@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const requiredReviewers = ["sonnet46", "gemini", "copilot"];
+export const requiredReviewers = ["sonnet46", "gemini"];
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export const goodEvidence = `
@@ -17,6 +17,7 @@ export const goodEvidence = `
 - [x] Subagent results: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/reviews/subagent-results.md\`
 - [x] Model route preflight: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/reviews/model-review-preflight.md\`
 - [x] Model access check: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/reviews/model-review-access.md\`
+- [x] Codex senior review: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/reviews/codex-senior-review.md\`
 - [x] Plugin activation: \`docs/runbooks/plugin_activation_policy.md\` applied; activated plugins: GitHub, Codex Security
 - [x] NurseConnect QA evidence: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/evidence/nurseconnect-qa.md\`
 - [x] Model review evidence: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/evidence/model-review.md\`
@@ -26,7 +27,7 @@ export const goodEvidence = `
 - [x] \`pnpm verify-slice -- --run-root <run-root> --static\` result: pass
 - [x] \`pnpm verify-slice -- --run-root <run-root> --required-gates\` result: pass
 - [x] \`pnpm slice:evidence -- --run-root <run-root>\` result: pass
-- [x] \`pnpm slice:evidence -- --run-root <run-root> --require-reviewers "sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "none"\` result: pass
+- [x] \`pnpm slice:evidence -- --run-root <run-root> --require-reviewers "sonnet46,gemini" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-codex-senior-review --require-debate --must-fix-disposition "none"\` result: pass
 
 ### Logs
 - [x] Logs path: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/evidence/gates/\`
@@ -54,6 +55,17 @@ export function writeRunRoot(root, options = {}) {
   writeFileSync(join(root, "run-manifest.md"), "# Manifest\n");
   writeFileSync(join(root, "reviewer-plan.md"), "# Reviewer Plan\n");
   writeFileSync(join(root, "reviews/subagents/security_reviewer.md"), "# Security Reviewer\n");
+  writeFileSync(join(root, "reviews/codex-senior-review.md"), "# Codex Senior Review\n");
+  writeFileSync(join(root, "reviews/codex-senior-review.json"), json({
+    status: "pass",
+    reviewer: "codex-senior",
+    baseSha: "base",
+    headSha: "head",
+    changedFiles: ["scripts/example.mjs"],
+    receiptPath: "reviews/codex-senior-review.md",
+    mustFixCount: 0,
+    mustFixDisposition: "none",
+  }));
   writeFileSync(join(root, "reviews/subagent-handoff.json"), json({ status: "pass", reviewers: [{ reviewer: "security_reviewer", prompt: join(root, "prompts/security_reviewer.md") }], missingPrompts: [] }));
   writeFileSync(join(root, "reviews/subagent-results.json"), json({
     status: "pass",

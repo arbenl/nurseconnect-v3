@@ -47,9 +47,8 @@ Never mark a slice, task, or tracker row complete without Step 9 evidence.
 
 1. Draft the slice design (scope, files, falsifiable exit criteria, threat
    surface) in `docs/plans/<slice-id>-<slice-name>-design.md`.
-2. STOP and request Fable review. Apply accepted findings and record
-   `**Fable approval:** granted <date>` before branching; unrecorded approval is
-   no approval.
+2. STOP for configured design review. Apply accepted findings and record the
+   route; Fable is used only for explicit escalation or protected disagreement.
 
 ## Step 2 — Branch (via the plane-3 `start` client once NC-EG-05 lands)
 
@@ -100,10 +99,11 @@ Run the pre-PR reviewer pool from
 `tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md`. Fix every `MUST_FIX`
 or record a written technical rejection.
 
-Then, STOP and present the slice to Fable (the Chief Senior Engineer). You must
-receive explicit permission from Fable before proceeding to open the PR.
-Record it as a `- [x] Fable pre-PR approval: granted <date>` line in the PR
-body's Evidence section. No silent dismissals.
+Then run `pnpm codex:senior-review -- --run-root <run_root>` and record
+`reviews/codex-senior-review.{json,md}`. Supabase/schema/RLS/auth-provider
+slices use `pnpm codex:senior-review:supabase -- --run-root <run_root>`.
+Fable is escalation evidence only; record quota/auth/no-output blockers once
+and do not count blocked routes as approval.
 
 ## Step 8 — Required gates
 
@@ -119,8 +119,8 @@ opening a PR. A PR opened without this evidence violates Mandate 4.
 1. Open ONE PR with slice ID, final `run_root`, evidence paths, gate manifest
    (+ sha), threat-model path if required, and proof for each exit criterion.
 2. Monitor the PR until terminal: use `gh pr checks --watch`, inspect failing
-   Actions logs, and watch Copilot/Sentry/Sonar/GitGuardian/reviewer threads.
-3. Fix every failing check and actionable Sonar/Copilot/reviewer comment in the
+   Actions logs, and watch Sentry/Sonar/GitGuardian/reviewer threads.
+3. Fix every failing check and actionable Sonar/reviewer comment in the
    same branch; rerun focused local checks, `verify-slice --required-gates` when
    evidence changed, push, and keep monitoring. Do not hand off a red PR.
 4. When all required checks are green, PR Finalizer passes, and review threads

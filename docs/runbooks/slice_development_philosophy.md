@@ -39,7 +39,7 @@ Enterprise readiness is not achieved by one large rewrite. It is achieved by mak
     `pnpm verify-slice`, reviewer prompts, `MUST_FIX` handling, and required gates are not ceremony. They are the safety system around small slices.
 
 11. **Design is reviewed before code.**
-    A slice design should be challenged by configured external reviewers before implementation starts. Claude, Gemini Pro, and Copilot Pro+ are advisory reviewers; repo evidence and deterministic gates remain the authority.
+    A slice design should be challenged by configured external reviewers before implementation starts. Sonnet/Gemini routes are advisory; GitHub review bots are PR-surface findings, not local approval. Repo evidence and deterministic gates remain the authority.
 
 12. **Merge is not the finish line.**
     A slice is complete only after the PR is green and merged, local `main` is synced, the branch is deleted, closeout evidence is recorded, and the next slice is promoted from clean `main`.

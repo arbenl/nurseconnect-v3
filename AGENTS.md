@@ -64,7 +64,7 @@ Execute slices only via the `nurseconnect-execution-runner` SOP. Summary:
 7. Run the reviewer pool from `tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md`.
 8. Fix every `MUST_FIX` or document a technical rejection before PR.
 9. `pnpm verify-slice -- --run-root <run_root> --required-gates`.
-10. Open one PR with verify-slice evidence paths; fix CI, Sonar, Copilot, review findings.
+10. Open one PR with verify-slice evidence paths; fix CI, Sonar, review-bot, and reviewer findings.
 11. Merge only after all required checks pass, including PR Finalizer.
 12. Sync `main`, record closeout in the trackers, delete branches, promote next slice.
 

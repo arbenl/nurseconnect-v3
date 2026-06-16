@@ -66,7 +66,7 @@ describe("verify-slice workflow", () => {
       expect(reviewerPlan).toContain("--fallback-ladder");
       expect(reviewerPlan).toContain("docs/runbooks/slice_playbook_scorecard.md");
       expect(reviewerPlan).toContain("code_review.md");
-      expect(reviewerPlan).toContain('--require-reviewers "sonnet46,gemini,copilot"');
+      expect(reviewerPlan).toContain('--require-reviewers "sonnet46,gemini"');
       expect(reviewerPlan).toContain("--require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate");
       expect(manifest).toContain("base_refresh_status:");
       expect(manifest).toContain("branch_status:");
@@ -143,7 +143,7 @@ describe("verify-slice workflow", () => {
     expect(script).toContain("slice-evidence");
     expect(script).toContain("model-review-preflight");
     expect(script).toContain("model-review-access-check");
-    expect(script).toContain("sonnet46,gemini,copilot");
+    expect(script).toContain("sonnet46,gemini");
     expect(script).toContain("docs-only static path");
   });
 });

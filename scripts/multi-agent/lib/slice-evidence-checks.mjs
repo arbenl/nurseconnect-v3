@@ -103,7 +103,8 @@ export async function checkModelReview(runRoot, options) {
     if (missing.length > 0) return fail("model-review evidence is missing required reviewer receipts", { path: file, requiredReviewers: options.requiredReviewers, reviewers, acceptableReviewers, missingReviewers: missing, allowDryRun: options.allowDryRun });
   }
   if (options.requireDebate && evidence.debate !== true) return fail("required model-review debate evidence is missing", { path: file, evidenceStatus: evidence.status || "unknown" });
-  if (!validMustFixDisposition(options.mustFixDisposition, agreedMustFixCount)) {
+  const strictModelEvidence = options.requireModelReview || options.requireDebate || options.requiredReviewers.length > 0;
+  if (strictModelEvidence && !validMustFixDisposition(options.mustFixDisposition, agreedMustFixCount)) {
     return fail("model-review MUST_FIX candidates require explicit fixed or rejected disposition", { path: file, agreedMustFixCount, mustFixDisposition: options.mustFixDisposition || "" });
   }
   return pass(blocked.length > 0 ? "model-review evidence passed with blocked optional routes" : "model-review evidence passed", { path: file, evidenceStatus: evidence.status || "unknown", completed, blocked, dryRun, debate: Boolean(evidence.debate), agreedMustFixCount, mustFixDisposition: options.mustFixDisposition || (agreedMustFixCount === 0 ? "none" : "") });

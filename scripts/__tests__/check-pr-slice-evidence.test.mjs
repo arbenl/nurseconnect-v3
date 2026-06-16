@@ -96,6 +96,7 @@ describe("PR slice evidence validator", () => {
 - [x] Plugin activation policy applied for GitHub and Codex Security where exposed.
 - [x] Model route preflight evidence: blocked route recorded and not counted as approval.
 - [x] Model access check evidence: blocked quota/auth route recorded and not counted as approval.
+- [x] Codex senior review: \`tmp/multi-agent/verify-slice/verify-slice-20260616T084558Z-d41802/reviews/codex-senior-review.md\`
 - [x] Model review evidence: blocked/silent routes remained blockers and no approval counted.
 - [x] MUST_FIX: 0 (none)
 - [x] \`pnpm modularity:guard\`: pass
@@ -115,6 +116,17 @@ describe("PR slice evidence validator", () => {
     expect(nonzeroNone.errors).toContain('Evidence section cannot use "none" disposition when MUST_FIX count is greater than 0.');
     expect(zeroFixed.errors).toContain('Evidence section should use "MUST_FIX: 0 (none)" when there are no MUST_FIX findings.');
     expect(dryRun.errors).toContain("Tier 2/3 or protected-file PRs must not use --allow-dry-run in strict slice:evidence evidence.");
+  });
+
+  it("rejects Copilot inside the strict local reviewer list", () => {
+    const escalated = validatePrSliceEvidence({ body: goodEvidence.replace('--require-reviewers "sonnet46,gemini"', '--require-reviewers "sonnet46,gemini,claude48"'), files: ["scripts/lib/pr-slice-evidence.mjs"] });
+    const body = goodEvidence
+      .replace('--require-reviewers "sonnet46,gemini"', '--require-reviewers "sonnet46,copilot"')
+      .replace("Model review evidence:", "Model review evidence: gemini mentioned outside the reviewer flag;");
+    const result = validatePrSliceEvidence({ body, files: ["scripts/lib/pr-slice-evidence.mjs"] });
+    expect(escalated.status).toBe("pass");
+    expect(result.status).toBe("fail");
+    expect(result.errors.join("\n")).toContain("explicit blocked external-review disposition");
   });
 
   it("requires a standalone debate receipt for protected files", () => {

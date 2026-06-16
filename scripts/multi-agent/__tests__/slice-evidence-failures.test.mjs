@@ -26,7 +26,7 @@ describe("slice evidence failure reporting", () => {
       const result = runSliceEvidence(root, ["--require-reviewers", requiredReviewers.join(","), "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--allow-dry-run", "--must-fix-disposition", "none"]);
       const report = JSON.parse(result.stdout);
       expect(result.status).not.toBe(0);
-      expect(report.checks.modelReview.missingReviewers).toEqual(["sonnet46", "copilot"]);
+      expect(report.checks.modelReview.missingReviewers).toEqual(["sonnet46"]);
     } finally {
       cleanup(root);
     }

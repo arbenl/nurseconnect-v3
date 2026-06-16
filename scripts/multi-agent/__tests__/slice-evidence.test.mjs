@@ -59,4 +59,40 @@ describe("slice evidence checker", () => {
       cleanup(root);
     }
   });
+
+  it("records optional model-review MUST_FIX candidates without failing base evidence", () => {
+    const root = makeRoot();
+    try {
+      writeRunRoot(root, { modelReview: { status: "complete", completed: ["sonnet46"], dryRun: [], blocked: [], debate: true, agreedMustFixCount: 1 } });
+      expect(runSliceEvidence(root).status).toBe(0);
+      expect(runSliceEvidence(root, ["--require-model-review", "--require-debate"]).status).not.toBe(0);
+    } finally {
+      cleanup(root);
+    }
+  });
+
+  it("requires Codex senior review only for strict evidence", () => {
+    const root = makeRoot();
+    try {
+      writeRunRoot(root, { codexSeniorReview: { status: "fail", reviewer: "codex-senior", baseSha: "base", headSha: "head", changedFiles: [], receiptPath: "reviews/codex-senior-review.md", mustFixCount: 1 } });
+      expect(runSliceEvidence(root).status).toBe(0);
+      const required = runSliceEvidence(root, ["--require-codex-senior-review"]);
+      expect(required.status).not.toBe(0);
+      const dispositioned = runSliceEvidence(root, ["--require-codex-senior-review", "--codex-must-fix-disposition", "rejected: not applicable"]);
+      expect(dispositioned.status).not.toBe(0);
+    } finally {
+      cleanup(root);
+    }
+  });
+
+  it("allows a structured blocked Codex senior route only when explicitly marked as fallback", () => {
+    const root = makeRoot();
+    try {
+      writeRunRoot(root, { codexSeniorReview: { status: "blocked", blocker: "total_timeout", reviewer: "codex-senior", baseSha: "base", headSha: "head", changedFiles: [], receiptPath: "reviews/codex-senior-review.md", mustFixCount: 0 } });
+      expect(runSliceEvidence(root, ["--require-codex-senior-review"]).status).not.toBe(0);
+      expect(runSliceEvidence(root, ["--require-codex-senior-review", "--allow-codex-senior-blocked"]).status).toBe(0);
+    } finally {
+      cleanup(root);
+    }
+  });
 });

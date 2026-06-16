@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
-const requiredModelReviewers = ["sonnet46", "gemini", "copilot"];
+const requiredModelReviewers = ["sonnet46", "gemini"];
 const protectedPatterns = [/^apps\/web\/src\/app\/api\/auth\//, /^apps\/web\/src\/app\/.*\/route\.ts$/, /^apps\/web\/src\/middleware\.ts$/, /\/proxy\//, /^packages\/contracts\//, /^apps\/contracts\//, /^contracts\//, /^packages\/database\//, /^\.github\/workflows\//, /^scripts\/(multi-agent|mcp|lib\/pr-slice-evidence|pr-finalizer|check-pr-slice-evidence|check-modularity-guard)/, /^package\.json$/, /auth|session|webhook|payment|payout|admin|PHI|phi|secret/i];
 
 function extractSection(markdown, heading) {
@@ -42,9 +42,18 @@ function mustFixDisposition(text) {
 }
 
 function hasStrictCommand(evidence) {
-  const required = ["--require-reviewers", "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--must-fix-disposition"];
+  const required = ["--require-reviewers", "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-codex-senior-review", "--require-debate", "--must-fix-disposition"];
   const text = String(evidence || "");
-  return required.every((flag) => new RegExp(flag, "i").test(text)) && requiredModelReviewers.every((reviewer) => new RegExp(`\\b${reviewer}\\b`, "i").test(text));
+  return required.every((flag) => new RegExp(flag, "i").test(text)) && reviewerListMatchesStrict(text);
+}
+
+function reviewerListMatchesStrict(text) {
+  const reviewerFlag = /--require-reviewers(?:=|\s+)(?:"([^"]+)"|'([^']+)'|`([^`]+)`|([^\s`]+))/gi;
+  for (const match of text.matchAll(reviewerFlag)) {
+    const reviewers = (match[1] || match[2] || match[3] || match[4] || "").split(",").map((item) => item.trim()).filter(Boolean);
+    if (!reviewers.includes("copilot") && requiredModelReviewers.every((reviewer) => reviewers.includes(reviewer))) return true;
+  }
+  return false;
 }
 
 function hasBlockedExternalDisposition(evidence) {
@@ -91,6 +100,7 @@ function checkHighRisk(errors, evidence) {
   if (!hasEvidence(evidence, /reviews\/model-review-preflight\.(md|json)/i, /model route preflight/i)) errors.push("Tier 2/3 or protected-file PRs must include model route preflight evidence.");
   if (!hasEvidence(evidence, /reviews\/model-review-access\.(md|json)/i, /model (?:access check|route access)/i)) errors.push("Tier 2/3 or protected-file PRs must include model route access-check evidence.");
   if (!hasEvidence(evidence, /evidence\/model-review\.(md|json)/i, /model[- ]review evidence/i)) errors.push("Tier 2/3 or protected-file PRs must include model-review receipt evidence.");
+  if (!hasEvidence(evidence, /reviews\/codex-senior-review\.(md|json)/i, /codex senior review/i)) errors.push("Tier 2/3 or protected-file PRs must include Codex senior review receipt evidence.");
   if (hasStrictCommand(evidence)) {
     if (!/reviews\/subagent-results\.(md|json)/i.test(evidence)) errors.push("Strict Tier 2/3 or protected-file PR evidence must include subagent reviewer result evidence.");
     if (!/reviews\/debate\.(md|json)/i.test(evidence)) errors.push("Strict Tier 2/3 or protected-file PR evidence must include model debate receipt evidence.");
@@ -123,7 +133,8 @@ export function verifyReferencedRunRoot({ body, files = [], allowMissing = false
     return { status: allowMissing ? "pass" : "fail", highRisk, runRoot, skipped: allowMissing, reason: "run root is not present in this checkout", errors };
   }
   const args = ["slice:evidence", "--", "--run-root", runRoot];
-  if (highRisk && !hasBlockedModelAccess(runRoot)) args.push("--require-reviewers", requiredModelReviewers.join(","), "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--must-fix-disposition", disposition?.disposition || "");
+  if (highRisk && !hasBlockedModelAccess(runRoot)) args.push("--require-reviewers", requiredModelReviewers.join(","), "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-codex-senior-review", "--require-debate", "--must-fix-disposition", disposition?.disposition || "");
+  if (highRisk && /--allow-codex-senior-blocked/i.test(evidence)) args.push("--allow-codex-senior-blocked");
   const result = spawnSync("pnpm", args, { encoding: "utf8" });
   if (result.status !== 0) errors.push(`Referenced run root failed slice:evidence verification:\n${result.stdout || ""}${result.stderr || ""}`.trim());
   return { status: errors.length > 0 ? "fail" : "pass", highRisk, runRoot, skipped: false, command: ["pnpm", ...args].join(" "), errors };
@@ -133,5 +144,6 @@ function hasBlockedModelAccess(runRoot) {
   const file = `${runRoot}/reviews/model-review-access.json`;
   if (!existsSync(file)) return false;
   const evidence = JSON.parse(readFileSync(file, "utf8"));
-  return evidence.status === "blocked" || (Array.isArray(evidence.blocked) && evidence.blocked.length > 0);
+  const blocked = Array.isArray(evidence.blocked) ? evidence.blocked.map((item) => (typeof item === "string" ? item : item?.reviewer)) : [];
+  return blocked.some((reviewer) => requiredModelReviewers.includes(reviewer));
 }

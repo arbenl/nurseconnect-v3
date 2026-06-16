@@ -13,7 +13,7 @@ describe("PR slice evidence run-root verifier", () => {
       const body = goodEvidence.replaceAll("tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee", root);
       const result = verifyReferencedRunRoot({ body, files: ["apps/web/src/app/api/admin/users/route.ts"] });
       expect(result.status).toBe("pass");
-      expect(result.command).toContain("--require-reviewers sonnet46,gemini,copilot");
+      expect(result.command).toContain("--require-reviewers sonnet46,gemini");
       expect(result.command).toContain("--require-subagent-results");
       expect(result.command).not.toContain("--allow-dry-run");
     } finally {
@@ -53,6 +53,21 @@ describe("PR slice evidence run-root verifier", () => {
       const result = verifyReferencedRunRoot({ body, files: ["scripts/multi-agent/model-review.mjs"] });
       expect(result.status).toBe("pass");
       expect(result.command).not.toContain("--require-reviewers");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("still verifies strict receipts when only optional model access is blocked", () => {
+    const root = makeRunRoot();
+    try {
+      writeRunRoot(root, {
+        access: { status: "blocked", reviewers: [...requiredReviewers, "claude48"], completed: requiredReviewers, blocked: [{ reviewer: "claude48" }] },
+      });
+      const body = goodEvidence.replaceAll("tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee", root);
+      const result = verifyReferencedRunRoot({ body, files: ["scripts/multi-agent/model-review.mjs"] });
+      expect(result.status).toBe("pass");
+      expect(result.command).toContain("--require-reviewers");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

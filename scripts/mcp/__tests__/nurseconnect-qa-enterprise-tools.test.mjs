@@ -8,9 +8,11 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { describe, expect, it } from "vitest";
 
+import { createEnterpriseHandlers } from "../lib/nurseconnect-enterprise-tools.mjs";
+
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(currentDir, "../../..");
-const requiredReviewers = ["sonnet46", "gemini", "copilot"];
+const requiredReviewers = ["sonnet46", "gemini"];
 
 async function writeRunRoot(root) {
   await mkdir(join(root, "evidence"), { recursive: true });
@@ -19,6 +21,17 @@ async function writeRunRoot(root) {
   await writeFile(join(root, "run-manifest.md"), "# Manifest\n");
   await writeFile(join(root, "reviewer-plan.md"), "# Reviewer Plan\n");
   await writeFile(join(root, "reviews/subagents/security_reviewer.md"), "# Security Reviewer\n\nREADY FOR PR\n");
+  await writeFile(join(root, "reviews/codex-senior-review.md"), "# Codex Senior Review\n");
+  await writeFile(join(root, "reviews/codex-senior-review.json"), json({
+    status: "pass",
+    reviewer: "codex-senior",
+    baseSha: "base",
+    headSha: "head",
+    changedFiles: ["scripts/example.mjs"],
+    receiptPath: "reviews/codex-senior-review.md",
+    mustFixCount: 0,
+    mustFixDisposition: "none",
+  }));
   await writeFile(join(root, "reviews/subagent-handoff.json"), json({
     status: "pass",
     reviewers: [{ reviewer: "security_reviewer", prompt: join(root, "prompts/security_reviewer.md") }],
@@ -96,11 +109,25 @@ describe("nurseconnect QA enterprise tools", () => {
 
       expect(payload.status).toBe("success");
       expect(payload.strict).toBe(true);
-      expect(payload.stdout).toContain('"requireSubagentResults": true');
+      expect(payload.stdout).toContain('"requireCodexSeniorReview": true');
     } finally {
       await client.close().catch(() => {});
       await rm(runRoot, { recursive: true, force: true });
     }
+  });
+
+  it("fails closed when scope audit cannot diff the requested base", async () => {
+    const handlers = createEnterpriseHandlers({
+      repoRoot,
+      config: {},
+      availableSuites: () => [],
+      runConfiguredCommand: async () => ({ status: "unused" }),
+    });
+
+    const result = await handlers.scope_audit({ base: "missing/protected-base" });
+
+    expect(result.status).toBe("error");
+    expect(result.error).toContain("missing/protected-base...HEAD");
   });
 });
 
