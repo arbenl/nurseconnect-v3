@@ -120,9 +120,10 @@ opening a PR. A PR opened without this evidence violates Mandate 4.
    (+ sha), threat-model path if required, and proof for each exit criterion.
 2. Monitor the PR until terminal: use `gh pr checks --watch`, inspect failing
    Actions logs, and watch Sentry/Sonar/GitGuardian/reviewer threads.
-3. Fix every failing check and actionable Sonar/reviewer comment in the
-   same branch; rerun focused local checks, `verify-slice --required-gates` when
-   evidence changed, push, and keep monitoring. Do not hand off a red PR.
+3. Stop broad reruns and merge attempts when Sonar, Sentry, Copilot/reviewer,
+   or PR Finalizer has actionable feedback; fix it first in the same branch.
+   Use `STRICT_GUARD_SKIP=1` only to publish a proven review-fix after focused
+   proof plus required local gates; the pushed head still needs all green.
 4. When all required checks are green, PR Finalizer passes, and review threads
    are resolved, merge the PR. Never self-merge with `--auto` to skip review.
 5. After merge only: sync `main`, verify it is clean, delete the local branch,

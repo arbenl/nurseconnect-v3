@@ -63,6 +63,12 @@ Follow `docs/runbooks/slice_workflow.md`:
 13. PR, CI/Sonar/review-bot/finalizer monitoring, merge, main sync, branch deletion.
 14. Closeout evidence, measurement notes, and next-slice promotion only from clean synced `main`.
 
+During PR monitoring, stop broad gate reruns and merge attempts when Sonar,
+Copilot/Sentry threads, or PR Finalizer report actionable feedback. Fix that
+feedback first. Use `STRICT_GUARD_SKIP=1` only for a narrow review-fix publish
+after focused proof plus required local gates already passed; the pushed head
+still needs green CI, Sonar, review threads, GitGuardian, and PR Finalizer.
+
 ## Risk Tier Defaults
 
 - Docs/tracker only: Tier 0.

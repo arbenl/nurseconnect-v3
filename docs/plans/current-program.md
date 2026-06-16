@@ -116,8 +116,7 @@ after the NC-EG band merges.
 The next implementation slices are:
 
 ```text
-NC-EG-01 / codex/ent-gate-framework   (promoted next)
-then: NC-E2-03 / codex/platform-authz
+NC-E2-03 / codex/platform-authz   (promoted next)
 ```
 
 ## Slice Execution Contract
