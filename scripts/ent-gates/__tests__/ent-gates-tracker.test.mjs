@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -63,11 +63,25 @@ describe("enterprise gate tracker promotion checks", () => {
   it("can validate policy against the current base while diffing from merge-base", () => {
     const root = mkdtempSync(join(tmpdir(), "nurseconnect-ent-gates-tracker-"));
     try {
+      const manifest = join(root, "slice-gates.yaml");
+      writeFileSync(manifest, [
+        "slice: NC-E2-03",
+        "branch: codex/platform-authz",
+        "gates:",
+        "  ent-tm:",
+        "    status: required",
+        "    evidence: docs/threat-models/nc-e2-03.md",
+        "  ent-dlv: { status: n/a, justification: No schema or data lifecycle behavior changes in this test fixture. }",
+        "  ent-perf: { status: n/a, justification: No runtime or performance budget behavior changes in this test fixture. }",
+        "",
+      ].join("\n"));
       const result = run([
         "--base",
         "HEAD",
         "--policy-base",
         "origin/main",
+        "--manifest",
+        manifest,
         "--run-root",
         root,
         "--changed-files-complete",
@@ -75,7 +89,7 @@ describe("enterprise gate tracker promotion checks", () => {
         "--changed-file",
         "docs/example.md",
         "--changed-file",
-        "docs/threat-models/nc-eg-01.md",
+        "docs/threat-models/nc-e2-03.md",
       ], { GITHUB_BASE_REF: "main" });
       expect(result.errors).toEqual([]);
     } finally {
