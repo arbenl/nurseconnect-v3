@@ -133,7 +133,8 @@ export function verifyReferencedRunRoot({ body, files = [], allowMissing = false
     return { status: allowMissing ? "pass" : "fail", highRisk, runRoot, skipped: allowMissing, reason: "run root is not present in this checkout", errors };
   }
   const args = ["slice:evidence", "--", "--run-root", runRoot];
-  if (highRisk && !hasBlockedModelAccess(runRoot)) args.push("--require-reviewers", requiredModelReviewers.join(","), "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--must-fix-disposition", disposition?.disposition || "");
+  if (highRisk && !hasBlockedModelAccess(runRoot)) args.push("--require-reviewers", requiredModelReviewers.join(","), "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-codex-senior-review", "--require-debate", "--must-fix-disposition", disposition?.disposition || "");
+  if (highRisk && /--allow-codex-senior-blocked/i.test(evidence)) args.push("--allow-codex-senior-blocked");
   const result = spawnSync("pnpm", args, { encoding: "utf8" });
   if (result.status !== 0) errors.push(`Referenced run root failed slice:evidence verification:\n${result.stdout || ""}${result.stderr || ""}`.trim());
   return { status: errors.length > 0 ? "fail" : "pass", highRisk, runRoot, skipped: false, command: ["pnpm", ...args].join(" "), errors };
