@@ -1,9 +1,20 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { loadManifest } from "../ent-gates/manifest.mjs";
+
 export const requiredReviewers = ["sonnet46", "gemini"];
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
+const manifestPath = join(repoRoot, "slice-gates.yaml");
+export const manifestSha = createHash("sha256")
+  .update(readFileSync(manifestPath))
+  .digest("hex");
+const gateEvidenceFiles = Object.values(loadManifest(manifestPath).manifest?.gates || {})
+  .map((gate) => gate.evidence)
+  .filter(Boolean);
+export const entGateFiles = [...new Set(["docs/runbooks/slice_workflow.md", ...gateEvidenceFiles])];
 
 export const goodEvidence = `
 ## Summary
@@ -22,6 +33,8 @@ export const goodEvidence = `
 - [x] NurseConnect QA evidence: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/evidence/nurseconnect-qa.md\`
 - [x] Model review evidence: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/evidence/model-review.md\`
 - [x] Model debate: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/reviews/debate.md\`
+- [x] ent-gates: PASS @ \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/evidence/ent-gates.md\`
+- [x] manifest sha256: \`${manifestSha}\`
 - [x] MUST_FIX: 0 (none)
 - [x] \`pnpm modularity:guard -- --base <base-commit>\` result: pass
 - [x] \`pnpm verify-slice -- --run-root <run-root> --static\` result: pass

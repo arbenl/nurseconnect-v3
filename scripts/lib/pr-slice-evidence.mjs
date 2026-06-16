@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-
+import { validateEntGateEvidence } from "./pr-ent-gate-evidence.mjs";
 const requiredModelReviewers = ["sonnet46", "gemini"];
-const protectedPatterns = [/^apps\/web\/src\/app\/api\/auth\//, /^apps\/web\/src\/app\/.*\/route\.ts$/, /^apps\/web\/src\/middleware\.ts$/, /\/proxy\//, /^packages\/contracts\//, /^apps\/contracts\//, /^contracts\//, /^packages\/database\//, /^\.github\/workflows\//, /^scripts\/(multi-agent|mcp|lib\/pr-slice-evidence|pr-finalizer|check-pr-slice-evidence|check-modularity-guard)/, /^package\.json$/, /auth|session|webhook|payment|payout|admin|PHI|phi|secret/i];
+const protectedPatterns = [/^apps\/web\/src\/app\/api\/auth\//, /^apps\/web\/src\/app\/.*\/route\.ts$/, /^apps\/web\/src\/middleware\.ts$/, /\/proxy\//, /^packages\/contracts\//, /^apps\/contracts\//, /^contracts\//, /^packages\/database\//, /^\.github\/workflows\//, /^scripts\/(multi-agent|mcp|ent-gates|lib\/pr-slice-evidence|lib\/pr-ent-gate-evidence|pr-finalizer|check-pr-slice-evidence|check-modularity-guard)/, /^package\.json$/, /auth|session|webhook|payment|payout|admin|PHI|phi|secret/i];
 
 function extractSection(markdown, heading) {
   const lines = String(markdown || "").split(/\r?\n/);
@@ -116,6 +116,7 @@ export function validatePrSliceEvidence({ body, files = [] }) {
   if (!/\bNC-(?:E\d+|EG|TB|CQ)-\d+\b/.test(body)) errors.push("PR body must include a NurseConnect tracker ID like NC-E2-03 or NC-EG-00.");
   if (!evidence) return { status: "fail", highRisk, errors: [...errors, 'PR body missing required "Evidence" section.'] };
   requireEvidence(errors, evidence);
+  validateEntGateEvidence(errors, evidence, "slice-gates.yaml", files);
   checkDisposition(errors, evidence);
   if (highRisk) checkHighRisk(errors, evidence);
   return { status: errors.length > 0 ? "fail" : "pass", highRisk, errors };

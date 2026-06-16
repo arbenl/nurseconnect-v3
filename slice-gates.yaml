@@ -1,23 +1,12 @@
-# Slice gate manifest (per SOP Step 3; machine-enforced from NC-EG-01 onward)
-slice: NC-EG-00
-branch: codex/constitution-deployment
+slice: NC-EG-01
+branch: codex/ent-gate-framework
 gates:
   ent-tm:
-    status: n/a
-    justification: >-
-      Pre-NC-EG-02 (no threat-model gate exists yet). No auth, session, PHI,
-      tenancy, or money surface is touched. The one gate-integrity-relevant
-      change (finalizer tracker-ID regex extension) is disclosed in the PR
-      body, fail-closed on unknown bands, regression-tested, and covered by
-      the security_reviewer receipt in the verify-slice run root.
+    status: required
+    evidence: docs/threat-models/nc-eg-01.md
   ent-dlv:
     status: n/a
-    justification: >-
-      No database schema, migration, or data-bearing column is added or
-      modified; the diff is governing documentation plus a CI validator regex
-      and its test.
+    justification: No schema, migration, retention, erasure, or PHI-bearing data lifecycle behavior changes.
   ent-perf:
     status: n/a
-    justification: >-
-      No runtime code path, critical route, or bundle is touched; CI-only
-      validator change.
+    justification: No runtime route, critical request path, bundle, or performance budget surface changes.

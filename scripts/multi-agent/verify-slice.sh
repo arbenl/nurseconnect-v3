@@ -466,7 +466,7 @@ if [[ "$RUN_STATIC" -eq 1 ]]; then
   sentry_flags="--strict"
   [[ "${SENTRY_ADVISORY_MODE:-strict}" == "advisory" ]] && sentry_flags=""
   run_gate "sentry-advisory" "node scripts/multi-agent/sentry-advisory.mjs --run-root \"$RUN_ROOT\" $sentry_flags"
-  run_gate "slice-evidence" "pnpm slice:evidence -- --run-root \"$RUN_ROOT\""
+  run_gate "slice-evidence" "pnpm slice:evidence -- --run-root \"$RUN_ROOT\""; run_gate "ent-gates-static" "node scripts/ent-gates/check.mjs --run-root \"$RUN_ROOT\" --base \"$BASE_COMMIT\" --policy-base \"$BASE_REF\""
   if [[ "$docs_only" == "yes" ]]; then
     printf '[verify-slice] docs-only static path: skipping type-check, lint, web build, sonar advisory, and launch readiness\n'
   else
@@ -478,7 +478,7 @@ if [[ "$RUN_STATIC" -eq 1 ]]; then
   fi
 fi
 
-if [[ "$RUN_REQUIRED" -eq 1 ]]; then
+if [[ "$RUN_REQUIRED" -eq 1 ]]; then run_gate "ent-gates-required" "node scripts/ent-gates/check.mjs --run-root \"$RUN_ROOT\" --base \"$BASE_COMMIT\" --policy-base \"$BASE_REF\""
   if [[ "$docs_only" == "yes" ]]; then
     run_gate "required-docs-mcp-preflight" "pnpm mcp:preflight"
     run_gate "required-docs-env-check" "pnpm env:check"

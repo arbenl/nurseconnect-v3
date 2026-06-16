@@ -153,7 +153,7 @@ tmp/multi-agent/verify-slice/<run-id>/reviewer-plan.md
 tmp/multi-agent/verify-slice/<run-id>/reviews/subagent-handoff.md and reviews/subagent-results.md
 tmp/multi-agent/verify-slice/<run-id>/reviews/model-review-preflight.md and reviews/model-review-access.md
 tmp/multi-agent/verify-slice/<run-id>/evidence/nurseconnect-qa.md and evidence/model-review.md
-tmp/multi-agent/verify-slice/<run-id>/evidence/gates/
+tmp/multi-agent/verify-slice/<run-id>/evidence/ent-gates.md and evidence/ent-gates.json; cite slice-gates.yaml sha256
 ```
 
 The PR body should also state:

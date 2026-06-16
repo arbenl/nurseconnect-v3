@@ -12,6 +12,8 @@
 - [ ] Plugin activation: `docs/runbooks/plugin_activation_policy.md` applied; activated/skipped plugins:
 - [ ] NurseConnect QA evidence: `tmp/multi-agent/verify-slice/<run-id>/evidence/nurseconnect-qa.md`
 - [ ] Model review evidence: `tmp/multi-agent/verify-slice/<run-id>/evidence/model-review.md`
+- [ ] ent-gates: PASS @ `tmp/multi-agent/verify-slice/<run-id>/evidence/ent-gates.md`
+- [ ] manifest sha256: `<slice-gates.yaml sha256>`
 - [ ] Selected reviewers:
 - [ ] `MUST_FIX: 0 (none)`
 - [ ] `pnpm modularity:guard -- --base <base-commit>` result:
