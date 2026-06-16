@@ -1,12 +1,12 @@
-slice: NC-EG-01
-branch: codex/ent-gate-framework
+slice: NC-E2-03
+branch: codex/platform-authz
 gates:
   ent-tm:
     status: required
-    evidence: docs/threat-models/nc-eg-01.md
+    evidence: docs/threat-models/nc-e2-03.md
   ent-dlv:
     status: n/a
-    justification: No schema, migration, retention, erasure, or PHI-bearing data lifecycle behavior changes.
+    justification: Platform authorization policy work does not add schema, retention, erasure, or PHI storage behavior.
   ent-perf:
     status: n/a
-    justification: No runtime route, critical request path, bundle, or performance budget surface changes.
+    justification: Platform authorization guard design is not expected to change critical route latency or bundle size budgets.
