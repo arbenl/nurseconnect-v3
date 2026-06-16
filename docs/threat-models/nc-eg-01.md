@@ -55,3 +55,5 @@ content checks land in NC-EG-02, NC-EG-03, and NC-EG-04.
 - `n/a` without a written justification fails.
 - Guarded-path changes with mapped gate `n/a` fail.
 - PR evidence without ent-gate PASS and manifest sha fails.
+- Follow-up policy repairs must keep this evidence file in the PR diff when
+  they rely on NC-EG-01 ent-gate finalizer evidence.

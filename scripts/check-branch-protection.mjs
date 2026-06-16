@@ -47,16 +47,15 @@ export function auditBranchProtection({ expectedConfig, observedProtection }) {
     errors.push(`enforce_admins must be ${Boolean(expected.enforce_admins)}`);
   }
 
-  const expectedReviews = expected.required_pull_request_reviews || {};
-  const observedReviews = observed.required_pull_request_reviews || {};
-  if (Boolean(observedReviews.dismiss_stale_reviews) !== Boolean(expectedReviews.dismiss_stale_reviews)) {
-    errors.push("required_pull_request_reviews.dismiss_stale_reviews is not enforced");
-  }
-  if (Boolean(observedReviews.require_code_owner_reviews) !== Boolean(expectedReviews.require_code_owner_reviews)) {
-    errors.push("required_pull_request_reviews.require_code_owner_reviews is not enforced");
-  }
-  if ((observedReviews.required_approving_review_count || 0) < (expectedReviews.required_approving_review_count || 0)) {
-    errors.push(`required_approving_review_count must be at least ${expectedReviews.required_approving_review_count}`);
+  const expectedReviews = expected.required_pull_request_reviews;
+  const observedReviews = observed.required_pull_request_reviews;
+  if (expectedReviews === null && observedReviews) errors.push("required_pull_request_reviews must be disabled");
+  if (expectedReviews !== null) {
+    const expectedReviewRules = expectedReviews || {};
+    const observedReviewRules = observedReviews || {};
+    if (Boolean(observedReviewRules.dismiss_stale_reviews) !== Boolean(expectedReviewRules.dismiss_stale_reviews)) errors.push("required_pull_request_reviews.dismiss_stale_reviews is not enforced");
+    if (Boolean(observedReviewRules.require_code_owner_reviews) !== Boolean(expectedReviewRules.require_code_owner_reviews)) errors.push("required_pull_request_reviews.require_code_owner_reviews is not enforced");
+    if ((observedReviewRules.required_approving_review_count || 0) !== (expectedReviewRules.required_approving_review_count || 0)) errors.push(`required_approving_review_count must be exactly ${expectedReviewRules.required_approving_review_count || 0}`);
   }
 
   if (boolEnabled(observed.required_conversation_resolution) !== Boolean(expected.required_conversation_resolution)) {
