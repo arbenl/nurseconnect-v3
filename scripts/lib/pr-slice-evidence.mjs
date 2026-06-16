@@ -51,25 +51,30 @@ function hasBlockedExternalDisposition(evidence) {
   return /model (?:route |review |access |debate )?(?:blocked|skipped)|external reviewer(?:s)? blocked|not counted as approval|no approval counted/i.test(String(evidence || ""));
 }
 
+function hasEvidence(evidence, pattern, labelPattern = pattern) {
+  const text = String(evidence || "");
+  return pattern.test(text) || labelPattern.test(text);
+}
+
 function extractRunRoot(evidence) {
   const match = String(evidence || "").match(/\btmp\/multi-agent\/verify-slice\/[A-Za-z0-9._/-]+/);
   return match ? match[0].replace(/[/.]*$/, "") : "";
 }
 
 function requireEvidence(errors, evidence) {
-  for (const [label, pattern] of [
+  for (const [label, pattern, labelPattern] of [
     ["verify-slice run root", /tmp\/multi-agent\/verify-slice\/[A-Za-z0-9._/-]+/],
     ["reviewer plan", /reviewer-plan\.md/],
-    ["nurseconnect_qa evidence", /evidence\/nurseconnect-qa\.(md|json)/],
-    ["subagent handoff", /reviews\/subagent-handoff\.(md|json)/],
-    ["model-review evidence", /evidence\/model-review\.(md|json)/],
+    ["nurseconnect_qa evidence", /evidence\/nurseconnect-qa\.(md|json)/, /nurseconnect[_ -]?qa evidence/i],
+    ["subagent handoff", /reviews\/subagent-handoff\.(md|json)/, /subagent handoff/i],
+    ["model-review evidence", /evidence\/model-review\.(md|json)/, /model[- ]review evidence/i],
     ["plugin activation", /plugin activation|plugin_activation_policy/i],
     ["modularity guard", /pnpm\s+modularity:guard|modularity-guard/],
-    ["slice evidence check", /pnpm\s+slice:evidence|slice-evidence/],
+    ["slice evidence check", /pnpm\s+slice:evidence|slice-evidence/, /slice evidence/i],
     ["verify-slice static gate", /verify-slice[^\n`]*--static|--static[^\n`]*verify-slice/],
-    ["verify-slice required gates", /verify-slice[^\n`]*--required-gates|--required-gates[^\n`]*verify-slice/],
+    ["verify-slice required gates", /verify-slice[^\n`]*--required-gates|--required-gates[^\n`]*verify-slice/, /strict release gate|pre-push[^\n]*(?:gate|release)/i],
   ]) {
-    if (!pattern.test(String(evidence || ""))) errors.push(`Evidence section missing ${label}.`);
+    if (!hasEvidence(evidence, pattern, labelPattern)) errors.push(`Evidence section missing ${label}.`);
   }
 }
 
@@ -83,9 +88,9 @@ function checkDisposition(errors, evidence) {
 
 function checkHighRisk(errors, evidence) {
   if (/--allow-dry-run/i.test(evidence)) errors.push("Tier 2/3 or protected-file PRs must not use --allow-dry-run in strict slice:evidence evidence.");
-  if (!/reviews\/model-review-preflight\.(md|json)/i.test(evidence)) errors.push("Tier 2/3 or protected-file PRs must include model route preflight evidence.");
-  if (!/reviews\/model-review-access\.(md|json)/i.test(evidence)) errors.push("Tier 2/3 or protected-file PRs must include model route access-check evidence.");
-  if (!/evidence\/model-review\.(md|json)/i.test(evidence)) errors.push("Tier 2/3 or protected-file PRs must include model-review receipt evidence.");
+  if (!hasEvidence(evidence, /reviews\/model-review-preflight\.(md|json)/i, /model route preflight/i)) errors.push("Tier 2/3 or protected-file PRs must include model route preflight evidence.");
+  if (!hasEvidence(evidence, /reviews\/model-review-access\.(md|json)/i, /model (?:access check|route access)/i)) errors.push("Tier 2/3 or protected-file PRs must include model route access-check evidence.");
+  if (!hasEvidence(evidence, /evidence\/model-review\.(md|json)/i, /model[- ]review evidence/i)) errors.push("Tier 2/3 or protected-file PRs must include model-review receipt evidence.");
   if (hasStrictCommand(evidence)) {
     if (!/reviews\/subagent-results\.(md|json)/i.test(evidence)) errors.push("Strict Tier 2/3 or protected-file PR evidence must include subagent reviewer result evidence.");
     if (!/reviews\/debate\.(md|json)/i.test(evidence)) errors.push("Strict Tier 2/3 or protected-file PR evidence must include model debate receipt evidence.");

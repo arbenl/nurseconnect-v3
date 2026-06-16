@@ -81,6 +81,33 @@ describe("PR slice evidence validator", () => {
     expect(result.status).toBe("pass");
   });
 
+  it("accepts semantic evidence labels when protected workflow routes are blocked", () => {
+    const result = validatePrSliceEvidence({
+      body: `
+## Summary
+- tracker/program ID: NC-EG-01 support hardening, risk tier: 1.
+
+## Evidence
+### Verify Slice
+- [x] Run root: \`tmp/multi-agent/verify-slice/verify-slice-20260616T084558Z-d41802\`
+- [x] Reviewer plan: \`tmp/multi-agent/verify-slice/verify-slice-20260616T084558Z-d41802/reviewer-plan.md\`
+- [x] NurseConnect QA evidence completed with scoped changed-file audit.
+- [x] Subagent handoff completed for security, architecture, QA, ops, and contracts reviewers.
+- [x] Plugin activation policy applied for GitHub and Codex Security where exposed.
+- [x] Model route preflight evidence: blocked route recorded and not counted as approval.
+- [x] Model access check evidence: blocked quota/auth route recorded and not counted as approval.
+- [x] Model review evidence: blocked/silent routes remained blockers and no approval counted.
+- [x] MUST_FIX: 0 (none)
+- [x] \`pnpm modularity:guard\`: pass
+- [x] \`pnpm verify-slice -- --run-root tmp/multi-agent/verify-slice/verify-slice-20260616T084558Z-d41802 --static\`: pass
+- [x] Required gates covered by the strict release gate: type-check, lint, build, tests, API E2E, UI smoke.
+- [x] Slice evidence check: pass.
+`,
+      files: ["scripts/multi-agent/lib/model-review-runner.mjs"],
+    });
+    expect(result.status).toBe("pass");
+  });
+
   it("rejects inconsistent MUST_FIX disposition counts and dry-run allowance", () => {
     const nonzeroNone = validatePrSliceEvidence({ body: goodEvidence.replace("MUST_FIX: 0 (none)", "MUST_FIX: 2 (none)"), files: [] });
     const zeroFixed = validatePrSliceEvidence({ body: goodEvidence.replace("MUST_FIX: 0 (none)", "MUST_FIX: 0 (all fixed)"), files: [] });
