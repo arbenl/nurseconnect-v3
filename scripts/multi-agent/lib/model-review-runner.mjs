@@ -14,6 +14,16 @@ export function safeResult(result) {
   return { ...result, args: result.args.map((arg) => (arg.length > 240 ? `${arg.slice(0, 240)}...` : arg)) };
 }
 
+function blockerReason({ stdout, stderr, exitCode }) {
+  const text = `${stdout || ""}\n${stderr || ""}`.toLowerCase();
+  if (text.includes("quota") || text.includes("rate limit") || text.includes("rate_limit")) return "quota_or_rate_limit";
+  if (text.includes("auth") || text.includes("oauth") || text.includes("login") || text.includes("unauthorized")) return "auth_required";
+  if (text.includes("model") && (text.includes("not found") || text.includes("unavailable") || text.includes("unknown"))) return "model_unavailable";
+  if (text.includes("timed out") || exitCode === -1) return "timeout_or_no_output";
+  if (exitCode !== 0) return "route_exit_nonzero";
+  return null;
+}
+
 function killProcessGroup(child) {
   if (!child.pid) return false;
   try {
@@ -77,9 +87,11 @@ export function runRoute(name, prompt, options, repoRoot) {
 }
 
 function makeResult(name, route, args, stdout, stderr, exitCode) {
+  const status = exitCode === 0 ? "complete" : "blocked";
   return {
     reviewer: name,
-    status: exitCode === 0 ? "complete" : "blocked",
+    status,
+    blockerReason: status === "blocked" ? blockerReason({ stdout, stderr, exitCode }) : null,
     label: route.label,
     provider: route.provider,
     model: route.model,
@@ -101,6 +113,7 @@ export function writeReceipt(reviewDir, result) {
       `# ${result.reviewer} Review`,
       "",
       `- status: \`${result.status}\``,
+      result.blockerReason ? `- blocker_reason: \`${result.blockerReason}\`` : null,
       `- label: \`${result.label || result.reviewer}\``,
       `- provider: \`${result.provider || "unknown"}\``,
       `- model: \`${result.model || "unknown"}\``,
@@ -112,6 +125,6 @@ export function writeReceipt(reviewDir, result) {
       "",
       "## stderr",
       result.stderr || "",
-    ].join("\n"),
+    ].filter(Boolean).join("\n"),
   );
 }

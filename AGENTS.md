@@ -11,6 +11,7 @@ repository only; do not import policies from other repositories.
 3. `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md` — Phase C execution map
 4. This file — execution constitution
 5. Skill SOP: `nurseconnect-execution-runner` (in `.codex/`, `.claude/`, `.gemini/` skills)
+6. `docs/runbooks/slice_playbook_scorecard.md` and `code_review.md` — slice discipline and review defaults
 
 The repo is mid **Phase C Enterprise Upgrade**. `HANDOVER.md` and
 `project_architecture.md` describe current reality; pre-2026-06 roadmaps are void.
@@ -54,6 +55,7 @@ acceptance must be falsifiable.
 Execute slices only via the `nurseconnect-execution-runner` SOP. Summary:
 
 1. Start from clean, synced `main`; confirm the promoted slice in the trackers.
+   Record active slice, risk tier, branch readiness, protected-scope status, and non-goals.
 2. Draft slice design; request configured external review; apply accepted findings.
 3. Create one fresh `codex/<slice-name>` branch; implement only that slice.
 4. Run focused deterministic checks while developing.
@@ -69,6 +71,9 @@ Execute slices only via the `nurseconnect-execution-runner` SOP. Summary:
 Docs-only slices may use the docs/static hygiene path, never a silent skip of
 `verify-slice`; the PR body must state the reduced scope. CI and PR Finalizer
 remain authoritative after the PR opens.
+
+Use `docs/runbooks/slice_playbook_scorecard.md` to avoid duplicate gates and to
+record reviewer blockers, CI reruns, and closeout evidence.
 
 ## Modularity Guard
 

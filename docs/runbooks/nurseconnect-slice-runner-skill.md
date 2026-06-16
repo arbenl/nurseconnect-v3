@@ -19,6 +19,8 @@ Read these first, in order:
 7. relevant ADRs under `docs/adr/`
 8. `docs/runbooks/slice_workflow.md`
 9. `docs/runbooks/plugin_activation_policy.md`
+10. `docs/runbooks/slice_playbook_scorecard.md`
+11. `code_review.md`
 
 ## Non-Negotiables
 
@@ -45,21 +47,21 @@ If no item is `ready`, stop and report the blocking decision.
 Follow `docs/runbooks/slice_workflow.md`:
 
 1. Clean synced `main`.
-2. Draft a bounded slice design.
-3. Apply `docs/runbooks/plugin_activation_policy.md` to choose any optional plugins.
-4. Run model preflight/access checks, then use the five-route debate command when routes are callable, or record blocked routes as non-approval evidence.
-5. Apply accepted design feedback before branch creation.
-6. Fresh `codex/<slice-name>` branch.
-7. Focused implementation.
-8. Focused local tests.
-9. `pnpm verify-slice`.
-10. `pnpm verify-slice -- --run-root <run_root> --static`.
-11. Confirm `nurseconnect_qa`, MCP preflight, modularity, Sentinel, Sentry, and applicable local Sonar evidence under `run_root`; PR Sonar Quality Gate remains blocking.
-12. Reviewer pool.
-13. Fix or reject `MUST_FIX`.
-14. `pnpm verify-slice -- --run-root <run_root> --required-gates`.
-15. PR, CI/Sonar/Copilot/finalizer monitoring, merge, main sync, branch deletion.
-16. Closeout evidence and next-slice promotion only from clean synced `main`.
+2. Report active slice, risk tier, branch readiness, protected-scope status,
+   and explicit non-goals from the playbook scorecard.
+3. Draft a bounded slice design.
+4. Apply `docs/runbooks/plugin_activation_policy.md` to choose optional plugins.
+5. Run model preflight/access checks, then debate when routes are callable.
+6. Apply accepted design feedback before branch creation.
+7. Fresh `codex/<slice-name>` branch.
+8. Focused implementation and focused local tests.
+9. `pnpm verify-slice`, then `pnpm verify-slice -- --run-root <run_root> --static`.
+10. Confirm `nurseconnect_qa`, MCP preflight, modularity, Sentinel, Sentry,
+    and applicable local Sonar evidence under `run_root`; PR Sonar remains blocking.
+11. Reviewer pool; fix or reject every `MUST_FIX`.
+12. `pnpm verify-slice -- --run-root <run_root> --required-gates`.
+13. PR, CI/Sonar/Copilot/finalizer monitoring, merge, main sync, branch deletion.
+14. Closeout evidence, measurement notes, and next-slice promotion only from clean synced `main`.
 
 ## Risk Tier Defaults
 
@@ -126,6 +128,10 @@ If model access is blocked, cite `reviews/model-review-access.*`, state blocked
 routes were not counted as approval, still generate `evidence/model-review.*`
 from any available-route review or explicit not-run summary, and keep
 deterministic gates mandatory.
+
+Codex is optional escalation evidence. If it is quota-limited, rate-limited, or
+silent, record the blocker reason once and continue with the available external
+routes instead of retrying it throughout the same slice.
 
 The debate is advisory evidence. It must not receive PHI, secrets, raw
 production data, patient details, or unnecessary clinical details.
