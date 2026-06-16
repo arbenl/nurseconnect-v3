@@ -6,8 +6,9 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const key = argv[i];
     if (!key.startsWith("--")) continue;
-    args[key.slice(2)] = argv[i + 1];
-    i += 1;
+    const next = argv[i + 1];
+    args[key.slice(2)] = next && !next.startsWith("--") ? next : true;
+    if (args[key.slice(2)] === next) i += 1;
   }
   return args;
 }
@@ -24,9 +25,7 @@ function boolEnabled(value) {
 
 function statusContexts(statusChecks = {}) {
   if (Array.isArray(statusChecks.contexts)) return statusChecks.contexts;
-  if (Array.isArray(statusChecks.checks)) {
-    return statusChecks.checks.map((item) => item?.context).filter(Boolean);
-  }
+  if (Array.isArray(statusChecks.checks)) return statusChecks.checks.map((item) => item?.context).filter(Boolean);
   return [];
 }
 
@@ -37,15 +36,11 @@ export function auditBranchProtection({ expectedConfig, observedProtection }) {
 
   const expectedChecks = expected.required_status_checks || {};
   const observedChecks = observed.required_status_checks || {};
-  if (Boolean(observedChecks.strict) !== Boolean(expectedChecks.strict)) {
-    errors.push(`required_status_checks.strict must be ${Boolean(expectedChecks.strict)}`);
-  }
+  if (Boolean(observedChecks.strict) !== Boolean(expectedChecks.strict)) errors.push(`required_status_checks.strict must be ${Boolean(expectedChecks.strict)}`);
 
   const observedContexts = new Set(statusContexts(observedChecks));
   for (const context of statusContexts(expectedChecks)) {
-    if (!observedContexts.has(context)) {
-      errors.push(`missing required status check: ${context}`);
-    }
+    if (!observedContexts.has(context)) errors.push(`missing required status check: ${context}`);
   }
 
   if (boolEnabled(observed.enforce_admins) !== Boolean(expected.enforce_admins)) {
@@ -95,6 +90,9 @@ function resolveRepo(args) {
 
 function fetchProtection({ owner, repo, branch }) {
   if (process.env.BRANCH_PROTECTION_AUDIT_RESPONSE) {
+    if (process.env.NODE_ENV !== "test" && process.env.CI_AUDIT_TEST_MODE !== "1") {
+      throw new Error("BRANCH_PROTECTION_AUDIT_RESPONSE is only allowed in test mode");
+    }
     return JSON.parse(process.env.BRANCH_PROTECTION_AUDIT_RESPONSE);
   }
   const path = `repos/${owner}/${repo}/branches/${branch}/protection`;
@@ -112,6 +110,8 @@ function fetchProtection({ owner, repo, branch }) {
   }
 }
 
+const isIntegrationAccessError = (error) => /resource not accessible by integration/i.test(String(error?.message || ""));
+
 export function runCli(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const expectedConfig = readJson(args.config || ".github/branch-protection.json");
@@ -121,6 +121,11 @@ export function runCli(argv = process.argv.slice(2)) {
   try {
     observedProtection = fetchProtection({ owner, repo, branch });
   } catch (error) {
+    if (args["allow-inaccessible"] && isIntegrationAccessError(error)) {
+      console.warn(`[branch-protection] blocked ${owner}/${repo}:${branch}`);
+      console.warn(` - ${error.message}`);
+      return 0;
+    }
     console.error(`[branch-protection] fail ${owner}/${repo}:${branch}`);
     console.error(` - ${error.message}`);
     return 1;

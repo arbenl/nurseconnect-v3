@@ -119,10 +119,12 @@ describe("PR slice evidence validator", () => {
   });
 
   it("rejects Copilot inside the strict local reviewer list", () => {
+    const escalated = validatePrSliceEvidence({ body: goodEvidence.replace('--require-reviewers "sonnet46,gemini"', '--require-reviewers "sonnet46,gemini,claude48"'), files: ["scripts/lib/pr-slice-evidence.mjs"] });
     const body = goodEvidence
       .replace('--require-reviewers "sonnet46,gemini"', '--require-reviewers "sonnet46,copilot"')
       .replace("Model review evidence:", "Model review evidence: gemini mentioned outside the reviewer flag;");
     const result = validatePrSliceEvidence({ body, files: ["scripts/lib/pr-slice-evidence.mjs"] });
+    expect(escalated.status).toBe("pass");
     expect(result.status).toBe("fail");
     expect(result.errors.join("\n")).toContain("explicit blocked external-review disposition");
   });

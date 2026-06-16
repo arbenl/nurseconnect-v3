@@ -20,7 +20,7 @@ function run(root, codexBody, extraArgs = []) {
   const codex = join(root, "bin", "codex");
   writeFileSync(codex, codexBody);
   chmodSync(codex, 0o755);
-  return spawnSync("node", [script, "--run-root", join(root, "run"), "--base", "origin/main", ...extraArgs], {
+  return spawnSync("node", [script, "--run-root", join(root, "run"), "--base", "HEAD", ...extraArgs], {
     cwd: repoRoot,
     encoding: "utf8",
     env: { ...process.env, PATH: `${join(root, "bin")}:${process.env.PATH}` },

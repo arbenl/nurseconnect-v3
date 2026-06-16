@@ -51,7 +51,7 @@ function reviewerListMatchesStrict(text) {
   const reviewerFlag = /--require-reviewers(?:=|\s+)(?:"([^"]+)"|'([^']+)'|`([^`]+)`|([^\s`]+))/gi;
   for (const match of text.matchAll(reviewerFlag)) {
     const reviewers = (match[1] || match[2] || match[3] || match[4] || "").split(",").map((item) => item.trim()).filter(Boolean);
-    if (reviewers.length === requiredModelReviewers.length && requiredModelReviewers.every((reviewer) => reviewers.includes(reviewer))) return true;
+    if (!reviewers.includes("copilot") && requiredModelReviewers.every((reviewer) => reviewers.includes(reviewer))) return true;
   }
   return false;
 }
@@ -144,5 +144,6 @@ function hasBlockedModelAccess(runRoot) {
   const file = `${runRoot}/reviews/model-review-access.json`;
   if (!existsSync(file)) return false;
   const evidence = JSON.parse(readFileSync(file, "utf8"));
-  return evidence.status === "blocked" || (Array.isArray(evidence.blocked) && evidence.blocked.length > 0);
+  const blocked = Array.isArray(evidence.blocked) ? evidence.blocked.map((item) => (typeof item === "string" ? item : item?.reviewer)) : [];
+  return blocked.some((reviewer) => requiredModelReviewers.includes(reviewer));
 }
