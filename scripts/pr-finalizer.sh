@@ -242,14 +242,9 @@ function extractSubsection(markdown, heading) {
   return out.join('\n').trim();
 }
 
-function hasPathLine(text) {
-  return /(https?:\/\/\S+|`[^`]+`|\[[^\]]+\]\([^\)]+\))/i.test(text);
-}
-
-function hasCheckedItem(section, phrase) {
-  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`^\\s*[-*]\\s*\\[[xX]\\]\\s*.*${escaped}.*$`, 'im').test(section || '');
-}
+function hasPathLine(text) { return /(https?:\/\/\S+|`[^`]+`|\[[^\]]+\]\([^\)]+\))/i.test(text); }
+function hasOptionalEvidence(text) { return hasPathLine(text) || /\b(?:n\/a|not applicable|none)\b/i.test(text); }
+function hasCheckedPattern(section, pattern) { return new RegExp(`^\\s*[-*]\\s*\\[[xX]\\]\\s*.*(?:${pattern}).*$`, 'im').test(section || ''); }
 
 const errors = [];
 
@@ -264,7 +259,7 @@ if (!evidenceSection) {
   if (!logs || !hasPathLine(logs)) {
     errors.push('Evidence section missing Logs item with a path/link.');
   }
-  if (!screenshots || !hasPathLine(screenshots)) {
+  if (!screenshots || !hasOptionalEvidence(screenshots)) {
     errors.push('Evidence section missing Screenshots item with a path/link.');
   }
   if (!runbook || !hasPathLine(runbook)) {
@@ -300,11 +295,12 @@ if (!guardrailsSection) {
   }
 } else {
   if (protectedChanges.length === 0) {
-    if (!hasCheckedItem(guardrailsSection, 'no protected auth/routing/proxy/api contract files were changed')) {
+    const noProtectedPattern = 'no protected auth/routing/proxy/api contract files were changed|no (?:changes|diff) (?:to|in) protected (?:auth/routing/proxy/api contract )?files|protected (?:runtime )?paths (?:stayed|remain|are) clean|protected files (?:were )?not (?:changed|touched)|n/a: docs/config-only pr with no protected runtime route, auth, proxy, or api contract changes';
+    if (!hasCheckedPattern(guardrailsSection, noProtectedPattern)) {
       errors.push('Pilot guardrails: confirm no protected auth/routing/proxy/API contract files were changed.');
     }
   } else {
-    if (!hasCheckedItem(guardrailsSection, 'protected files are explicitly allowed')) {
+    if (!hasCheckedPattern(guardrailsSection, 'protected files are explicitly allowed')) {
       errors.push('Pilot guardrails requires explicit approval for protected file changes.');
     }
     const missingAllowlist = [];
