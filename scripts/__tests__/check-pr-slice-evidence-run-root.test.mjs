@@ -13,7 +13,7 @@ describe("PR slice evidence run-root verifier", () => {
       const body = goodEvidence.replaceAll("tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee", root);
       const result = verifyReferencedRunRoot({ body, files: ["apps/web/src/app/api/admin/users/route.ts"] });
       expect(result.status).toBe("pass");
-      expect(result.command).toContain("--require-reviewers sonnet46,gemini,copilot");
+      expect(result.command).toContain("--require-reviewers sonnet46,gemini");
       expect(result.command).toContain("--require-subagent-results");
       expect(result.command).not.toContain("--allow-dry-run");
     } finally {

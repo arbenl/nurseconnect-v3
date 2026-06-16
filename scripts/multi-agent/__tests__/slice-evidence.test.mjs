@@ -59,4 +59,15 @@ describe("slice evidence checker", () => {
       cleanup(root);
     }
   });
+
+  it("records optional model-review MUST_FIX candidates without failing base evidence", () => {
+    const root = makeRoot();
+    try {
+      writeRunRoot(root, { modelReview: { status: "complete", completed: ["sonnet46"], dryRun: [], blocked: [], debate: true, agreedMustFixCount: 1 } });
+      expect(runSliceEvidence(root).status).toBe(0);
+      expect(runSliceEvidence(root, ["--require-model-review", "--require-debate"]).status).not.toBe(0);
+    } finally {
+      cleanup(root);
+    }
+  });
 });

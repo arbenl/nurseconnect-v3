@@ -117,6 +117,15 @@ describe("PR slice evidence validator", () => {
     expect(dryRun.errors).toContain("Tier 2/3 or protected-file PRs must not use --allow-dry-run in strict slice:evidence evidence.");
   });
 
+  it("rejects Copilot inside the strict local reviewer list", () => {
+    const body = goodEvidence
+      .replace('--require-reviewers "sonnet46,gemini"', '--require-reviewers "sonnet46,copilot"')
+      .replace("Model review evidence:", "Model review evidence: gemini mentioned outside the reviewer flag;");
+    const result = validatePrSliceEvidence({ body, files: ["scripts/lib/pr-slice-evidence.mjs"] });
+    expect(result.status).toBe("fail");
+    expect(result.errors.join("\n")).toContain("explicit blocked external-review disposition");
+  });
+
   it("requires a standalone debate receipt for protected files", () => {
     const result = validatePrSliceEvidence({ body: goodEvidence.replace(/- \[x\] Model debate:[^\n]+\n/, ""), files: ["apps/web/src/app/api/admin/users/route.ts"] });
     expect(result.status).toBe("fail");

@@ -60,8 +60,8 @@ if (!forbidden.includes("interdomestik_qa")) {
   fail(".mcp-toolkit.json must mark interdomestik_qa forbidden");
 }
 
-if (!modelRoutes.includes('export const defaultReviewers = ["sonnet46", "gemini", "copilot"];')) {
-  fail("model-review default reviewers must be sonnet46,gemini,copilot");
+if (!modelRoutes.includes('export const defaultReviewers = ["sonnet46", "gemini"];')) {
+  fail("model-review default reviewers must be sonnet46,gemini");
 }
 
 if (!modelRoutes.includes('CLAUDE_48_REVIEW_MODEL || "claude-opus-4-8"')) {

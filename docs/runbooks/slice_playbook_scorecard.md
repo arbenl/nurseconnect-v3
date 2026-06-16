@@ -30,8 +30,8 @@ Every slice thread must report:
 
 ## Reviewer Routes
 
-- Default model reviewers are `sonnet46,gemini,copilot`.
-- Codex is optional escalation evidence, not a required default route.
+- Default strict external model reviewers are `sonnet46,gemini`.
+- Codex senior review is recorded separately when callable.
 - A route blocked by auth, model id, quota, rate limit, timeout, or no output is
   not approval.
 - Do not retry a quota-limited or silent route repeatedly in the same slice.
@@ -53,6 +53,8 @@ Keep these as mandatory final evidence:
 - reviewer pool and model-review disposition
 - `pnpm verify-slice -- --run-root <run_root> --required-gates`
 - remote CI, Sonar, GitGuardian, PR Finalizer, and review threads green
+- server-side branch protection or ruleset state verified by GitHub API when
+  claiming protected `main` merge readiness
 
 If a local parity gate fails from resources after mandatory gates pass, record
 the exact blocker instead of mixing it with product regressions.

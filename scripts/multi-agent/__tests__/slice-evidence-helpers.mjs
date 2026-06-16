@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 export const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 export const scriptPath = join(repoRoot, "scripts/multi-agent/slice-evidence.mjs");
-export const requiredReviewers = ["sonnet46", "gemini", "copilot"];
+export const requiredReviewers = ["sonnet46", "gemini"];
 
 export function makeRoot() {
   return mkdtempSync(join(tmpdir(), "nurseconnect-slice-evidence-"));

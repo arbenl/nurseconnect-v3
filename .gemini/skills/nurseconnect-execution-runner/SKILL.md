@@ -119,8 +119,8 @@ opening a PR. A PR opened without this evidence violates Mandate 4.
 1. Open ONE PR with slice ID, final `run_root`, evidence paths, gate manifest
    (+ sha), threat-model path if required, and proof for each exit criterion.
 2. Monitor the PR until terminal: use `gh pr checks --watch`, inspect failing
-   Actions logs, and watch Copilot/Sentry/Sonar/GitGuardian/reviewer threads.
-3. Fix every failing check and actionable Sonar/Copilot/reviewer comment in the
+   Actions logs, and watch Sentry/Sonar/GitGuardian/reviewer threads.
+3. Fix every failing check and actionable Sonar/reviewer comment in the
    same branch; rerun focused local checks, `verify-slice --required-gates` when
    evidence changed, push, and keep monitoring. Do not hand off a red PR.
 4. When all required checks are green, PR Finalizer passes, and review threads

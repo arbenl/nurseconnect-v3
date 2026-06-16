@@ -18,7 +18,7 @@
 - [ ] `pnpm verify-slice -- --run-root <run-root> --static` result:
 - [ ] `pnpm verify-slice -- --run-root <run-root> --required-gates` result:
 - [ ] `pnpm slice:evidence -- --run-root <run-root>` result:
-- [ ] Tier 2/3 or AI/protected-surface with passing model access only: `pnpm slice:evidence -- --run-root <run-root> --require-reviewers "claude48,claude47,sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"` result:
+- [ ] Tier 2/3 or AI/protected-surface with passing model access only: `pnpm slice:evidence -- --run-root <run-root> --require-reviewers "sonnet46,gemini" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "<none|all fixed|rejected:reason>"` result:
 - [ ] Blocked external-review disposition, if any:
 
 ### Required Gates

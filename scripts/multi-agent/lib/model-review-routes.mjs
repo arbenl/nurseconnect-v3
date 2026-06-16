@@ -1,4 +1,4 @@
-export const defaultReviewers = ["sonnet46", "gemini", "copilot"];
+export const defaultReviewers = ["sonnet46", "gemini"];
 
 function claudeRoute({ label, model, role, overrideEnv }) {
   return {

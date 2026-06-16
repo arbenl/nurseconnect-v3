@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const requiredReviewers = ["sonnet46", "gemini", "copilot"];
+export const requiredReviewers = ["sonnet46", "gemini"];
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export const goodEvidence = `
@@ -26,7 +26,7 @@ export const goodEvidence = `
 - [x] \`pnpm verify-slice -- --run-root <run-root> --static\` result: pass
 - [x] \`pnpm verify-slice -- --run-root <run-root> --required-gates\` result: pass
 - [x] \`pnpm slice:evidence -- --run-root <run-root>\` result: pass
-- [x] \`pnpm slice:evidence -- --run-root <run-root> --require-reviewers "sonnet46,gemini,copilot" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "none"\` result: pass
+- [x] \`pnpm slice:evidence -- --run-root <run-root> --require-reviewers "sonnet46,gemini" --require-model-preflight --require-model-access --require-model-review --require-subagent-results --require-debate --must-fix-disposition "none"\` result: pass
 
 ### Logs
 - [x] Logs path: \`tmp/multi-agent/verify-slice/verify-slice-20260605T080944Z-fe7eee/evidence/gates/\`

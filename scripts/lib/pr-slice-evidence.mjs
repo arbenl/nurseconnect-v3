@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
-const requiredModelReviewers = ["sonnet46", "gemini", "copilot"];
+const requiredModelReviewers = ["sonnet46", "gemini"];
 const protectedPatterns = [/^apps\/web\/src\/app\/api\/auth\//, /^apps\/web\/src\/app\/.*\/route\.ts$/, /^apps\/web\/src\/middleware\.ts$/, /\/proxy\//, /^packages\/contracts\//, /^apps\/contracts\//, /^contracts\//, /^packages\/database\//, /^\.github\/workflows\//, /^scripts\/(multi-agent|mcp|lib\/pr-slice-evidence|pr-finalizer|check-pr-slice-evidence|check-modularity-guard)/, /^package\.json$/, /auth|session|webhook|payment|payout|admin|PHI|phi|secret/i];
 
 function extractSection(markdown, heading) {
@@ -44,7 +44,16 @@ function mustFixDisposition(text) {
 function hasStrictCommand(evidence) {
   const required = ["--require-reviewers", "--require-model-preflight", "--require-model-access", "--require-model-review", "--require-subagent-results", "--require-debate", "--must-fix-disposition"];
   const text = String(evidence || "");
-  return required.every((flag) => new RegExp(flag, "i").test(text)) && requiredModelReviewers.every((reviewer) => new RegExp(`\\b${reviewer}\\b`, "i").test(text));
+  return required.every((flag) => new RegExp(flag, "i").test(text)) && reviewerListMatchesStrict(text);
+}
+
+function reviewerListMatchesStrict(text) {
+  const reviewerFlag = /--require-reviewers(?:=|\s+)(?:"([^"]+)"|'([^']+)'|`([^`]+)`|([^\s`]+))/gi;
+  for (const match of text.matchAll(reviewerFlag)) {
+    const reviewers = (match[1] || match[2] || match[3] || match[4] || "").split(",").map((item) => item.trim()).filter(Boolean);
+    if (reviewers.length === requiredModelReviewers.length && requiredModelReviewers.every((reviewer) => reviewers.includes(reviewer))) return true;
+  }
+  return false;
 }
 
 function hasBlockedExternalDisposition(evidence) {

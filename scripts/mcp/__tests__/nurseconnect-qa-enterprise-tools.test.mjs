@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(currentDir, "../../..");
-const requiredReviewers = ["sonnet46", "gemini", "copilot"];
+const requiredReviewers = ["sonnet46", "gemini"];
 
 async function writeRunRoot(root) {
   await mkdir(join(root, "evidence"), { recursive: true });
