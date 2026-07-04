@@ -12,6 +12,13 @@ export class NurseCredentialValidationError extends Error {
   }
 }
 
+export class NurseCredentialConflictError extends Error {
+  constructor(message = "Nurse credential status changed before update") {
+    super(message);
+    this.name = "NurseCredentialConflictError";
+  }
+}
+
 export class NurseProfileNotFoundError extends Error {
   constructor(message = "Nurse profile not found") {
     super(message);

@@ -1,4 +1,6 @@
+import { organizationId } from "@nurseconnect/contracts";
 import { count, db, eq, schema, sql } from "@nurseconnect/database";
+import { DEFAULT_ORGANIZATION_ID } from "@nurseconnect/domain-identity";
 import {
   NurseCredentialValidationError,
   rejectNurseCredential,
@@ -6,10 +8,14 @@ import {
   suspendNurseCredential,
   verifyNurseCredential,
 } from "@nurseconnect/domain-nurse";
+import { authorizeTenantAction } from "@nurseconnect/platform-authz";
 import { beforeEach, describe, expect, it } from "vitest";
-
 const { adminAuditLogs, nurses, users } = schema;
-
+const org = organizationId(DEFAULT_ORGANIZATION_ID);
+const credentialAuthorityForAdmin = (actorUserId: string) => ({ organizationId: org, policyDecision: authorizeTenantAction({
+  subject: { userId: actorUserId, personaRole: "admin", organizationId: org, membershipRole: "admin", membershipStatus: "active" },
+  action: "tenant.write", resource: { kind: "organization", organizationId: org }, context: { tenantId: org },
+}) });
 async function countAuditActions(action: string, targetEntityId: string) {
   const [row] = await db
     .select({ value: count() })
@@ -17,10 +23,8 @@ async function countAuditActions(action: string, targetEntityId: string) {
     .where(
       sql`${adminAuditLogs.action} = ${action} AND ${adminAuditLogs.targetEntityId} = ${targetEntityId}`,
     );
-
   return Number(row?.value ?? 0);
 }
-
 describe.sequential("nurse credential lifecycle", () => {
   beforeEach(async () => {
     await db.execute(sql`TRUNCATE TABLE admin_audit_logs RESTART IDENTITY CASCADE`);
@@ -28,13 +32,11 @@ describe.sequential("nurse credential lifecycle", () => {
     await db.execute(sql`TRUNCATE TABLE nurses RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
   });
-
   it("verifies a submitted nurse, promotes role, and records audit", async () => {
     const [adminUser] = await db
       .insert(users)
       .values({ email: "verify-admin@test.local", role: "admin" })
       .returning();
-
     const [applicantUser] = await db
       .insert(users)
       .values({ email: "verify-applicant@test.local", role: "patient" })
@@ -46,10 +48,10 @@ describe.sequential("nurse credential lifecycle", () => {
       licenseJurisdiction: "CA",
       specialization: "General",
     });
-
     const verified = await verifyNurseCredential({
       actorUserId: adminUser!.id,
       nurseId: submitted.id,
+      ...credentialAuthorityForAdmin(adminUser!.id),
       licenseValidUntil: "2027-12-31T00:00:00.000Z",
       licenseJurisdiction: "CA",
     });
@@ -69,23 +71,21 @@ describe.sequential("nurse credential lifecycle", () => {
       .insert(users)
       .values({ email: "expired-admin@test.local", role: "admin" })
       .returning();
-
     const [applicantUser] = await db
       .insert(users)
       .values({ email: "expired-applicant@test.local", role: "patient" })
       .returning();
-
     const submitted = await submitNurseApplication({
       userId: applicantUser!.id,
       licenseNumber: "RN-EXPIRED-001",
       licenseJurisdiction: "CA",
       specialization: "General",
     });
-
     await expect(
       verifyNurseCredential({
         actorUserId: adminUser!.id,
         nurseId: submitted.id,
+        ...credentialAuthorityForAdmin(adminUser!.id),
         licenseValidUntil: "2020-01-01T00:00:00.000Z",
         licenseJurisdiction: "CA",
       }),
@@ -97,22 +97,20 @@ describe.sequential("nurse credential lifecycle", () => {
       .insert(users)
       .values({ email: "reject-admin@test.local", role: "admin" })
       .returning();
-
     const [applicantUser] = await db
       .insert(users)
       .values({ email: "reject-applicant@test.local", role: "patient" })
       .returning();
-
     const rejectedSeed = await submitNurseApplication({
       userId: applicantUser!.id,
       licenseNumber: "RN-REJECT-001",
       licenseJurisdiction: "CA",
       specialization: "General",
     });
-
     const rejected = await rejectNurseCredential({
       actorUserId: adminUser!.id,
       nurseId: rejectedSeed.id,
+      ...credentialAuthorityForAdmin(adminUser!.id),
       reason: "Incomplete credentials",
     });
 
@@ -134,6 +132,7 @@ describe.sequential("nurse credential lifecycle", () => {
     await verifyNurseCredential({
       actorUserId: adminUser!.id,
       nurseId: verifiedSeed.id,
+      ...credentialAuthorityForAdmin(adminUser!.id),
       licenseValidUntil: "2027-12-31T00:00:00.000Z",
       licenseJurisdiction: "CA",
     });
@@ -146,6 +145,7 @@ describe.sequential("nurse credential lifecycle", () => {
     const suspended = await suspendNurseCredential({
       actorUserId: adminUser!.id,
       nurseId: verifiedSeed.id,
+      ...credentialAuthorityForAdmin(adminUser!.id),
       reason: "Compliance hold",
     });
 

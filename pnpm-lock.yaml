@@ -135,6 +135,9 @@ importers:
       '@nurseconnect/domain-visit':
         specifier: workspace:*
         version: link:../../packages/domain-visit
+      '@nurseconnect/platform-authz':
+        specifier: workspace:*
+        version: link:../../packages/platform-authz
       '@nurseconnect/platform-telemetry':
         specifier: workspace:*
         version: link:../../packages/platform-telemetry
@@ -429,6 +432,9 @@ importers:
       '@nurseconnect/database':
         specifier: workspace:*
         version: link:../database
+      '@nurseconnect/platform-authz':
+        specifier: workspace:*
+        version: link:../platform-authz
       '@nurseconnect/platform-telemetry':
         specifier: workspace:*
         version: link:../platform-telemetry
@@ -517,6 +523,9 @@ importers:
       '@nurseconnect/database':
         specifier: workspace:*
         version: link:../database
+      '@nurseconnect/platform-authz':
+        specifier: workspace:*
+        version: link:../platform-authz
       drizzle-orm:
         specifier: ^0.40.0
         version: 0.40.1(@electric-sql/pglite@0.2.17)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(gel@2.2.0)(kysely@0.28.11)(pg@8.16.3)

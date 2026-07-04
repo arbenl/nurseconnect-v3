@@ -2,6 +2,7 @@ import { AdminRejectNurseSchema } from "@nurseconnect/contracts";
 import { rejectNurseCredential } from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 
+import { credentialAuthorityForAdmin } from "@/server/admin/nurse-credential-authz";
 import { requireRole } from "@/server/auth";
 import {
   createApiLogContext,
@@ -36,6 +37,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const nurse = await rejectNurseCredential({
       actorUserId: actor.id,
       nurseId: params.id,
+      ...(await credentialAuthorityForAdmin(actor.id)),
       reason,
     });
     if (!nurse) {
@@ -48,6 +50,16 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return withRequestId(response, context.requestId);
   } catch (error) {
     const err = error as { name?: string };
+    if (err?.name === "NurseCredentialValidationError") {
+      const response = NextResponse.json({ error: error instanceof Error ? error.message : "Invalid nurse credential" }, { status: 400 });
+      logApiFailure(actorContext, error, 400, startedAt, { source: "admin.nurses.reject" });
+      return withRequestId(response, context.requestId);
+    }
+    if (err?.name === "NurseCredentialConflictError") {
+      const response = NextResponse.json({ error: "Nurse credential status changed" }, { status: 409 });
+      logApiFailure(actorContext, error, 409, startedAt, { source: "admin.nurses.reject" });
+      return withRequestId(response, context.requestId);
+    }
     if (err?.name === "UnauthorizedError") {
       const response = NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       logApiFailure(context, "Unauthorized", 401, startedAt, { source: "admin.nurses.reject" });

@@ -77,7 +77,7 @@ export function checkPackageBoundaries(files, readText) {
       const to = importedPackage(specifier);
       if (!to || to === from || to === "@nurseconnect/contracts") continue;
       if (PRE_RLS_DATABASE_ALLOWANCE.imports.has(to) && PRE_RLS_DATABASE_ALLOWANCE.packages.test(from)) continue;
-      if (to === "@nurseconnect/platform-telemetry" && from.startsWith("@nurseconnect/domain-")) continue;
+      if ((to === "@nurseconnect/platform-telemetry" || to === "@nurseconnect/platform-authz") && from.startsWith("@nurseconnect/domain-")) continue;
       const allow = TRANSITIONAL_DOMAIN_ALLOWLIST.find((rule) =>
         rule.from === from && rule.to === to && (!rule.testOnly || isTestFile(file))
       );

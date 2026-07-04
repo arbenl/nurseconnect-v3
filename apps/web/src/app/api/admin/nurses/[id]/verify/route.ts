@@ -2,6 +2,7 @@ import { AdminVerifyNurseSchema } from "@nurseconnect/contracts";
 import { verifyNurseCredential } from "@nurseconnect/domain-nurse";
 import { NextResponse } from "next/server";
 
+import { credentialAuthorityForAdmin } from "@/server/admin/nurse-credential-authz";
 import { requireRole } from "@/server/auth";
 import {
   createApiLogContext,
@@ -36,6 +37,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     const nurse = await verifyNurseCredential({
       actorUserId: actor.id,
       nurseId: params.id,
+      ...(await credentialAuthorityForAdmin(actor.id)),
       licenseValidUntil,
       licenseJurisdiction,
     });
@@ -52,6 +54,11 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     if (err?.name === "NurseCredentialValidationError") {
       const response = NextResponse.json({ error: error instanceof Error ? error.message : "Invalid nurse credential" }, { status: 400 });
       logApiFailure(actorContext, error, 400, startedAt, { source: "admin.nurses.verify" });
+      return withRequestId(response, context.requestId);
+    }
+    if (err?.name === "NurseCredentialConflictError") {
+      const response = NextResponse.json({ error: "Nurse credential status changed" }, { status: 409 });
+      logApiFailure(actorContext, error, 409, startedAt, { source: "admin.nurses.verify" });
       return withRequestId(response, context.requestId);
     }
     if (err?.name === "UnauthorizedError") {

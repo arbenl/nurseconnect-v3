@@ -29,7 +29,7 @@ describe("enterprise gate manifest comments", () => {
     ].join("\n"));
 
     try {
-      const result = run(["--base", "HEAD", "--enforce-promotion", "false", "--run-root", root, "--manifest", manifest, "--config", config, "--changed-file", "docs/example.md"], {});
+      const result = run(["--base", "HEAD", "--enforce-promotion", "false", "--run-root", root, "--manifest", manifest, "--config", config, "--changed-files-complete", "true", "--changed-file", "docs/example.md"], {});
       expect(result).toMatchObject({ status: "pass", errors: [] });
     } finally {
       rmSync(root, { recursive: true, force: true });
