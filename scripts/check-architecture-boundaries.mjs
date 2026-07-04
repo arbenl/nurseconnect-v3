@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkServiceRequestStatusWrites } from "./lib/service-request-status-guard.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 export const LINE_LIMIT = 150;
@@ -16,7 +17,6 @@ export const TRANSITIONAL_DOMAIN_ALLOWLIST = [
   { from: "@nurseconnect/domain-admin-ops", to: "@nurseconnect/domain-nurse", testOnly: false, required: true },
   { from: "@nurseconnect/domain-identity", to: "@nurseconnect/domain-nurse", testOnly: true, required: true },
 ];
-
 const sourceExt = /\.(?:ts|tsx|js|mjs)$/;
 const packageSource = /^packages\/[^/]+\/src\/.+\.(?:ts|tsx|js|mjs)$/;
 const lineGuardSource = /^(?:apps\/web\/src|packages\/[^/]+\/src)\/.+\.(?:ts|tsx|js|mjs)$/;
@@ -146,7 +146,6 @@ export function parseNameStatus(text) {
 function count(text) {
   return text === "" ? 0 : text.split(/\r?\n/).length - (text.endsWith("\n") ? 1 : 0);
 }
-
 function baseText(base, file) {
   try {
     return git(["show", `${base}:${file}`], { stdio: ["ignore", "pipe", "ignore"] });
@@ -172,10 +171,11 @@ export function checkLineGuard(changes, readCurrent, readBase = () => "") {
 
 function main() {
   const tracked = lines(git(["ls-files"])).filter((file) => sourceExt.test(file));
-  const base = baseRef();
-  const boundary = checkPackageBoundaries(tracked, (file) => readFileSync(path.join(repoRoot, file), "utf8"));
-  const modularity = checkLineGuard(changedFiles(base), (file) => readFileSync(path.join(repoRoot, file), "utf8"), (file) => baseText(base, file));
-  const failures = [...boundary, ...modularity];
+  const base = baseRef(), currentText = new Map();
+  const readCurrent = (file) => currentText.get(file) ?? currentText.set(file, readFileSync(path.join(repoRoot, file), "utf8")).get(file);
+  const boundary = checkPackageBoundaries(tracked, readCurrent);
+  const modularity = checkLineGuard(changedFiles(base), readCurrent, (file) => baseText(base, file));
+  const failures = [...boundary, ...modularity, ...checkServiceRequestStatusWrites(tracked, readCurrent)];
   if (failures.length > 0) {
     process.stderr.write(`[architecture-boundaries] FAIL (${failures.length})\n${failures.map((item) => `- ${item}`).join("\n")}\n`);
     process.exit(1);
