@@ -1,7 +1,12 @@
 import type { DbClient } from "@nurseconnect/database";
 import { nurses, serviceRequests, users } from "@nurseconnect/database/schema";
-import { appendRequestEvent } from "@nurseconnect/domain-request";
-import { eq } from "drizzle-orm";
+import {
+  appendRequestEvent,
+  canTransition,
+  requestStatusUpdate,
+  transitionStatus,
+} from "@nurseconnect/domain-request";
+import { and, eq } from "drizzle-orm";
 
 import { DispatchValidationError } from "./errors";
 
@@ -75,20 +80,32 @@ export async function assignRequestToNurse(
   }
 
   const assignedAt = new Date();
+  const transition = canTransition(request.status, "assign", {
+    requestId: request.id,
+    actorUserId: null,
+  });
+  const nextStatus = transitionStatus(transition);
 
   const [updated] = await tx
     .update(serviceRequests)
-    .set({
+    .set(requestStatusUpdate(transition, {
+      requestId: request.id,
+      actorUserId: null,
+      fromStatus: request.status,
+      toStatus: nextStatus,
+    }, {
       assignedNurseUserId: nurseUserId,
-      status: "assigned",
       assignedAt,
       updatedAt: assignedAt,
-    })
-    .where(eq(serviceRequests.id, request.id))
+    }))
+    .where(and(
+      eq(serviceRequests.id, request.id),
+      eq(serviceRequests.status, request.status),
+    ))
     .returning();
 
   if (!updated) {
-    throw new DispatchValidationError("Failed to update request");
+    throw new DispatchValidationError("Request status changed during assignment");
   }
 
   await tx
@@ -103,8 +120,8 @@ export async function assignRequestToNurse(
     requestId: updated.id,
     type: "request_assigned",
     actorUserId: null,
-    fromStatus: "open",
-    toStatus: "assigned",
+    fromStatus: request.status,
+    toStatus: nextStatus,
     meta: {
       nurseUserId,
     },

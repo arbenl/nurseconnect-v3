@@ -1,30 +1,32 @@
 import { describe, expect, it } from "vitest";
 
-import { canTransition } from "./request-lifecycle";
+import { canTransition, transitionStatus } from "./request-lifecycle";
+
+const context = { requestId: "request-1", actorUserId: "actor-1" };
 
 describe("canTransition", () => {
   it("allows assigned -> accepted", () => {
-    expect(canTransition("assigned", "accept")).toBe("accepted");
+    expect(transitionStatus(canTransition("assigned", "accept", context))).toBe("accepted");
   });
 
   it("allows accepted -> enroute -> completed", () => {
-    expect(canTransition("accepted", "enroute")).toBe("enroute");
-    expect(canTransition("enroute", "complete")).toBe("completed");
+    expect(transitionStatus(canTransition("accepted", "enroute", context))).toBe("enroute");
+    expect(transitionStatus(canTransition("enroute", "complete", context))).toBe("completed");
   });
 
   it("allows patient cancel from open/assigned/accepted", () => {
-    expect(canTransition("open", "cancel")).toBe("canceled");
-    expect(canTransition("assigned", "cancel")).toBe("canceled");
-    expect(canTransition("accepted", "cancel")).toBe("canceled");
+    expect(transitionStatus(canTransition("open", "cancel", context))).toBe("canceled");
+    expect(transitionStatus(canTransition("assigned", "cancel", context))).toBe("canceled");
+    expect(transitionStatus(canTransition("accepted", "cancel", context))).toBe("canceled");
   });
 
   it("reject action returns request back to open", () => {
-    expect(canTransition("assigned", "reject")).toBe("open");
-    expect(canTransition("accepted", "reject")).toBe("open");
+    expect(transitionStatus(canTransition("assigned", "reject", context))).toBe("open");
+    expect(transitionStatus(canTransition("accepted", "reject", context))).toBe("open");
   });
 
   it("throws on invalid transition", () => {
-    expect(() => canTransition("open", "accept")).toThrow(/Invalid transition/i);
-    expect(() => canTransition("completed", "cancel")).toThrow(/Invalid transition/i);
+    expect(() => canTransition("open", "accept", context)).toThrow(/Invalid transition/i);
+    expect(() => canTransition("completed", "cancel", context)).toThrow(/Invalid transition/i);
   });
 });

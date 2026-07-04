@@ -1,8 +1,8 @@
 import type { RequestStatus } from "@nurseconnect/contracts";
 import type { DbClient } from "@nurseconnect/database";
 import { nurses, serviceRequests } from "@nurseconnect/database/schema";
-import { RequestNotFoundError, appendRequestEvent } from "@nurseconnect/domain-request";
-import { eq, sql } from "drizzle-orm";
+import { RequestNotFoundError, appendRequestEvent, canTransition, requestStatusUpdate, transitionStatus } from "@nurseconnect/domain-request";
+import { and, eq, sql } from "drizzle-orm";
 
 import {
   RequestReassignForbiddenError,
@@ -68,7 +68,6 @@ export async function reassignRequestInDispatch(
   if (!request) {
     throw new RequestNotFoundError();
   }
-
   const normalizedStatus = request.status.toLowerCase();
   if (!["open", "assigned"].includes(normalizedStatus)) {
     throw new RequestReassignForbiddenError(
@@ -94,33 +93,31 @@ export async function reassignRequestInDispatch(
       : request.assignedAt
         ? new Date(request.assignedAt)
         : null;
-  const previousStatus = request.status as RequestStatus;
+  const previousStatus = normalizedStatus as RequestStatus;
   const plan = deriveReassignmentPlan({
     currentStatus: normalizedStatus as "open" | "assigned",
     previousNurseUserId,
     nextNurseUserId: nurseUserId,
   });
   const now = new Date();
-  const nextAssignedAt =
-    nurseUserId === null
-      ? null
-      : plan.shouldRefreshAssignedAt
-        ? now
-        : previousAssignedAt;
+  const transition = canTransition(previousStatus, plan.nextStatus === "assigned" ? "assign" : "unassign", { requestId, actorUserId });
+  const nextStatus = transitionStatus(transition);
+  const nextAssignedAt = nurseUserId === null
+    ? null
+    : plan.shouldRefreshAssignedAt ? now : previousAssignedAt;
 
   const [updated] = await tx
     .update(serviceRequests)
-    .set({
-      status: plan.nextStatus,
-      updatedAt: now,
-      assignedNurseUserId: nurseUserId,
-      assignedAt: nextAssignedAt,
-    })
-    .where(eq(serviceRequests.id, requestId))
+    .set(requestStatusUpdate(
+      transition,
+      { requestId, actorUserId, fromStatus: previousStatus, toStatus: nextStatus },
+      { updatedAt: now, assignedNurseUserId: nurseUserId, assignedAt: nextAssignedAt },
+    ))
+    .where(and(eq(serviceRequests.id, requestId), eq(serviceRequests.status, previousStatus)))
     .returning();
 
   if (!updated) {
-    throw new RequestNotFoundError();
+    throw new RequestReassignValidationError("Request status changed during reassignment");
   }
 
   if (plan.shouldReleasePreviousNurse && previousNurseUserId) {
@@ -142,7 +139,7 @@ export async function reassignRequestInDispatch(
     type: "request_reassigned",
     actorUserId,
     fromStatus: previousStatus,
-    toStatus: plan.nextStatus as RequestStatus,
+    toStatus: nextStatus,
     meta: {
       previousNurseUserId,
       newNurseUserId: nurseUserId,
@@ -153,6 +150,6 @@ export async function reassignRequestInDispatch(
     request: updated,
     previousNurseUserId,
     previousStatus,
-    nextStatus: plan.nextStatus as RequestStatus,
+    nextStatus,
   };
 }

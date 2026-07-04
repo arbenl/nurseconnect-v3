@@ -1,20 +1,19 @@
 import type { RequestEventType, RequestStatus } from "@nurseconnect/contracts";
 import type { DbClient } from "@nurseconnect/database";
 import { serviceRequests } from "@nurseconnect/database/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
-import {
-  RequestConflictError,
-  RequestForbiddenError,
-  RequestNotFoundError,
-} from "./errors";
+import { RequestConflictError, RequestForbiddenError, RequestNotFoundError } from "./errors";
 import { appendRequestEvent } from "./request-events";
 import {
   canAdminTransition,
   canTransition,
+  transitionStatus,
+  type AuthorizedTransition,
   type AdminTriageAction,
   type RequestAction,
 } from "./request-lifecycle";
+import { requestStatusUpdate, type RequestStatusUpdateExtras } from "./request-status-update";
 
 type Transaction = Parameters<Parameters<DbClient["transaction"]>[0]>[0];
 
@@ -153,31 +152,28 @@ export async function applyRequestAction(
     }
   }
 
-  let nextStatus: RequestStatus;
+  let transition: AuthorizedTransition;
   try {
-    nextStatus = canTransition(locked.status, action);
+    transition = canTransition(locked.status, action, { requestId, actorUserId });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Invalid request transition";
+    const message = error instanceof Error ? error.message : "Invalid request transition";
     throw new RequestConflictError(message);
   }
+  const nextStatus = transitionStatus(transition);
 
   if (locked.status === nextStatus) {
     throw new RequestConflictError(`Request is already in status '${nextStatus}'`);
   }
 
   const now = new Date();
-  const updateData: Partial<typeof serviceRequests.$inferInsert> = {
-    status: nextStatus,
-    updatedAt: now,
-  };
+  const updateExtras: RequestStatusUpdateExtras = { updatedAt: now };
   const sideEffects: RequestSideEffect[] = [];
 
   switch (action) {
     case "accept":
-      updateData.acceptedAt = now;
+      updateExtras.acceptedAt = now;
       if (!locked.assigned_at) {
-        updateData.assignedAt = now;
+        updateExtras.assignedAt = now;
       }
       sideEffects.push({
         type: "set-nurse-availability",
@@ -186,9 +182,8 @@ export async function applyRequestAction(
       });
       break;
     case "reject":
-      updateData.status = "open";
-      updateData.assignedNurseUserId = null;
-      updateData.rejectedAt = now;
+      updateExtras.assignedNurseUserId = null;
+      updateExtras.rejectedAt = now;
       sideEffects.push({
         type: "set-nurse-availability",
         userId: actorUserId,
@@ -196,10 +191,10 @@ export async function applyRequestAction(
       });
       break;
     case "enroute":
-      updateData.enrouteAt = now;
+      updateExtras.enrouteAt = now;
       break;
     case "complete":
-      updateData.completedAt = now;
+      updateExtras.completedAt = now;
       sideEffects.push({
         type: "set-nurse-availability",
         userId: actorUserId,
@@ -207,7 +202,7 @@ export async function applyRequestAction(
       });
       break;
     case "cancel":
-      updateData.canceledAt = now;
+      updateExtras.canceledAt = now;
       if (locked.assigned_nurse_user_id) {
         sideEffects.push({
           type: "set-nurse-availability",
@@ -217,15 +212,18 @@ export async function applyRequestAction(
       }
       break;
   }
+  const updateData = requestStatusUpdate(
+    transition, { requestId, actorUserId, fromStatus: locked.status, toStatus: nextStatus }, updateExtras,
+  );
 
   const [updated] = await tx
     .update(serviceRequests)
     .set(updateData)
-    .where(eq(serviceRequests.id, requestId))
+    .where(and(eq(serviceRequests.id, requestId), eq(serviceRequests.status, locked.status)))
     .returning();
 
   if (!updated) {
-    throw new RequestNotFoundError();
+    throw new RequestConflictError("Request status changed while applying transition");
   }
 
   const event = {
@@ -272,32 +270,29 @@ export async function applyAdminTriageAction(
     throw new RequestNotFoundError();
   }
 
-  let nextStatus: RequestStatus;
+  let transition: AuthorizedTransition;
   try {
-    nextStatus = canAdminTransition(locked.status, action);
+    transition = canAdminTransition(locked.status, action, { requestId, actorUserId });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Invalid request transition";
+    const message = error instanceof Error ? error.message : "Invalid request transition";
     throw new RequestConflictError(message);
   }
+  const nextStatus = transitionStatus(transition);
 
   if (locked.status === nextStatus) {
     throw new RequestConflictError(`Request is already in status '${nextStatus}'`);
   }
 
   const now = new Date();
-  const updateData: Partial<typeof serviceRequests.$inferInsert> = {
-    status: nextStatus,
-    updatedAt: now,
-  };
+  const updateExtras: RequestStatusUpdateExtras = { updatedAt: now };
   const sideEffects: RequestSideEffect[] = [];
 
   if (
     locked.assigned_nurse_user_id &&
     (action === "needs_review" || action === "decline" || action === "unfulfilled")
   ) {
-    updateData.assignedNurseUserId = null;
-    updateData.assignedAt = null;
+    updateExtras.assignedNurseUserId = null;
+    updateExtras.assignedAt = null;
     sideEffects.push({
       type: "set-nurse-availability",
       userId: locked.assigned_nurse_user_id,
@@ -307,31 +302,34 @@ export async function applyAdminTriageAction(
 
   switch (action) {
     case "needs_review":
-      updateData.needsReviewAt = now;
+      updateExtras.needsReviewAt = now;
       break;
     case "decline":
-      updateData.declinedAt = now;
+      updateExtras.declinedAt = now;
       break;
     case "unfulfilled":
-      updateData.unfulfilledAt = now;
+      updateExtras.unfulfilledAt = now;
       break;
     case "reopen":
-      updateData.assignedNurseUserId = null;
-      updateData.assignedAt = null;
-      updateData.needsReviewAt = null;
-      updateData.declinedAt = null;
-      updateData.unfulfilledAt = null;
+      updateExtras.assignedNurseUserId = null;
+      updateExtras.assignedAt = null;
+      updateExtras.needsReviewAt = null;
+      updateExtras.declinedAt = null;
+      updateExtras.unfulfilledAt = null;
       break;
   }
+  const updateData = requestStatusUpdate(
+    transition, { requestId, actorUserId, fromStatus: locked.status, toStatus: nextStatus }, updateExtras,
+  );
 
   const [updated] = await tx
     .update(serviceRequests)
     .set(updateData)
-    .where(eq(serviceRequests.id, requestId))
+    .where(and(eq(serviceRequests.id, requestId), eq(serviceRequests.status, locked.status)))
     .returning();
 
   if (!updated) {
-    throw new RequestNotFoundError();
+    throw new RequestConflictError("Request status changed while applying transition");
   }
 
   const reason = normalizeReason(input.reason);

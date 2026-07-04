@@ -8,5 +8,5 @@ gates:
     status: n/a
     justification: Platform authorization policy work does not add schema, retention, erasure, or PHI storage behavior.
   ent-perf:
-    status: n/a
-    justification: Platform authorization guard design is not expected to change critical route latency or bundle size budgets.
+    status: required
+    evidence: docs/performance/nc-e2-03.md

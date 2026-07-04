@@ -25,6 +25,26 @@ The model-review runner completed and wrote:
 Because every external route was blocked, the debate is evidence of attempted
 review and exact blockers, not external approval.
 
+## Fable 5 Escalation Review
+
+Date: 2026-07-03
+Run root: `tmp/multi-agent/fable-5-enterprise-audit`
+Route: `claude48` with `CLAUDE_48_REVIEW_MODEL=claude-fable-5`
+Status: `complete`
+
+Accepted findings for implementation:
+
+- `AuthorizedTransition` must carry request id, actor id, expected `from`
+  status, target status, and action, not just a branded string.
+- Transition persistence must re-check expected status under compare-and-set.
+  Stale proof must produce deterministic conflict.
+- Runtime proof tokens must resist structural forgery; object spread, JSON
+  round-trip, and plain structural objects must not validate as proof.
+- Raw status-write guards should cover Drizzle update sites outside the owning
+  request-domain transition authority.
+- Later route adapters must derive tenant/resource context server-side from
+  platform identity and membership helpers, never from raw client input.
+
 ## Accepted Local Findings
 
 - Deny reason codes must not include PHI, patient names, addresses, clinical
