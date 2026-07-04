@@ -66,4 +66,32 @@ describe("first admin organization bootstrap", () => {
       expect(membership?.status).toBe("active");
     });
   });
+
+  it("does not reactivate an intentionally disabled admin membership", async () => {
+    const [admin] = await db
+      .insert(users)
+      .values({ email: "disabled.admin@test.local", role: "admin" })
+      .returning();
+    await db.execute(sql`
+      INSERT INTO organizations (id, name, slug, status)
+      VALUES (${DEFAULT_ORGANIZATION_ID}, 'NurseConnect Default Organization', 'nurseconnect-default', 'active')
+    `);
+    await db.insert(orgMemberships).values({
+      organizationId: DEFAULT_ORGANIZATION_ID,
+      userId: admin!.id,
+      role: "viewer",
+      status: "disabled",
+      source: "bootstrap",
+    });
+
+    await maybeBootstrapFirstAdmin(admin!);
+
+    await withTenantContext(db, DEFAULT_ORGANIZATION_ID, async (tx) => {
+      const [membership] = await tx
+        .select()
+        .from(orgMemberships)
+        .where(eq(orgMemberships.userId, admin!.id));
+      expect(membership).toMatchObject({ role: "viewer", status: "disabled" });
+    });
+  });
 });

@@ -1,10 +1,14 @@
 
 import { APIRequestContext, expect } from "@playwright/test";
+import {
+    DEFAULT_ORGANIZATION_ID,
+    DEFAULT_ORGANIZATION_NAME,
+    DEFAULT_ORGANIZATION_SLUG,
+} from "@nurseconnect/domain-identity";
 
 import { getDbClient } from "./db";
 
 export const TEST_PASSWORD = "password123";
-const DEFAULT_ORGANIZATION_ID = "00000000-0000-4000-8000-000000000001";
 
 export async function createTestUser(
     request: APIRequestContext,
@@ -45,16 +49,16 @@ export async function createTestUser(
         if (role === "admin") {
             await client.query(
                 `INSERT INTO organizations (id, name, slug, status, created_at, updated_at)
-                 VALUES ($1, 'NurseConnect Test Org', 'nurseconnect-test', 'active', NOW(), NOW())
+                 VALUES ($1, $2, $3, 'active', NOW(), NOW())
                  ON CONFLICT (id) DO UPDATE SET status = 'active', updated_at = NOW()`,
-                [DEFAULT_ORGANIZATION_ID],
+                [DEFAULT_ORGANIZATION_ID, DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_SLUG],
             );
             await client.query(
                 `INSERT INTO org_memberships
                     (organization_id, user_id, role, status, source, activated_at, created_at, updated_at)
-                 VALUES ($1, $2, 'admin', 'active', 'bootstrap', NOW(), NOW(), NOW())
+                 VALUES ($1, $2, 'owner', 'active', 'bootstrap', NOW(), NOW(), NOW())
                  ON CONFLICT (organization_id, user_id)
-                 DO UPDATE SET role = 'admin', status = 'active', updated_at = NOW()`,
+                 DO NOTHING`,
                 [DEFAULT_ORGANIZATION_ID, userId],
             );
         }

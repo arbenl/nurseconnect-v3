@@ -1,6 +1,6 @@
 import { and, db, eq, isNull, schema } from "@nurseconnect/database";
 
-import { bootstrapDefaultOrganizationMemberships } from "./organization-membership-bootstrap";
+import { bootstrapDefaultOrganizationMembershipForAdmin } from "./organization-membership-bootstrap";
 
 const { authUsers, users } = schema;
 
@@ -123,7 +123,7 @@ export const upsertUser = ensureDomainUserFromSession;
 
 export async function maybeBootstrapFirstAdmin(domainUser: DomainUser) {
   if (domainUser.role === "admin") {
-    await bootstrapDefaultOrganizationMemberships();
+    await bootstrapDefaultOrganizationMembershipForAdmin(domainUser.id);
     return domainUser;
   }
 
@@ -142,7 +142,7 @@ export async function maybeBootstrapFirstAdmin(domainUser: DomainUser) {
       .where(eq(users.id, domainUser.id))
       .returning();
 
-    if (updated) await bootstrapDefaultOrganizationMemberships();
+    if (updated) await bootstrapDefaultOrganizationMembershipForAdmin(updated.id);
     return updated;
   }
 
