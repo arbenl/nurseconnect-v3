@@ -3,10 +3,10 @@ branch: codex/platform-authz
 gates:
   ent-tm:
     status: required
-    evidence: docs/threat-models/nc-e2-03.md
+    evidence: docs/threat-models/nc-e2-03-closeout.md
   ent-dlv:
     status: n/a
-    justification: Platform authorization policy work does not add schema, retention, erasure, or PHI storage behavior.
+    justification: Docs-only tracker closeout does not add schema, retention, erasure, or PHI storage behavior.
   ent-perf:
-    status: required
-    evidence: docs/performance/nc-e2-03.md
+    status: n/a
+    justification: Docs-only tracker closeout does not change runtime paths or performance characteristics.

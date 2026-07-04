@@ -88,6 +88,12 @@ Completed closeout evidence:
 - `NC-EG-00 / constitution-deployment` merged in PR #101 on 2026-06-13.
 - Merge commit: `b2baa0a80572a2eb10471dcd02c1c945928fc0ef`.
 - Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, E2E API, UI smoke, docs-only verify-slice static, docs-only verify-slice required gates, and pre-push strict release gate. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`.
+- `NC-EG-01 / ent-gate-framework` merged in PR #105 and follow-up PR #106.
+- Merge commits: `246b74e6f569cd20464f6ec82fce7d4bfae5c740` and `08fbced6a586353aa3884a1cfcf238bfa60bca96`.
+- Required checks passed: CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, ent-gates, branch-protection audit parity, and local verify-slice static/required gates.
+- `NC-E2-03 / platform-authz` merged in PR #109 on 2026-07-04.
+- Merge commit: `945b09362a786c082a71f2e4fbd77a372c7df452`.
+- Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, bot-thread guard, and subagent evidence. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260704T081621Z-0e3b9b`.
 
 Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
 ADR-001 Decision B:
@@ -107,16 +113,15 @@ Decision scope:
   before launch
 
 The program now executes under the **Phase C Enterprise Upgrade** map
-(`docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`): the enterprise verification gate
-band (`NC-EG`) lands before further implementation slices, so all subsequent
-work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating. `NC-E2-03 /
-platform-authz` is amended (phantom-type guards) and is promoted immediately
-after the NC-EG band merges.
+(`docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`). The enterprise verification gate
+band (`NC-EG`) landed before further implementation slices, so all subsequent
+work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating. `NC-E2-04 /
+medical-evidence-brand` is promoted next after `NC-E2-03 / platform-authz`.
 
 The next implementation slices are:
 
 ```text
-NC-E2-03 / codex/platform-authz   (promoted next)
+NC-E2-04 / codex/medical-evidence-brand   (promoted next)
 ```
 
 ## Slice Execution Contract
