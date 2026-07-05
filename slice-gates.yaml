@@ -1,12 +1,12 @@
-slice: NC-E2-03
-branch: codex/platform-authz
+slice: NC-E2-04
+branch: codex/medical-evidence-brand
 gates:
   ent-tm:
     status: required
-    evidence: docs/threat-models/nc-e2-03-closeout.md
+    evidence: docs/threat-models/nc-e2-04.md
   ent-dlv:
     status: n/a
-    justification: Docs-only tracker closeout does not add schema, retention, erasure, or PHI storage behavior.
+    justification: This slice adds proof-token guards only; it does not add schema columns, retention rules, erasure behavior, or new PHI storage.
   ent-perf:
     status: n/a
-    justification: Docs-only tracker closeout does not change runtime paths or performance characteristics.
+    justification: This slice changes credential proof checks and guard tests only; it does not touch configured critical route or bundle performance budget paths.

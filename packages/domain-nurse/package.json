@@ -16,6 +16,7 @@
   "dependencies": {
     "@nurseconnect/contracts": "workspace:*",
     "@nurseconnect/database": "workspace:*",
+    "@nurseconnect/platform-authz": "workspace:*",
     "@nurseconnect/platform-telemetry": "workspace:*"
   },
   "devDependencies": {

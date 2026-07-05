@@ -126,7 +126,7 @@ describe("enterprise gate manifest", () => {
     ].join("\n"));
 
     try {
-      const result = runGate(["--run-root", root, "--manifest", manifest, "--config", config, "--changed-file", "docs/example.md"]);
+      const result = runGate(["--run-root", root, "--manifest", manifest, "--config", config, "--changed-files-complete", "true", "--changed-file", "docs/example.md"]);
       expect(result).toMatchObject({ status: "pass", errors: [] });
     } finally {
       rmSync(root, { recursive: true, force: true });

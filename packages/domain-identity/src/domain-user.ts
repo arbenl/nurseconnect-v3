@@ -1,5 +1,7 @@
 import { and, db, eq, isNull, schema } from "@nurseconnect/database";
 
+import { bootstrapDefaultOrganizationMembershipForAdmin } from "./organization-membership-bootstrap";
+
 const { authUsers, users } = schema;
 
 export type DomainUser = typeof users.$inferSelect;
@@ -11,11 +13,7 @@ type SessionUserProjectionInput = {
   image?: string | null;
 };
 
-const parseAllowlist = () =>
-  (process.env.FIRST_ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
+const parseAllowlist = () => (process.env.FIRST_ADMIN_EMAILS ?? "").split(",").map((entry) => entry.trim().toLowerCase()).filter(Boolean);
 
 async function authEmailIsVerified(authId: string) {
   const [authUser] = await db
@@ -121,11 +119,11 @@ export async function ensureDomainUserFromSession(data: SessionUserProjectionInp
   return user;
 }
 
-/** @deprecated Use ensureDomainUserFromSession for session-backed domain projections. */
 export const upsertUser = ensureDomainUserFromSession;
 
 export async function maybeBootstrapFirstAdmin(domainUser: DomainUser) {
   if (domainUser.role === "admin") {
+    await bootstrapDefaultOrganizationMembershipForAdmin(domainUser.id);
     return domainUser;
   }
 
@@ -144,6 +142,7 @@ export async function maybeBootstrapFirstAdmin(domainUser: DomainUser) {
       .where(eq(users.id, domainUser.id))
       .returning();
 
+    if (updated) await bootstrapDefaultOrganizationMembershipForAdmin(updated.id);
     return updated;
   }
 

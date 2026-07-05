@@ -1,5 +1,10 @@
 
 import { APIRequestContext, expect } from "@playwright/test";
+import {
+    DEFAULT_ORGANIZATION_ID,
+    DEFAULT_ORGANIZATION_NAME,
+    DEFAULT_ORGANIZATION_SLUG,
+} from "@nurseconnect/domain-identity";
 
 import { getDbClient } from "./db";
 
@@ -41,6 +46,22 @@ export async function createTestUser(
         // Fetch domain user ID (UUID) — always needed
         const res = await client.query("SELECT id FROM users WHERE email = $1", [email]);
         const userId = res.rows[0].id as string;
+        if (role === "admin") {
+            await client.query(
+                `INSERT INTO organizations (id, name, slug, status, created_at, updated_at)
+                 VALUES ($1, $2, $3, 'active', NOW(), NOW())
+                 ON CONFLICT (id) DO UPDATE SET status = 'active', updated_at = NOW()`,
+                [DEFAULT_ORGANIZATION_ID, DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_SLUG],
+            );
+            await client.query(
+                `INSERT INTO org_memberships
+                    (organization_id, user_id, role, status, source, activated_at, created_at, updated_at)
+                 VALUES ($1, $2, 'owner', 'active', 'bootstrap', NOW(), NOW(), NOW())
+                 ON CONFLICT (organization_id, user_id)
+                 DO NOTHING`,
+                [DEFAULT_ORGANIZATION_ID, userId],
+            );
+        }
 
         return { userId, authUserId };
     } finally {

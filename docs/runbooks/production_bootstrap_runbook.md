@@ -126,7 +126,7 @@ LAUNCH_MONITOR_ADMIN_COOKIE='<cookie header>' \
 
 4. Trigger the promotion path (authoritative)
    * Ensure the client calls **`GET /api/me`** (it’s the session + domain user sync endpoint).
-     This endpoint upserts the domain user and then attempts allowlist-based admin bootstrap.
+    This endpoint upserts the domain user, attempts allowlist-based admin bootstrap, and backfills default organization membership.
 
 **Promotion validation options:**
 * Open `/api/me` in the browser and confirm JSON contains `user.role: "admin"`.

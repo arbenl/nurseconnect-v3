@@ -1,9 +1,15 @@
+import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
+  resolve: {
+    alias: {
+      '@nurseconnect/contracts': path.resolve(__dirname, '../../packages/contracts/src/index.ts'),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

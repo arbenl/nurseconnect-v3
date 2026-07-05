@@ -28,6 +28,53 @@ export async function bootstrapDefaultOrganizationMemberships(
   database?: TenantTransactionalDatabase,
 ): Promise<{ organizationId: string; grantedMemberships: number }> {
   const executor = database ?? (await defaultDatabase());
+  await ensureDefaultOrganization(executor);
+
+  return membershipResult(await grantDefaultOrganizationMemberships(executor));
+}
+
+export async function bootstrapDefaultOrganizationMembershipForAdmin(
+  userId: string,
+  database?: TenantTransactionalDatabase,
+): Promise<{ organizationId: string; grantedMemberships: number }> {
+  const executor = database ?? (await defaultDatabase());
+  await ensureDefaultOrganization(executor);
+
+  return membershipResult(await grantDefaultOrganizationMemberships(executor, userId));
+}
+
+async function grantDefaultOrganizationMemberships(
+  executor: TenantTransactionalDatabase,
+  userId?: string,
+) {
+  return executor.transaction(async (tx) => {
+    await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${DEFAULT_ORGANIZATION_ID}, true)`);
+    return tx.execute(sql`
+      INSERT INTO org_memberships (
+        organization_id,
+        user_id,
+        role,
+        status,
+        source,
+        activated_at
+      )
+      SELECT
+        ${DEFAULT_ORGANIZATION_ID},
+        users.id,
+        'owner',
+        'active',
+        'bootstrap',
+        now()
+      FROM users
+      WHERE users.role = 'admin'
+      ${userId ? sql`AND users.id = ${userId}` : sql``}
+      ON CONFLICT (organization_id, user_id) DO NOTHING
+      RETURNING organization_id, user_id AS membership_user_id
+    `);
+  });
+}
+
+async function ensureDefaultOrganization(executor: TenantTransactionalDatabase) {
   const slugOwner = rowsFrom<DefaultOrganizationSlugRow>(
     await executor.execute(sql`
       SELECT id
@@ -51,37 +98,9 @@ export async function bootstrapDefaultOrganizationMemberships(
     )
     ON CONFLICT (id) DO NOTHING
   `);
+}
 
-  const result = await executor.transaction(async (tx) => {
-    await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${DEFAULT_ORGANIZATION_ID}, true)`);
-    return tx.execute(sql`
-      INSERT INTO org_memberships (
-        organization_id,
-        user_id,
-        role,
-        status,
-        source,
-        activated_at
-      )
-      SELECT
-        ${DEFAULT_ORGANIZATION_ID},
-        users.id,
-        'owner',
-        'active',
-        'bootstrap',
-        now()
-      FROM users
-      WHERE users.role = 'admin'
-      ON CONFLICT (organization_id, user_id) DO UPDATE SET
-        role = EXCLUDED.role,
-        status = EXCLUDED.status,
-        source = EXCLUDED.source,
-        activated_at = COALESCE(org_memberships.activated_at, EXCLUDED.activated_at),
-        updated_at = now()
-      RETURNING organization_id, user_id AS membership_user_id
-    `);
-  });
-
+function membershipResult(result: { rows?: Record<string, unknown>[] } | Record<string, unknown>[]) {
   return {
     organizationId: DEFAULT_ORGANIZATION_ID,
     grantedMemberships: rowsFrom<BootstrapRow>(result).filter((row) => row.membership_user_id != null).length,
