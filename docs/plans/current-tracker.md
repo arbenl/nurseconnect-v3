@@ -4,7 +4,7 @@ status: active
 source_of_truth: false
 authority_note: "current-program.md is the singular source of truth; this tracker defers to it on conflict."
 owner: platform
-last_reviewed: 2026-06-05
+last_reviewed: 2026-07-05
 current_program_path: docs/plans/current-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
 verification_command: pnpm verify-slice
@@ -34,7 +34,8 @@ verification_command: pnpm verify-slice
 | `NC-EG-00` | `completed` | platform + architecture | Land Phase C governing docs: Enterprise Constitution (`AGENTS.md`), `CLAUDE.md`/`GEMINI.md`, rewritten `HANDOVER.md`/`project_architecture.md`, `ENTERPRISE_UPGRADE_TRACKER.md`, the `nurseconnect-execution-runner` SOP in `.codex/`/`.claude/`/`.gemini/` skills, `ADR-005-slice-lifecycle-automation.md`, and the NC-EG-01 design doc. Docs plus one disclosed gate amendment (finalizer tracker-ID regex for Phase C bands + regression test). | PR #101 merged at `b2baa0a80572a2eb10471dcd02c1c945928fc0ef`; byte-identical SKILL.md copies; planning docs agree next slice = NC-EG-01; docs-only verify-slice static + required gates passed with run root `tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`; CI, Sonar, GitGuardian, E2E API, UI smoke, and PR Finalizer passed. |
 | `NC-EG-01` | `completed` | platform + qa | Fail-closed ent-gate framework in `verify-slice --required-gates` + PR Finalizer (`slice-gates.yaml` manifest; `ent-tm`/`ent-dlv`/`ent-perf` declarations). Design: `docs/plans/nc-eg-01-ent-gate-framework-design.md`. | PR #105 merged at `246b74e6f569cd20464f6ec82fce7d4bfae5c740`; PR #106 follow-up merged at `08fbced6a586353aa3884a1cfcf238bfa60bca96`; ent-gates, branch-protection audit parity, evidence parser hardening, CI, Sonar, GitGuardian, PR Finalizer, E2E API, and UI smoke passed. |
 | `NC-E2-03` | `completed` | identity + platform | Add in-process tenant/resource-aware policy functions **plus phantom-type guards** (`AuthorizedTransition` brand; branded `PolicyDecision`) per the Phase C amendment in `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`. | PR #109 merged at `945b09362a786c082a71f2e4fbd77a372c7df452`; policy matrix covers allow/deny/cross-tenant/PHI/action-resource cases; negative type-test proves direct `service_requests.status` writes fail `tsc` without an `AuthorizedTransition`; architecture guard blocks raw status writes; verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, UI smoke, bot-thread guard, and subagent evidence passed. |
-| `NC-E2-04` | `ready` | identity + platform + clinical | Add `MedicalEvidence` / `VerifiedCredentialEvidence` proof tokens for credential and clinical writes. | Type-test proves `nurses.status` cannot be set from outside `domain-nurse` constructors; admin verification flow still passes API E2E; boundary guard extends to credential write sites. |
+| `NC-E2-04` | `completed` | identity + platform + clinical | Add `MedicalEvidence` / `VerifiedCredentialEvidence` proof tokens for credential and clinical writes. | PR #111 merged at `b79a345267249fe7d431c7026dd0a44d59be486f`; credential and clinical write proof tokens, wrapper route coverage, type-level negative tests, boundary guards, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, local gate:release, ent-gates, and subagent evidence passed. |
+| `NC-TB-01` | `ready` | platform + database | Default org/facility bootstrap; add nullable `organization_id` plus `branch_id` to all domain tables; backfill to default tenant. | Migration is reversible; zero NULL `organization_id` after backfill; no query behavior change; full gate:release green. |
 
 > Phase C Enterprise Upgrade bands (ent-* gates, type-level guards, tenant
 > backfill execution, outbox, CQRS repair, PHI lifecycle) are mapped in
@@ -44,15 +45,14 @@ verification_command: pnpm verify-slice
 ## Next Slice
 
 ```text
-NC-E2-04 / codex/medical-evidence-brand   (ready, promoted next)
+NC-TB-01 / codex/tenant-expand   (ready, promoted next)
 ```
 
 Rationale:
 
-- PR #109 completed `NC-E2-03 / platform-authz` under fail-closed
+- PR #111 completed `NC-E2-04 / medical-evidence-brand` under fail-closed
   `ent-tm`/`ent-dlv`/`ent-perf` gates.
-- `NC-E2-04 / medical-evidence-brand` is the next Phase C identity/AuthZ
-  hardening slice.
+- `NC-TB-01 / tenant-expand` is now the next Phase C tenant backfill slice.
 
 ## Recent Closeout Evidence
 
@@ -73,6 +73,7 @@ Rationale:
 | `NC-EG-00 / constitution-deployment` | `https://github.com/arbenl/nurseconnect-v3/pull/101` | `b2baa0a80572a2eb10471dcd02c1c945928fc0ef` | Phase C governing docs, ADR-005, all three agent SOP copies, NC-EG-01 design, finalizer Phase C tracker-ID amendment, Fable M1 design amendment, docs-only verify-slice static/required gates (`tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`), CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and pre-push strict release gate passed. |
 | `NC-EG-01 / ent-gate-framework` | `https://github.com/arbenl/nurseconnect-v3/pull/105` + `https://github.com/arbenl/nurseconnect-v3/pull/106` | `246b74e6f569cd20464f6ec82fce7d4bfae5c740` + `08fbced6a586353aa3884a1cfcf238bfa60bca96` | Ent-gate framework, PR evidence/finalizer hardening, live branch-protection audit parity, Copilot finding fixes, local verify-slice static/required gates, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, E2E API, and UI smoke passed. |
 | `NC-E2-03 / platform-authz` | `https://github.com/arbenl/nurseconnect-v3/pull/109` | `945b09362a786c082a71f2e4fbd77a372c7df452` | Platform authz package, branded policy decisions, `AuthorizedTransition` status proof tokens, action/resource-kind binding, raw status-write guard, CAS tests, local verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, bot-thread guard, and model-route blocked disposition passed. |
+| `NC-E2-04 / medical-evidence-brand` | `https://github.com/arbenl/nurseconnect-v3/pull/111` | `b79a345267249fe7d431c7026dd0a44d59be486f` | `MedicalEvidence` and `VerifiedCredentialEvidence` proof tokens, credential route wrappers, negative type tests, raw status-write guard coverage, local `CI=true pnpm gate:release`, verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, and subagent evidence passed. |
 
 ## Status Rules
 

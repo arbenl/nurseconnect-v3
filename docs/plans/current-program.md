@@ -3,7 +3,7 @@ plan_role: canonical_program
 status: active
 source_of_truth: true
 owner: platform
-last_reviewed: 2026-06-05
+last_reviewed: 2026-07-05
 tracker_path: docs/plans/current-tracker.md
 architecture_program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
@@ -42,7 +42,7 @@ The active architecture program is:
 
 ## Current Phase
 
-The active phase is **NC-E2: Identity/AuthZ Platform**.
+The active phase is **NC-TB: Tenant Backfill Execution**.
 
 Phase 0 was intentionally boring: close cheap high-assurance gaps before schema-wide tenancy, CRM, outbox, or compliance work.
 
@@ -94,6 +94,9 @@ Completed closeout evidence:
 - `NC-E2-03 / platform-authz` merged in PR #109 on 2026-07-04.
 - Merge commit: `945b09362a786c082a71f2e4fbd77a372c7df452`.
 - Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, bot-thread guard, and subagent evidence. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260704T081621Z-0e3b9b`.
+- `NC-E2-04 / medical-evidence-brand` merged in PR #111 on 2026-07-05.
+- Merge commit: `b79a345267249fe7d431c7026dd0a44d59be486f`.
+- Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, local gate:release, and subagent evidence. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260704T112031Z-dd7b4c`.
 
 Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
 ADR-001 Decision B:
@@ -115,13 +118,13 @@ Decision scope:
 The program now executes under the **Phase C Enterprise Upgrade** map
 (`docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`). The enterprise verification gate
 band (`NC-EG`) landed before further implementation slices, so all subsequent
-work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating. `NC-E2-04 /
-medical-evidence-brand` is promoted next after `NC-E2-03 / platform-authz`.
+work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating. `NC-TB-01 /
+tenant-expand` is promoted next after `NC-E2-04 / medical-evidence-brand`.
 
 The next implementation slices are:
 
 ```text
-NC-E2-04 / codex/medical-evidence-brand   (promoted next)
+NC-TB-01 / codex/tenant-expand   (promoted next)
 ```
 
 ## Slice Execution Contract
