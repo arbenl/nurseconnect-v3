@@ -11,6 +11,12 @@ vi.mock("./credential-route", () => ({
   handleCredentialRoute: mocks.handleCredentialRoute,
 }));
 
+vi.mock("@nurseconnect/contracts", () => ({
+  AdminRejectNurseSchema: {},
+  AdminSuspendNurseSchema: {},
+  AdminVerifyNurseSchema: {},
+}));
+
 vi.mock("@nurseconnect/domain-nurse", () => ({
   rejectNurseCredential: mocks.rejectNurseCredential,
   suspendNurseCredential: mocks.suspendNurseCredential,
