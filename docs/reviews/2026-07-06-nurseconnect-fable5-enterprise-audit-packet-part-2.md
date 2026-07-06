@@ -24,6 +24,11 @@ Recommended invocation for this audit:
 
 ```bash
 RUN_ROOT=tmp/multi-agent/fable5-enterprise-audit/2026-07-06
+PACKET_BUNDLE="$RUN_ROOT/nurseconnect-fable5-enterprise-audit-packet.bundle.md"
+mkdir -p "$RUN_ROOT"
+for suffix in "" -part-1 -part-2 -part-3 -part-4 -part-5 -part-6; do
+  sed -n '1,220p' "docs/reviews/2026-07-06-nurseconnect-fable5-enterprise-audit-packet${suffix}.md"
+done > "$PACKET_BUNDLE"
 CLAUDE_48_REVIEW_MODEL=claude-fable-5 \
 MODEL_REVIEW_TIMEOUT_MS=300000 \
 pnpm model-review -- --preflight --run-root "$RUN_ROOT" --reviewers claude48
@@ -35,7 +40,7 @@ pnpm model-review -- --access-check --run-root "$RUN_ROOT" --reviewers claude48
 CLAUDE_48_REVIEW_MODEL=claude-fable-5 \
 MODEL_REVIEW_TIMEOUT_MS=300000 \
 pnpm model-review -- \
-  --packet docs/reviews/2026-07-06-nurseconnect-fable5-enterprise-audit-packet.md \
+  --packet "$PACKET_BUNDLE" \
   --run-root "$RUN_ROOT" \
   --reviewers claude48 \
   --debate

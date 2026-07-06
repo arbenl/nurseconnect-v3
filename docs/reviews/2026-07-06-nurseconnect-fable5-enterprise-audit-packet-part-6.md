@@ -33,13 +33,13 @@
 ## Worktree Hygiene
 
 This packet is docs-only advisory setup. It must not be staged or committed
-with unrelated worktree changes, especially repo-constitution changes such as
-`AGENTS.md`. If `git status` shows unrelated modified files, they must remain
-unstaged or be split into their own reviewed change.
+with unrelated worktree changes. If `git status` shows unrelated modified files,
+they must remain unstaged or be split into their own reviewed change.
 
-Current local caveat at creation time: `AGENTS.md` was already modified in the
-worktree before this packet was created. That change is not part of this packet
-and must not be staged with it.
+This PR intentionally includes the related `AGENTS.md` Obsidian orientation
+protocol because the packet depends on wiki-first context discipline. That
+constitution change is in scope for this advisory setup PR; unrelated
+constitution changes are not.
 
 Modularity caveat: this long markdown packet is an advisory review prompt. If
 the docs path is subject to the 150-line modularity guard, either split the

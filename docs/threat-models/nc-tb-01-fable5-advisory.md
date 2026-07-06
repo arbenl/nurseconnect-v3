@@ -13,7 +13,9 @@ In scope:
 
 - advisory review packets under `docs/reviews/`;
 - repo-local Obsidian orientation instructions in `AGENTS.md`;
-- docs-only `slice-gates.yaml` evidence for this PR.
+- docs-only `slice-gates.yaml` evidence for this PR;
+- the ent-gates tracker test fixture update that aligns policy expectations with
+  the currently promoted `NC-TB-01 / codex/tenant-expand` branch.
 
 Out of scope:
 
@@ -41,6 +43,7 @@ Out of scope:
 | --- | --- | --- |
 | Spoofing | Advisory packets could look authoritative. | Frontmatter and body mark `source_of_truth: false` or advisory authority. |
 | Tampering | Fable findings could be silently adopted. | Adoption requires a separate authority-chain commit. |
+| Tampering | Gate fixture changes could hide promotion mismatches. | Fixture change is limited to current tracker authority and covered by ent-gates tests. |
 | Repudiation | Later reviewers may not know what was sent to Fable. | Packet lists payload boundary, run root, and required output schema. |
 | Information disclosure | PHI, secrets, or production IDs could enter model payloads. | Packet forbids PHI, secrets, raw logs, patient data, and production IDs. |
 | Denial of service | Large docs could break repo modularity gates. | Packet is split into sub-150-line parts. |
