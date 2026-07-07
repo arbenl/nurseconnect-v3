@@ -29,8 +29,8 @@ Deferred tables:
 
 ## Verification
 
-- `docs/evidence/nc-tb-01/pre-backfill-audit.md` must record row counts and
-  pseudo-tenant signal review.
+- `docs/evidence/nc-tb-01/pre-backfill-audit.md` records row-count gates,
+  relationship checks, zero-null reconciliation, and rollback/down-path proof.
 - Orphan checks cover `visits -> assignments -> service_requests`,
   `service_request_events -> service_requests`, and
   `payment_authorizations -> service_requests`.

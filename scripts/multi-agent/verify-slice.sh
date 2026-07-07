@@ -485,7 +485,7 @@ if [[ "$RUN_REQUIRED" -eq 1 ]]; then run_gate "ent-gates-required" "node scripts
     run_gate "required-docs-repo-hygiene" "pnpm repo:hygiene"
     run_gate "required-docs-diff-check" "git diff --check $BASE_COMMIT...HEAD && git diff --cached --check && git diff --check"
   else
-    run_gate "gate-release" "pnpm gate:release"
+    run_gate "tenant-isolation-guard" "pnpm tenant:isolation -- --mode guard --source drizzle"; run_gate "gate-release" "pnpm gate:release"
   fi
 fi
 

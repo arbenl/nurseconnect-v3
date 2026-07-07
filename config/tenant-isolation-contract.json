@@ -1,7 +1,7 @@
 {
   "version": "2026-07-07.nc-tb-01",
   "tenantKey": "organization_id",
-  "statusLabel": "ADVISORY_PASS_PENDING_SCHEMA",
+  "statusLabel": "EXPAND_SCHEMA_READY_PENDING_EXECUTABLE_ASSERTIONS",
   "promotionTrigger": "Add tenant:isolation guard mode to required gates in the PR that introduces the organizations table or the first domain-table organization_id tenant column. Promote to enforce mode only in the PR that completes the full tenant-owned schema, RLS policies, and executable scenario assertions for the staging restrictive fixture.",
   "expectedTenantBoundaryTables": [
     {
@@ -20,52 +20,67 @@
       "classification": "tenant-owned organization membership"
     },
     {
+      "table": "branches",
+      "requiredTenantColumn": "organization_id",
+      "requiredResourceColumns": [],
+      "rlsRequired": false,
+      "rlsDecision": "NC-TB-01 creates the default care-site branch boundary and indexes organization_id. RLS policies and branch authorization scenarios remain NC-TB-03.",
+      "classification": "tenant-owned care-site branch boundary"
+    },
+    {
       "table": "service_requests",
       "requiredTenantColumn": "organization_id",
       "requiredResourceColumns": ["branch_id"],
-      "rlsRequired": true,
+      "rlsRequired": false,
+      "rlsDecision": "NC-TB-01 adds nullable ownership columns and backfills only. RLS policies and enforcement remain NC-TB-03.",
       "classification": "tenant-owned care-site workflow"
     },
     {
       "table": "patients",
       "requiredTenantColumn": "organization_id",
       "requiredResourceColumns": [],
-      "rlsRequired": true,
+      "rlsRequired": false,
+      "rlsDecision": "NC-TB-01 adds nullable ownership columns and backfills only. RLS policies and enforcement remain NC-TB-03.",
       "classification": "tenant-owned PHI"
     },
     {
       "table": "assignments",
       "requiredTenantColumn": "organization_id",
       "requiredResourceColumns": [],
-      "rlsRequired": true,
+      "rlsRequired": false,
+      "rlsDecision": "NC-TB-01 adds nullable ownership columns and backfills only. RLS policies and enforcement remain NC-TB-03.",
       "classification": "tenant-owned request/nurse relationship"
     },
     {
       "table": "visits",
       "requiredTenantColumn": "organization_id",
       "requiredResourceColumns": ["branch_id"],
-      "rlsRequired": true,
+      "rlsRequired": false,
+      "rlsDecision": "NC-TB-01 adds nullable ownership columns and backfills only. RLS policies and enforcement remain NC-TB-03.",
       "classification": "tenant-owned PHI through assignment"
     },
     {
       "table": "service_request_events",
       "requiredTenantColumn": "organization_id",
       "requiredResourceColumns": [],
-      "rlsRequired": true,
+      "rlsRequired": false,
+      "rlsDecision": "NC-TB-01 adds nullable ownership columns and backfills only. RLS policies and enforcement remain NC-TB-03.",
       "classification": "tenant-owned audit/workflow evidence after PHI classification"
     },
     {
       "table": "payment_authorizations",
       "requiredTenantColumn": "organization_id",
       "requiredResourceColumns": [],
-      "rlsRequired": true,
+      "rlsRequired": false,
+      "rlsDecision": "NC-TB-01 adds nullable ownership columns and backfills only. RLS policies and enforcement remain NC-TB-03.",
       "classification": "tenant-owned payment authorization"
     },
     {
       "table": "nurse_payouts",
       "requiredTenantColumn": "organization_id",
       "requiredResourceColumns": [],
-      "rlsRequired": true,
+      "rlsRequired": false,
+      "rlsDecision": "NC-TB-01 adds nullable ownership columns and backfills only. RLS policies and enforcement remain NC-TB-03.",
       "classification": "mixed tenant/platform financial evidence; ledger/export decision required before enforce"
     }
   ],
@@ -79,31 +94,31 @@
     {
       "id": "tenant_a_cannot_read_tenant_b",
       "description": "Organization A admin cannot read Organization B tenant-owned rows.",
-      "status": "unimplemented",
+      "status": "planned_nc_tb_03",
       "assertionRefs": []
     },
     {
       "id": "tenant_a_cannot_write_tenant_b",
       "description": "Organization A cannot create or update rows owned by Organization B.",
-      "status": "unimplemented",
+      "status": "planned_nc_tb_03",
       "assertionRefs": []
     },
     {
       "id": "wrong_tenant_negative_cases",
       "description": "Wrong-tenant request, patient, visit, audit, payment authorization, and facility access attempts fail.",
-      "status": "unimplemented",
+      "status": "planned_nc_tb_03",
       "assertionRefs": []
     },
     {
       "id": "shared_nurse_no_cross_tenant_inference",
       "description": "A shared nurse cannot expose or infer another organization's data through tenant-scoped surfaces.",
-      "status": "unimplemented",
+      "status": "planned_nc_tb_03",
       "assertionRefs": []
     },
     {
       "id": "platform_admin_explicit_audited_access",
       "description": "Platform-admin cross-tenant access is explicit and audited, not ordinary tenant-policy bypass.",
-      "status": "unimplemented",
+      "status": "planned_nc_tb_03",
       "assertionRefs": []
     },
     {

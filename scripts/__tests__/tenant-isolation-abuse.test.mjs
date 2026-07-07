@@ -6,16 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  evaluateTenantIsolation,
-  exitCodeFor,
-  EXIT_FAIL,
-  EXIT_OK,
-  EXIT_SKIPPED,
-  STATUS_FAIL,
-  STATUS_PASS,
-  STATUS_PENDING_SCHEMA,
-} from "../tenant-isolation-abuse.mjs";
+import { evaluateTenantIsolation, exitCodeFor, EXIT_FAIL, EXIT_OK, EXIT_SKIPPED, STATUS_FAIL, STATUS_PENDING_SCENARIOS, STATUS_PASS, STATUS_PENDING_SCHEMA } from "../tenant-isolation-abuse.mjs";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const scriptPath = join(repoRoot, "scripts/tenant-isolation-abuse.mjs");
@@ -80,10 +71,10 @@ describe("tenant isolation abuse harness", () => {
     expect(evaluation.summary.readyBoundaryTables).toBe(contract.expectedTenantBoundaryTables.length);
     expect(evaluation.summary.readyTables).toBe(1);
     expect(evaluation.tableResults.find((result) => result.table === "org_memberships")?.ready).toBe(true);
-    expect(evaluation.missingScenarios).toContain("tenant_a_cannot_read_tenant_b");
+    expect(evaluation.missingScenarios).toHaveLength(5);
   });
 
-  it("fails once a tenant-owned table has tenant ownership without RLS", () => {
+  it("does not require NC-TB-03 RLS for NC-TB-01 expanded tables", () => {
     const evaluation = evaluateTenantIsolation(contract, tableInventory({
       service_requests: {
         columns: ["organization_id", "branch_id"],
@@ -91,8 +82,8 @@ describe("tenant isolation abuse harness", () => {
       },
     }));
 
-    expect(evaluation.status).toBe(STATUS_FAIL);
-    expect(evaluation.tableResults.find((result) => result.table === "service_requests")?.missingRls).toBe(true);
+    expect(evaluation.status).toBe(STATUS_PENDING_SCENARIOS);
+    expect(evaluation.tableResults.find((result) => result.table === "service_requests")).toMatchObject({ missingRls: false, ready: true });
   });
 
   it("does not fail just because a table has non-tenant RLS before tenant columns exist", () => {
@@ -142,10 +133,10 @@ describe("tenant isolation abuse harness", () => {
   });
 
   it("uses explicit exit codes for advisory readiness and enforce failures", () => {
+    for (const status of [STATUS_PENDING_SCHEMA, STATUS_PENDING_SCENARIOS]) expect(exitCodeFor({ mode: "guard", status })).toBe(EXIT_OK);
     expect(exitCodeFor({ mode: "readiness", status: STATUS_PENDING_SCHEMA })).toBe(EXIT_OK);
-    expect(exitCodeFor({ mode: "guard", status: STATUS_PENDING_SCHEMA })).toBe(EXIT_OK);
     expect(exitCodeFor({ mode: "guard", status: STATUS_FAIL })).toBe(EXIT_FAIL);
-    expect(exitCodeFor({ mode: "enforce", status: STATUS_PENDING_SCHEMA })).toBe(EXIT_FAIL);
+    for (const status of [STATUS_PENDING_SCHEMA, STATUS_PENDING_SCENARIOS]) expect(exitCodeFor({ mode: "enforce", status })).toBe(EXIT_FAIL);
     expect(exitCodeFor({ mode: "enforce", status: STATUS_PASS })).toBe(EXIT_OK);
     expect(exitCodeFor({ mode: "enforce", errorCode: "MISSING_DATABASE_URL" })).toBe(EXIT_SKIPPED);
     expect(exitCodeFor({ mode: "guard", errorCode: "MISSING_DATABASE_URL" })).toBe(EXIT_FAIL);
@@ -164,13 +155,13 @@ describe("tenant isolation abuse harness", () => {
     expect(result.stderr).toContain("MISSING_DATABASE_URL");
   });
 
-  it("prints current Drizzle readiness as an advisory state", () => {
+  it("prints current Drizzle readiness from the latest snapshot", () => {
     const stdout = execFileSync("node", [scriptPath, "--mode", "readiness", "--source", "drizzle"], {
       cwd: repoRoot,
       encoding: "utf8",
     });
 
-    expect(stdout).toContain("status=ADVISORY_PASS_PENDING_SCHEMA");
+    expect(stdout).toContain("status=ADVISORY_PASS_PENDING_SCENARIOS");
     expect(stdout).toContain("promotion_trigger=");
     expect(stdout).toContain("table=service_requests");
   });
@@ -182,7 +173,7 @@ describe("tenant isolation abuse harness", () => {
     });
     const parsed = JSON.parse(stdout);
 
-    expect(parsed.status).toBe(STATUS_PENDING_SCHEMA);
+    expect(parsed.status).toBe(STATUS_PENDING_SCENARIOS);
     expect(parsed.summary.expectedTables).toBe(contract.expectedTenantOwnedTables.length);
     expect(parsed.tableResults[0]).toHaveProperty("table");
   });

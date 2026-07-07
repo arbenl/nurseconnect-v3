@@ -1,8 +1,4 @@
-import type {
-  AdminRequestPaymentTrace,
-  NursePayoutAction,
-  PaymentAuthorizationAction,
-} from "@nurseconnect/contracts";
+import type { AdminRequestPaymentTrace, NursePayoutAction, PaymentAuthorizationAction } from "@nurseconnect/contracts";
 import {
   AdminRequestPaymentTraceSchema,
   RecordNursePayoutSchema,
@@ -13,20 +9,10 @@ import {
 import type { DbClient } from "@nurseconnect/database";
 import { eq } from "drizzle-orm";
 
-import {
-  nursePayouts,
-  paymentAuthorizations,
-  serviceRequests,
-} from "@nurseconnect/database/schema";
+import { nursePayouts, paymentAuthorizations, serviceRequests } from "@nurseconnect/database/schema";
 
-import {
-  PaymentTraceConflictError,
-  PaymentTraceNotFoundError,
-} from "./errors";
-import {
-  canTransitionNursePayout,
-  canTransitionPaymentAuthorization,
-} from "./payment-lifecycle";
+import { PaymentTraceConflictError, PaymentTraceNotFoundError } from "./errors";
+import { canTransitionNursePayout, canTransitionPaymentAuthorization } from "./payment-lifecycle";
 
 type Transaction = Parameters<Parameters<DbClient["transaction"]>[0]>[0];
 type PaymentTraceDb = DbClient | Transaction;
@@ -118,6 +104,13 @@ async function getRequestOrThrow(db: PaymentTraceDb, requestId: string) {
   return request;
 }
 
+function requireRequestOrganization(request: Awaited<ReturnType<typeof getRequestOrThrow>>) {
+  if (!request.organizationId) {
+    throw new PaymentTraceConflictError("Payment trace requires tenant-owned request");
+  }
+  return request.organizationId;
+}
+
 async function assertNoAuthorization(db: PaymentTraceDb, requestId: string) {
   const existing = await db.query.paymentAuthorizations.findFirst({
     where: eq(paymentAuthorizations.requestId, requestId),
@@ -150,6 +143,7 @@ export async function recordPaymentAuthorizationTrace(
     note: input.note,
   });
   const request = await getRequestOrThrow(db, input.requestId);
+  const organizationId = requireRequestOrganization(request);
   await assertNoAuthorization(db, input.requestId);
 
   const now = new Date();
@@ -157,6 +151,7 @@ export async function recordPaymentAuthorizationTrace(
     .insert(paymentAuthorizations)
     .values({
       requestId: input.requestId,
+      organizationId,
       patientUserId: request.patientUserId,
       status: "authorized",
       amountCents: parsed.amountCents,
@@ -238,6 +233,7 @@ export async function recordNursePayoutTrace(
     note: input.note,
   });
   const request = await getRequestOrThrow(db, input.requestId);
+  const organizationId = requireRequestOrganization(request);
   if (request.status !== "completed") {
     throw new PaymentTraceConflictError("Nurse payout can only be recorded after completion");
   }
@@ -251,6 +247,7 @@ export async function recordNursePayoutTrace(
     .insert(nursePayouts)
     .values({
       requestId: input.requestId,
+      organizationId,
       nurseUserId: parsed.nurseUserId,
       status: "owed",
       amountCents: parsed.amountCents,

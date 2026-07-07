@@ -7,6 +7,7 @@ import {
     getActiveServiceAreas,
     selectDispatchCandidate,
 } from "@nurseconnect/domain-dispatch";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID } from "@nurseconnect/domain-identity";
 import { appendRequestEvent, assertCreateRequestInvariants } from "@nurseconnect/domain-request";
 
 const { serviceRequests } = schema;
@@ -49,6 +50,8 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
             .insert(serviceRequests)
             .values({
                 patientUserId,
+                organizationId: DEFAULT_ORGANIZATION_ID,
+                branchId: DEFAULT_BRANCH_ID,
                 address,
                 lat: String(lat), // NUMERIC in db; store as string for drizzle numeric
                 lng: String(lng),

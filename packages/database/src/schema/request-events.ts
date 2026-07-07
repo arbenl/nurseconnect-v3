@@ -1,5 +1,6 @@
 import { index, jsonb, pgEnum, pgTable, serial, timestamp, uuid } from "drizzle-orm/pg-core";
 
+import { organizations } from "./organizations";
 import { serviceRequestStatusEnum, serviceRequests } from "./service-requests";
 import { users } from "./users";
 
@@ -25,6 +26,7 @@ export const requestEvents = pgTable(
         requestId: uuid("request_id")
             .notNull()
             .references(() => serviceRequests.id, { onDelete: "cascade" }),
+        organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "restrict" }),
         type: requestEventTypeEnum("type").notNull(),
         actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "set null" }),
         fromStatus: serviceRequestStatusEnum("from_status"),
@@ -34,5 +36,6 @@ export const requestEvents = pgTable(
     },
     (t) => ({
         requestIdIdx: index("service_request_events_request_id_id_idx").on(t.requestId, t.id),
+        organizationIdx: index("service_request_events_organization_id_idx").on(t.organizationId),
     })
 );

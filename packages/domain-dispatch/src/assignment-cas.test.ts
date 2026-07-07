@@ -17,6 +17,8 @@ function makeRequest(overrides: Partial<typeof serviceRequests.$inferSelect> = {
   const now = new Date("2026-04-16T00:00:00.000Z");
   return {
     id: "request-1",
+    organizationId: null,
+    branchId: null,
     patientUserId: "patient-1",
     assignedNurseUserId: null,
     status: "open",

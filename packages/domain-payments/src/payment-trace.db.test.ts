@@ -1,6 +1,5 @@
 import { db, schema, sql } from "@nurseconnect/database";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-
 import {
   getAdminRequestPaymentTrace,
   recordNursePayoutTrace,
@@ -9,15 +8,8 @@ import {
   updatePaymentAuthorizationTraceStatus,
 } from "./payment-trace";
 import { PaymentTraceConflictError } from "./errors";
-
-const {
-  nursePayouts,
-  nurses,
-  paymentAuthorizations,
-  serviceRequests,
-  users,
-} = schema;
-
+const { nursePayouts, nurses, paymentAuthorizations, serviceRequests, users } = schema;
+const DEFAULT_TENANT = { organizationId: "00000000-0000-4000-8000-000000000001", branchId: "00000000-0000-4000-8000-000000000101" };
 describe.sequential("payment traceability", () => {
   beforeAll(async () => {
     await db.execute(sql`SELECT 1`);
@@ -29,6 +21,8 @@ describe.sequential("payment traceability", () => {
     await db.execute(sql`TRUNCATE TABLE service_requests RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE nurses RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
+    await db.execute(sql`INSERT INTO organizations (id, name, slug, status) VALUES (${DEFAULT_TENANT.organizationId}, 'NurseConnect Default Organization', 'nurseconnect-default', 'active') ON CONFLICT (id) DO NOTHING`);
+    await db.execute(sql`INSERT INTO branches (id, organization_id, name, slug, status, jurisdiction_country, jurisdiction_region) VALUES (${DEFAULT_TENANT.branchId}, ${DEFAULT_TENANT.organizationId}, 'NurseConnect Default Branch', 'nurseconnect-default-branch', 'active', 'US', 'default-launch-region') ON CONFLICT (id) DO NOTHING`);
   });
 
   it("records, captures, and exposes a private-pay authorization trace", async () => {
@@ -41,6 +35,7 @@ describe.sequential("payment traceability", () => {
       .insert(serviceRequests)
       .values({
         patientUserId: patient!.id,
+        ...DEFAULT_TENANT,
         address: "100 Private Pay Ave",
         lat: "42.662900",
         lng: "21.165500",
@@ -62,6 +57,7 @@ describe.sequential("payment traceability", () => {
     });
 
     expect(captured.status).toBe("captured");
+    expect(captured.organizationId).toBe(DEFAULT_TENANT.organizationId);
     expect(captured.capturedAt).toBeInstanceOf(Date);
 
     const trace = await getAdminRequestPaymentTrace(db, request!.id);
@@ -96,6 +92,7 @@ describe.sequential("payment traceability", () => {
       .values({
         patientUserId: patient!.id,
         assignedNurseUserId: nurseUser!.id,
+        ...DEFAULT_TENANT,
         status: "completed",
         address: "200 Payout Trace Ave",
         lat: "42.662900",
@@ -119,6 +116,7 @@ describe.sequential("payment traceability", () => {
     });
 
     expect(paid.status).toBe("paid");
+    expect(paid.organizationId).toBe(DEFAULT_TENANT.organizationId);
     expect(paid.paidAt).toBeInstanceOf(Date);
 
     const trace = await getAdminRequestPaymentTrace(db, request!.id);
@@ -145,6 +143,7 @@ describe.sequential("payment traceability", () => {
       .values({
         patientUserId: patient!.id,
         assignedNurseUserId: nurseUser!.id,
+        ...DEFAULT_TENANT,
         status: "accepted",
         address: "300 Early Payout Ave",
         lat: "42.662900",
@@ -176,6 +175,7 @@ describe.sequential("payment traceability", () => {
       .values({
         patientUserId: patient!.id,
         assignedNurseUserId: nurseUser!.id,
+        ...DEFAULT_TENANT,
         status: "completed",
         address: "400 Unique Trace Ave",
         lat: "42.662900",

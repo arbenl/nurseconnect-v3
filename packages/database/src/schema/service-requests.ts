@@ -1,6 +1,7 @@
 import { pgTable, uuid, text, timestamp, numeric, index, pgEnum } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { serviceAreas } from "./service-areas";
+import { branches, organizations } from "./organizations";
 
 export const serviceRequestStatusEnum = pgEnum("service_request_status", [
     "open",
@@ -21,6 +22,8 @@ export const serviceRequests = pgTable(
         id: uuid("id").defaultRandom().primaryKey(),
         patientUserId: uuid("patient_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
         assignedNurseUserId: uuid("assigned_nurse_user_id").references(() => users.id, { onDelete: "set null" }),
+        organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "restrict" }),
+        branchId: uuid("branch_id").references(() => branches.id, { onDelete: "restrict" }),
 
         status: serviceRequestStatusEnum("status").notNull().default("open"),
 
@@ -53,5 +56,7 @@ export const serviceRequests = pgTable(
         nurseIdx: index("service_requests_nurse_idx").on(t.assignedNurseUserId),
         statusIdx: index("service_requests_status_idx").on(t.status),
         serviceAreaIdx: index("service_requests_service_area_id_idx").on(t.serviceAreaId),
+        organizationIdx: index("service_requests_organization_id_idx").on(t.organizationId),
+        branchIdx: index("service_requests_branch_id_idx").on(t.branchId),
     })
 );

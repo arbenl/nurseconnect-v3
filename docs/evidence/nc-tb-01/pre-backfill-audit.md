@@ -1,0 +1,138 @@
+# NC-TB-01 Pre-Backfill And Rollback Evidence
+
+Date: 2026-07-07
+Status: required PR evidence
+
+## Scope
+
+This evidence covers the NC-TB-01 expand migration and checked operations
+backfill. The migration adds nullable tenant ownership columns and creates the
+default organization/branch. `scripts/backfill-tenant-ownership.mjs` backfills
+rows with per-batch commits and produces reconciliation output. This does not
+authorize RLS enforcement, `NOT NULL`, composite tenant FKs, or executable tenant
+A/B abuse-test claims.
+
+## Pre-Backfill Row Counts
+
+Run on the target database before applying the migration. Do not paste PHI,
+patient identifiers, request addresses, logs, secrets, credentials, or
+production identifiers into PR evidence.
+
+Query shape: `count(*)` for `service_requests`, `patients`, `assignments`,
+`visits`, `service_request_events`, `payment_authorizations`, and
+`nurse_payouts`.
+
+Stop conditions:
+
+- Any included table exceeds 100,000 rows without a reviewed maintenance window
+  and a backfill progress/retry runner.
+- Any orphan query below returns rows.
+- The migration dry run exceeds the configured statement timeout on a
+  production-shaped fixture.
+
+Local disposable evidence, `nurseconnect_test`, 2026-07-07:
+
+| Table | Sanitized row count |
+| --- | ---: |
+| `service_requests` | 1 |
+| `patients` | 0 |
+| `assignments` | 0 |
+| `visits` | 0 |
+| `service_request_events` | 0 |
+| `payment_authorizations` | 0 |
+| `nurse_payouts` | 0 |
+
+The local disposable fixture stays below the stop threshold and contains no
+production data.
+
+## Relationship Consistency
+
+Query shape: count request-owned children whose parent path is missing:
+`assignments -> service_requests`, `visits -> assignments -> service_requests`,
+`service_request_events -> service_requests`,
+`payment_authorizations -> service_requests`, and
+`nurse_payouts -> service_requests`.
+
+Local disposable evidence, `nurseconnect_test`, 2026-07-07:
+
+| Check | Rows |
+| --- | ---: |
+| `orphan_assignments` | 0 |
+| `orphan_visits` | 0 |
+| `orphan_events` | 0 |
+| `orphan_payment_authorizations` | 0 |
+| `orphan_nurse_payouts` | 0 |
+
+## Post-Backfill Reconciliation
+
+Query shape: count null `organization_id` on all included tenant-owned tables
+and null `branch_id` on `service_requests` and `visits`.
+
+All counts must be zero for NC-TB-01 acceptance on the migrated database.
+
+Local disposable evidence, after applying the default tenant/branch backfill to
+`nurseconnect_test`, 2026-07-07:
+
+| Check | Rows |
+| --- | ---: |
+| `service_requests_null_org` | 0 |
+| `patients_null_org` | 0 |
+| `assignments_null_org` | 0 |
+| `visits_null_org` | 0 |
+| `service_request_events_null_org` | 0 |
+| `payment_authorizations_null_org` | 0 |
+| `nurse_payouts_null_org` | 0 |
+| `service_requests_null_branch` | 0 |
+| `visits_null_branch` | 0 |
+
+## Backfill Runner Evidence
+
+Checked runner: `scripts/backfill-tenant-ownership.mjs`.
+
+Local disposable fixture, `nurseconnect_test`, 2026-07-07:
+
+- Synthetic rows inserted across `service_requests`, `patients`, `assignments`,
+  `visits`, `service_request_events`, `payment_authorizations`, and
+  `nurse_payouts` with null tenant ownership.
+- Command:
+  `PSQL_BIN=/opt/homebrew/opt/libpq/bin/psql DATABASE_URL=... node scripts/backfill-tenant-ownership.mjs`.
+- Result: `status: pass`; each included table updated 1 row; all 14
+  reconciliation/orphan checks returned 0.
+
+## Migration Safety
+
+The migration uses plain `CREATE INDEX` because the current Drizzle migration
+runner applies migrations transactionally, and PostgreSQL does not allow
+`CREATE INDEX CONCURRENTLY` inside a transaction block. This is acceptable only
+when the pre-backfill row-count gate above stays below the stop threshold or a
+reviewed maintenance window is recorded in PR evidence. If the row-count gate is
+exceeded, split index creation into an explicitly non-transactional operations
+runbook before applying to that environment.
+
+## Rollback And Down Path
+
+If the migration has not been released, rollback is to drop the uncommitted
+migration artifacts and regenerate metadata from schema.
+
+If the migration was applied to a disposable database, rehearse the reverse
+order:
+
+1. Drop indexes on `organization_id` and `branch_id`.
+2. Drop FKs from tenant-owned tables to `organizations` and `branches`.
+3. Drop nullable `organization_id` and `branch_id` columns from included tables.
+4. Drop the `branches` table and `branch_status` enum.
+5. Keep the pre-existing `organizations` and `org_memberships` structures.
+
+Production rollback after release must be treated as an operations incident.
+Because write paths begin depending on tenant columns in this slice, rollback
+must first deploy an application revert that no longer writes tenant ownership.
+The preferred database rollback is then to leave nullable inert columns in place
+until a reviewed cleanup slice.
+
+Local disposable full-surface rollback rehearsal, `nurseconnect_test`,
+2026-07-07:
+
+- Ran the reverse order for all new tenant indexes, FKs, nullable tenant
+  columns, `branches`, and `branch_status` inside an explicit transaction.
+- Rolled the transaction back before commit.
+- Result: `full_rollback_rehearsal_transaction | rolled_back`.

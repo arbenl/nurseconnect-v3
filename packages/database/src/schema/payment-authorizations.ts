@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { serviceRequests } from "./service-requests";
+import { organizations } from "./organizations";
 import { users } from "./users";
 
 export const paymentAuthorizationStatusEnum = pgEnum("payment_authorization_status", [
@@ -26,6 +27,7 @@ export const paymentAuthorizations = pgTable(
     requestId: uuid("request_id")
       .notNull()
       .references(() => serviceRequests.id, { onDelete: "cascade" }),
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "restrict" }),
     patientUserId: uuid("patient_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -45,6 +47,7 @@ export const paymentAuthorizations = pgTable(
   },
   (table) => ({
     requestUniqueIdx: uniqueIndex("payment_authorizations_request_id_uidx").on(table.requestId),
+    organizationIdx: index("payment_authorizations_organization_id_idx").on(table.organizationId),
     patientIdx: index("payment_authorizations_patient_user_id_idx").on(table.patientUserId),
     statusIdx: index("payment_authorizations_status_idx").on(table.status),
     createdAtIdx: index("payment_authorizations_created_at_idx").on(table.createdAt),

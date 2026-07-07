@@ -20,6 +20,8 @@ function makeRequestRow(
     id: "request-1",
     patientUserId: "patient-1",
     assignedNurseUserId: "nurse-1",
+    organizationId: null,
+    branchId: null,
     status: "assigned",
     address: "123 Main St",
     lat: "0.000000",

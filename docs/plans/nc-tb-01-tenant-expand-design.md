@@ -71,7 +71,8 @@ reviewed tracker and contract amendment before schema generation.
 4. Add idempotent default organization/branch/jurisdiction seed support.
 5. Add nullable columns, indexes, and foreign keys for included tables.
 6. Add default ownership writes for new rows before bulk backfill.
-7. Backfill in bounded chunks with lock and statement timeouts.
+7. Backfill with `scripts/backfill-tenant-ownership.mjs`, which commits each
+   table batch separately outside the transactional Drizzle migration.
 8. Prove zero-null ownership for included rows and relationship consistency.
 9. Record rollback/down-path rehearsal evidence.
 
@@ -99,13 +100,18 @@ reviewed tracker and contract amendment before schema generation.
   repo authority.
 - Default seed is not idempotent.
 - Backfill would log PHI or production identifiers.
-- Reversibility/down-path rehearsal is unproven.
-- `tenant:isolation` guard fails without an accepted NC-TB-01 disposition.
+- Reversibility/down-path rehearsal is unproven, or rollback evidence does not
+  pair schema cleanup with application rollback for tenant-aware write paths.
+- `tenant:isolation` readiness or guard fails for reasons other than the
+  documented `ADVISORY_PASS_PENDING_SCENARIOS` NC-TB-03 scenario handoff.
 
 ## Verification Plan
 
+- `pnpm tenant:isolation -- --mode readiness --source drizzle`
 - `pnpm tenant:isolation -- --mode guard --source drizzle`
 - seed-twice DB test for default organization/branch/jurisdiction
+- `scripts/backfill-tenant-ownership.mjs` executable backfill/reconciliation
+  proof on a disposable migrated database
 - zero-null invariant for included `organization_id` rows after backfill
 - zero-null invariant for care-site scope on request/visit rows
 - relationship consistency checks for request-owned child rows
