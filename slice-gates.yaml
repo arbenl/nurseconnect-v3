@@ -3,10 +3,10 @@ branch: codex/tenant-expand
 gates:
   ent-tm:
     status: required
-    evidence: docs/threat-models/nc-tb-01-fable5-advisory.md
+    evidence: docs/threat-models/nc-tb-01.md
   ent-dlv:
-    status: n/a
-    justification: This docs-only PR does not add data stores, retention behavior, erasure behavior, migrations, or PHI storage.
+    status: required
+    evidence: docs/data-lifecycle/nc-tb-01.md
   ent-perf:
-    status: n/a
-    justification: This docs-only PR does not change runtime code, critical routes, build output, query paths, bundle size, or performance budgets.
+    status: required
+    evidence: docs/performance/nc-tb-01.md

@@ -86,7 +86,7 @@ describe("tenant isolation abuse harness", () => {
   it("fails once a tenant-owned table has tenant ownership without RLS", () => {
     const evaluation = evaluateTenantIsolation(contract, tableInventory({
       service_requests: {
-        columns: ["organization_id", "facility_id"],
+        columns: ["organization_id", "branch_id"],
         rlsEnabled: false,
       },
     }));
@@ -110,7 +110,7 @@ describe("tenant isolation abuse harness", () => {
   it("does not start guard mode from a resource column without the tenant key", () => {
     const evaluation = evaluateTenantIsolation(contract, tableInventory({
       service_requests: {
-        columns: ["facility_id"],
+        columns: ["branch_id"],
         rlsEnabled: false,
       },
     }));

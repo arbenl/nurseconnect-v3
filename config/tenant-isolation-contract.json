@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-04.nc-e1-04",
+  "version": "2026-07-07.nc-tb-01",
   "tenantKey": "organization_id",
   "statusLabel": "ADVISORY_PASS_PENDING_SCHEMA",
   "promotionTrigger": "Add tenant:isolation guard mode to required gates in the PR that introduces the organizations table or the first domain-table organization_id tenant column. Promote to enforce mode only in the PR that completes the full tenant-owned schema, RLS policies, and executable scenario assertions for the staging restrictive fixture.",
@@ -22,7 +22,7 @@
     {
       "table": "service_requests",
       "requiredTenantColumn": "organization_id",
-      "requiredResourceColumns": ["facility_id"],
+      "requiredResourceColumns": ["branch_id"],
       "rlsRequired": true,
       "classification": "tenant-owned care-site workflow"
     },
@@ -43,7 +43,7 @@
     {
       "table": "visits",
       "requiredTenantColumn": "organization_id",
-      "requiredResourceColumns": ["facility_id"],
+      "requiredResourceColumns": ["branch_id"],
       "rlsRequired": true,
       "classification": "tenant-owned PHI through assignment"
     },
