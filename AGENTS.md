@@ -90,6 +90,24 @@ record reviewer blockers, CI reruns, and closeout evidence.
 - If an MCP tool is blocked, report the exact blocker/error before shell fallback.
 - Before activating optional plugins, apply `docs/runbooks/plugin_activation_policy.md`.
 
+## Obsidian Wiki Context Protocol
+
+For substantive NurseConnect work, use the local Obsidian LLM Wiki as the orientation layer before broad source scanning:
+
+1. Read `/Users/arbenlila/Documents/Knowledge Manager and Systems Architect/Wiki/Home.md`.
+2. Read `/Users/arbenlila/Documents/Knowledge Manager and Systems Architect/Wiki/projects/nurseconnect.md`.
+3. Read relevant generated module/concept pages, especially under:
+   - `Wiki/modules/nurseconnect/`
+   - `Wiki/cross-project-concepts/`
+   - `Wiki/architecture/`
+   - `Wiki/api-references/`
+4. Read relevant human notes under `/Users/arbenlila/Documents/Knowledge Manager and Systems Architect/Notes/`.
+5. Then inspect exact source files in this repository.
+
+The wiki is a memory and navigation layer only. It never overrides this `AGENTS.md`, NurseConnect trackers, source code, tests, gates, user instructions, PHI/compliance boundaries, or repo-specific MCP evidence.
+
+If the task produces durable architecture rationale, add or update a note under the vault's `Notes/` tree rather than editing generated wiki pages.
+
 <!-- FAST-TOOLS PROMPT v1 | codex-mastery | watermark:do-not-alter -->
 
 ## CRITICAL: Use ripgrep, not grep

@@ -1,12 +1,12 @@
-slice: NC-E2-04
-branch: codex/medical-evidence-brand
+slice: NC-TB-01
+branch: codex/tenant-expand
 gates:
   ent-tm:
     status: required
-    evidence: docs/threat-models/nc-e2-04.md
+    evidence: docs/threat-models/nc-tb-01-fable5-advisory.md
   ent-dlv:
     status: n/a
-    justification: This slice adds proof-token guards only; it does not add schema columns, retention rules, erasure behavior, or new PHI storage.
+    justification: This docs-only PR does not add data stores, retention behavior, erasure behavior, migrations, or PHI storage.
   ent-perf:
     status: n/a
-    justification: This slice changes credential proof checks and guard tests only; it does not touch configured critical route or bundle performance budget paths.
+    justification: This docs-only PR does not change runtime code, critical routes, build output, query paths, bundle size, or performance budgets.
