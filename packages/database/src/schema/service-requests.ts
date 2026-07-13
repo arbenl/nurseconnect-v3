@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, numeric, index, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, numeric, index, pgEnum, uniqueIndex } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { serviceAreas } from "./service-areas";
 import { branches, organizations } from "./organizations";
@@ -58,5 +58,15 @@ export const serviceRequests = pgTable(
         serviceAreaIdx: index("service_requests_service_area_id_idx").on(t.serviceAreaId),
         organizationIdx: index("service_requests_organization_id_idx").on(t.organizationId),
         branchIdx: index("service_requests_branch_id_idx").on(t.branchId),
+        paymentOwnerIdx: uniqueIndex("service_requests_payment_owner_uidx").on(
+            t.id,
+            t.organizationId,
+            t.patientUserId,
+        ),
+        payoutOwnerIdx: uniqueIndex("service_requests_payout_owner_uidx").on(
+            t.id,
+            t.organizationId,
+            t.assignedNurseUserId,
+        ),
     })
 );

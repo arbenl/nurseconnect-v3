@@ -77,5 +77,14 @@ partial schema, invalid refs, and missing boundary tables; the required gate
 therefore preserves the existing promotion trigger without claiming tenant
 isolation evidence.
 
-A final post-fix senior receipt is required before push; blocked MCP
-OAuth/shutdown errors remain operational evidence, never approval.
+The exact-head review at `3ecb12b1` then found that structurally valid payment
+request context could name a different existing organization or user. This P1
+is fixed with database-enforced composite ownership: authorization rows must
+match the request ID, organization, and patient; payout rows must match the
+request ID, organization, and assigned nurse. A regression constructs the
+previously forgeable context and proves the insert fails without leaving a
+payment row. The migration applies cleanly from an empty test database and all
+six payment DB tests pass.
+
+A final post-fix senior receipt is required before push; quota, MCP OAuth, and
+shutdown errors remain operational evidence, never approval.

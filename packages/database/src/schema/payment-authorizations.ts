@@ -1,4 +1,5 @@
 import {
+  foreignKey,
   index,
   integer,
   pgEnum,
@@ -51,5 +52,14 @@ export const paymentAuthorizations = pgTable(
     patientIdx: index("payment_authorizations_patient_user_id_idx").on(table.patientUserId),
     statusIdx: index("payment_authorizations_status_idx").on(table.status),
     createdAtIdx: index("payment_authorizations_created_at_idx").on(table.createdAt),
+    requestOwnerFk: foreignKey({
+      columns: [table.requestId, table.organizationId, table.patientUserId],
+      foreignColumns: [
+        serviceRequests.id,
+        serviceRequests.organizationId,
+        serviceRequests.patientUserId,
+      ],
+      name: "payment_authorizations_request_owner_fk",
+    }).onDelete("cascade"),
   }),
 );
