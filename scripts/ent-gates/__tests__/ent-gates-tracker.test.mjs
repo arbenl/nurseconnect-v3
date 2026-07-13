@@ -65,12 +65,12 @@ describe("enterprise gate tracker promotion checks", () => {
     try {
       const manifest = join(root, "slice-gates.yaml");
       writeFileSync(manifest, [
-        "slice: NC-TB-01",
-        "branch: codex/tenant-expand",
+        "slice: NC-TB-02",
+        "branch: codex/tenant-observe",
         "gates:",
         "  ent-tm:",
         "    status: required",
-        "    evidence: docs/threat-models/nc-tb-01-fable5-advisory.md",
+        "    evidence: docs/threat-models/nc-tb-02.md",
         "  ent-dlv: { status: n/a, justification: No schema or data lifecycle behavior changes in this test fixture. }",
         "  ent-perf: { status: n/a, justification: No runtime or performance budget behavior changes in this test fixture. }",
         "",
@@ -89,7 +89,7 @@ describe("enterprise gate tracker promotion checks", () => {
         "--changed-file",
         "docs/example.md",
         "--changed-file",
-        "docs/threat-models/nc-tb-01-fable5-advisory.md",
+        "docs/threat-models/nc-tb-02.md",
       ], { GITHUB_BASE_REF: "main" });
       expect(result.errors).toEqual([]);
     } finally {

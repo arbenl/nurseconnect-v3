@@ -1,4 +1,3 @@
-import { db } from "@nurseconnect/database";
 import {
   getPartnerRequestDetail,
   ReferralPartnerInactiveError,
@@ -8,6 +7,7 @@ import {
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import {
   createApiLogContext,
   logApiFailure,
@@ -33,10 +33,9 @@ export async function GET(
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
     const { id } = await params;
-    const detail = await getPartnerRequestDetail(db, {
-      actorUserId: user.id,
-      requestId: id,
-    });
+    const detail = await withDefaultTenantContext("referral.request", (tx) =>
+      getPartnerRequestDetail(tx, { actorUserId: user.id, requestId: id }),
+    );
 
     const response = NextResponse.json(detail);
     logApiSuccess(actorContext, 200, startedAt, {

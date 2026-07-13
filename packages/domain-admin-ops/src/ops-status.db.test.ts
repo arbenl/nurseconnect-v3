@@ -260,7 +260,7 @@ describe.sequential("admin ops status", () => {
       },
     ]);
 
-    await expect(getAdminOpsStatus({ now })).resolves.toMatchObject({
+    await expect(getAdminOpsStatus(db, { now })).resolves.toMatchObject({
       generatedAt: now.toISOString(),
       serviceAreas: { active: 1 },
       nurseSupply: {
@@ -379,7 +379,7 @@ describe.sequential("admin ops status", () => {
       },
     ]);
 
-    await expect(getAdminOpsStatus({ now })).resolves.toMatchObject({
+    await expect(getAdminOpsStatus(db, { now })).resolves.toMatchObject({
       serviceAreas: { active: 1 },
       nurseSupply: {
         verifiedAndAvailable: 10,
@@ -444,7 +444,7 @@ describe.sequential("admin ops status", () => {
       })),
     );
 
-    await expect(getAdminOpsStatus({ now })).resolves.toMatchObject({
+    await expect(getAdminOpsStatus(db, { now })).resolves.toMatchObject({
       serviceAreas: { active: 2 },
       nurseSupply: {
         verifiedAndAvailable: 10,

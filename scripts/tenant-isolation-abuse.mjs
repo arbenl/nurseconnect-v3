@@ -335,7 +335,7 @@ function textReport(evaluation, mode) {
   if (evaluation.snapshotPath) lines.push(`[tenant-isolation] snapshot=${evaluation.snapshotPath}`);
   lines.push(`[tenant-isolation] promotion_trigger=${evaluation.promotionTrigger}`);
   lines.push(
-    `[tenant-isolation] boundary_tables=${evaluation.summary.readyBoundaryTables}/${evaluation.summary.expectedBoundaryTables} ready tables=${evaluation.summary.readyTables}/${evaluation.summary.expectedTables} ready missing_scenario_assertions=${evaluation.summary.missingScenarioAssertions} invalid_scenario_assertions=${evaluation.summary.invalidScenarioAssertions}`,
+    `[tenant-isolation] boundary_tables=${evaluation.summary.readyBoundaryTables}/${evaluation.summary.expectedBoundaryTables} ready tables=${evaluation.summary.readyTables}/${evaluation.summary.expectedTables} ready missing_scenario_assertions=${evaluation.summary.missingScenarioAssertions} invalid_scenario_assertions=${evaluation.summary.invalidScenarioAssertions} tenant_scope_violations=external-e2e-required-zero`,
   );
 
   for (const result of evaluation.boundaryResults) {

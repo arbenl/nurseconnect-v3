@@ -1,8 +1,8 @@
-import { db } from "@nurseconnect/database";
 import { getNurseVisitProjection, getPatientVisitProjection } from "@nurseconnect/domain-visit";
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireAnyRole } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import {
   createApiLogContext,
   logApiFailure,
@@ -23,16 +23,13 @@ export async function GET(request: Request) {
     const { user } = await requireAnyRole(["admin", "nurse", "patient"]);
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
-    const [patientProjection, nurseProjection] = await Promise.all([
-      getPatientVisitProjection(db, {
-        actorUserId: user.id,
-        historyLimit: null,
-      }),
-      getNurseVisitProjection(db, {
-        actorUserId: user.id,
-        historyLimit: null,
-      }),
-    ]);
+    const [patientProjection, nurseProjection] = await withDefaultTenantContext(
+      "visit.projection",
+      (tx) => Promise.all([
+        getPatientVisitProjection(tx, { actorUserId: user.id, historyLimit: null }),
+        getNurseVisitProjection(tx, { actorUserId: user.id, historyLimit: null }),
+      ]),
+    );
     const requestsById = new Map<
       string,
       | NonNullable<typeof patientProjection.activeVisit>

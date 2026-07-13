@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import {
   createApiLogContext,
   logApiFailure,
@@ -42,7 +43,9 @@ export async function GET(request: NextRequest) {
       return withRequestId(response, context.requestId);
     }
 
-    const feed = await getAdminReassignmentActivityFeed(parsedQuery.data.limit);
+    const feed = await withDefaultTenantContext("admin.activity", (tx) =>
+      getAdminReassignmentActivityFeed(tx, parsedQuery.data.limit),
+    );
     const response = NextResponse.json(feed);
     logApiSuccess(actorContext, 200, startedAt, {
       source: "admin.activity.reassignments",

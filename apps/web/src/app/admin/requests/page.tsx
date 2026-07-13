@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 
 type PageProps = {
   searchParams?: {
@@ -26,7 +27,6 @@ function severityClassName(band: "critical" | "high" | "medium" | "low") {
       return "border-sky-200 bg-sky-50 text-sky-700";
   }
 }
-
 function buildHref(filters: {
   status?: string;
   severity?: string;
@@ -39,7 +39,6 @@ function buildHref(filters: {
   const query = params.toString();
   return query ? `/admin/requests?${query}` : "/admin/requests";
 }
-
 function filterQueue(
   items: AdminActiveRequestQueueItem[],
   filters: {
@@ -61,10 +60,11 @@ function filterQueue(
     return true;
   });
 }
-
 export default async function AdminRequestsPage({ searchParams }: PageProps) {
   await requirePortalAccessOrRedirect({ portal: "admin", currentPath: "/admin/requests" });
-  const queue = await getAdminActiveRequestQueue({ limit: 200 });
+  const queue = await withDefaultTenantContext("admin.active-queue", (tx) =>
+    getAdminActiveRequestQueue(tx, { limit: 200 }),
+  );
   const filters = {
     status: searchParams?.status,
     severity: searchParams?.severity,

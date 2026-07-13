@@ -90,10 +90,10 @@ describe.sequential("admin exception queue", () => {
       createdAt: firstUpdatedAt,
     });
 
-    const activeQueue = await getAdminActiveRequestQueue({ now });
+    const activeQueue = await getAdminActiveRequestQueue(db, { now });
     expect(activeQueue.items).toHaveLength(0);
 
-    const exceptionQueue = await getAdminExceptionQueue({ now });
+    const exceptionQueue = await getAdminExceptionQueue(db, { now });
     expect(exceptionQueue.items.map((item) => item.requestId)).toEqual([
       needsReview!.id,
       declined!.id,

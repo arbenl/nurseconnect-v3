@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@nurseconnect/database", () => ({
   db: { execute: mocks.dbExecute },
   sql: mocks.sql,
+  withTenantContext: (_db: unknown, _organizationId: string, callback: (tx: unknown) => unknown) => callback(_db),
 }));
 
 vi.mock("@nurseconnect/domain-admin-ops", () => ({

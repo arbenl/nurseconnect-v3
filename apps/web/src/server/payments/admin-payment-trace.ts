@@ -1,5 +1,4 @@
 import type { AdminPaymentTraceMutationInput } from "@nurseconnect/contracts";
-import { db } from "@nurseconnect/database";
 import {
   PaymentTraceConflictError,
   PaymentTraceNotFoundError,
@@ -12,6 +11,7 @@ import {
 
 import { recordAdminAction, type AdminAuditAction } from "@/server/admin/audit";
 import { notifyOpsAlert } from "@/server/alerts/ops-alert";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 
 import { resolvePaymentTraceRequestContext } from "./payment-trace-request-context";
 
@@ -63,8 +63,10 @@ function adminAuditAction(input: AdminPaymentTraceMutationInput): AdminAuditActi
 }
 
 export async function getAdminPaymentTrace(requestId: string) {
-  const request = await resolvePaymentTraceRequestContext(db, requestId);
-  return getAdminRequestPaymentTrace(db, requestId, request);
+  return withDefaultTenantContext("payment.admin", async (tx) => {
+    const request = await resolvePaymentTraceRequestContext(tx, requestId);
+    return getAdminRequestPaymentTrace(tx, requestId, request);
+  });
 }
 
 export async function mutateAdminPaymentTrace(
@@ -74,7 +76,7 @@ export async function mutateAdminPaymentTrace(
 ) {
   const auditAction = adminAuditAction(input);
 
-  await db.transaction(async (tx) => {
+  await withDefaultTenantContext("payment.admin", async (tx) => {
     const request = await resolvePaymentTraceRequestContext(tx, requestId);
     if (input.kind === "authorization") {
       if (input.action === "record") {

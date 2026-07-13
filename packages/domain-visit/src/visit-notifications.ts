@@ -6,7 +6,7 @@ import {
   gte,
   lt,
   or,
-  type DbClient,
+  type DbExecutor,
 } from "@nurseconnect/database";
 import { requestEvents, serviceRequests } from "@nurseconnect/database/schema";
 import type { SQL } from "drizzle-orm";
@@ -61,7 +61,7 @@ function isSqlCondition(condition: SQL | undefined | null): condition is SQL {
 }
 
 export async function getVisitNotificationsForActor(
-  db: DbClient,
+  db: DbExecutor,
   input: {
     actorUserId: string;
     actorRole: VisitActorRole;

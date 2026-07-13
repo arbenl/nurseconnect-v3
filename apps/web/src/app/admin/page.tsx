@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 
 function metricTone(
   value: number,
@@ -20,17 +21,14 @@ function metricTone(
   }
   return "border-emerald-200 bg-emerald-50 text-emerald-700";
 }
-
 function binaryTone(isReady: boolean) {
   return isReady
     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
     : "border-red-200 bg-red-50 text-red-700";
 }
-
 function signalLabel(value: number, singular: string, plural = `${singular}s`) {
   return `${value} ${value === 1 ? singular : plural}`;
 }
-
 function paymentSignalLabel(kind: string) {
   switch (kind) {
     case "authorization_without_payout":
@@ -49,7 +47,9 @@ export default async function AdminDashboardPage() {
     portal: "admin",
     currentPath: "/admin",
   });
-  const dashboard = await getAdminOpsDashboard();
+  const dashboard = await withDefaultTenantContext("admin.dashboard", (tx) =>
+    getAdminOpsDashboard(tx),
+  );
   const opsStatus = dashboard.opsStatus;
   const launchPrerequisitesReady =
     opsStatus.serviceAreas.active > 0 && opsStatus.nurseSupply.launchReady;

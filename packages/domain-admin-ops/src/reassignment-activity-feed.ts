@@ -4,6 +4,7 @@ import {
   type RequestReassignedMetadata,
   AdminReassignmentActivityResponseSchema,
 } from "@nurseconnect/contracts";
+import type { DbExecutor } from "@nurseconnect/database";
 import { z } from "zod";
 
 const MIN_LIMIT = 1;
@@ -57,8 +58,11 @@ export function mergeAndSortActivityItems(items: AdminReassignmentActivityItem[]
   });
 }
 
-export async function getAdminReassignmentActivityFeed(limit = DEFAULT_LIMIT): Promise<AdminReassignmentActivityResponse> {
-  const { and, db, eq, schema } = await import("@nurseconnect/database");
+export async function getAdminReassignmentActivityFeed(
+  db: DbExecutor,
+  limit = DEFAULT_LIMIT,
+): Promise<AdminReassignmentActivityResponse> {
+  const { and, eq, schema } = await import("@nurseconnect/database");
   const { adminAuditLogs, requestEvents } = schema;
   const normalizedLimit = Math.min(Math.max(limit, MIN_LIMIT), MAX_LIMIT);
 

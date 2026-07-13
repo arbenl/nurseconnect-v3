@@ -21,8 +21,14 @@ export async function credentialAuthorityForAdmin(actorUserId: string) {
 
 async function requireAdminMembership(actorUserId: string) {
   try {
-    return await withTenantContext(db, DEFAULT_ORGANIZATION_ID, (tx) =>
-      requireOrganizationMembership({ userId: actorUserId, organizationId: DEFAULT_ORGANIZATION_ID }, tx),
+    return await withTenantContext(
+      db,
+      DEFAULT_ORGANIZATION_ID,
+      (tx) => requireOrganizationMembership(
+        { userId: actorUserId, organizationId: DEFAULT_ORGANIZATION_ID },
+        tx,
+      ),
+      "organization.membership",
     );
   } catch (error) {
     if (error instanceof Error && error.name.startsWith("Organization")) throw new ForbiddenError();

@@ -1,8 +1,8 @@
-import { db } from "@nurseconnect/database";
 import { getVisitNotificationsForActor } from "@nurseconnect/domain-visit";
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireAnyRole } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import {
   createApiLogContext,
   logApiFailure,
@@ -82,12 +82,14 @@ export async function GET(request: Request) {
       return withRequestId(response, context.requestId);
     }
 
-    const { notifications } = await getVisitNotificationsForActor(db, {
-      actorUserId: user.id,
-      actorRole: user.role,
-      sinceIso: sinceResult.value,
-      limit: limitResult.value,
-    });
+    const { notifications } = await withDefaultTenantContext("visit.notifications", (tx) =>
+      getVisitNotificationsForActor(tx, {
+        actorUserId: user.id,
+        actorRole: user.role,
+        sinceIso: sinceResult.value,
+        limit: limitResult.value,
+      }),
+    );
     const response = NextResponse.json(notifications, { headers: NO_CACHE_HEADERS });
     logApiSuccess(actorContext, 200, startedAt, { count: notifications.length });
     return withRequestId(response, context.requestId);

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 
 function statusClassName(status: AdminExceptionQueueItem["status"]) {
   switch (status) {
@@ -23,7 +24,9 @@ export default async function AdminRequestExceptionsPage() {
     currentPath: "/admin/requests/exceptions",
   });
 
-  const queue = await getAdminExceptionQueue({ limit: 200 });
+  const queue = await withDefaultTenantContext("admin.exception-queue", (tx) =>
+    getAdminExceptionQueue(tx, { limit: 200 }),
+  );
   const counts = {
     needsReview: queue.items.filter((item) => item.status === "needs_review").length,
     declined: queue.items.filter((item) => item.status === "declined").length,

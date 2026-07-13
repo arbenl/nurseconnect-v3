@@ -2,6 +2,7 @@ import { getAdminExceptionQueue } from "@nurseconnect/domain-admin-ops";
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import {
   createApiLogContext,
   logApiFailure,
@@ -23,7 +24,9 @@ export async function GET(request: Request) {
     const { user } = await requireRole("admin");
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
-    const queue = await getAdminExceptionQueue();
+    const queue = await withDefaultTenantContext("admin.exception-queue", (tx) =>
+      getAdminExceptionQueue(tx),
+    );
     const response = NextResponse.json(queue);
     logApiSuccess(actorContext, 200, startedAt, {
       action: "admin.request.exceptionQueue",

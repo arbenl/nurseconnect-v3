@@ -1,6 +1,6 @@
 // apps/web/src/server/requests/allocate-request.ts
 import type { CreateRequestInput as ContractCreateRequestInput } from "@nurseconnect/contracts";
-import { db, schema } from "@nurseconnect/database";
+import { schema } from "@nurseconnect/database";
 import {
     assignRequestToNurse,
     findContainingServiceArea,
@@ -9,6 +9,8 @@ import {
 } from "@nurseconnect/domain-dispatch";
 import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID } from "@nurseconnect/domain-identity";
 import { appendRequestEvent, assertCreateRequestInvariants } from "@nurseconnect/domain-request";
+
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 
 import { toPublicServiceRequest } from "./public-request";
 
@@ -35,7 +37,7 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
     const requestType = input.requestType ?? "same_day";
     const referralSource = input.referralSource ?? "consumer";
 
-    return await db.transaction(async (tx) => {
+    return await withDefaultTenantContext("request.create", async (tx) => {
         const activeServiceAreas = await getActiveServiceAreas(tx);
         const serviceArea = findContainingServiceArea({ lat, lng }, activeServiceAreas);
         const createInvariants = {

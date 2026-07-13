@@ -17,7 +17,37 @@ export type TenantTransactionalDatabase<Tx extends TenantQueryExecutor = TenantQ
 const organizationIdPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const tenantContextStore = new AsyncLocalStorage<OrganizationId>();
+export type TenantBoundary =
+  | "admin.active-queue"
+  | "admin.activity"
+  | "admin.dashboard"
+  | "admin.exception-queue"
+  | "admin.ops-status"
+  | "admin.request-detail"
+  | "organization.membership"
+  | "nurse.availability"
+  | "payment.admin"
+  | "referral.request"
+  | "request.action"
+  | "request.create"
+  | "request.reassign"
+  | "request.triage"
+  | "unspecified"
+  | "visit.notifications"
+  | "visit.projection"
+  | "visit.timeline";
+
+type TenantObservationContext = {
+  boundary: TenantBoundary;
+  organizationId: OrganizationId;
+};
+
+const globalForTenantContext = globalThis as unknown as {
+  __tenantContextStore?: AsyncLocalStorage<TenantObservationContext>;
+};
+const tenantContextStore = globalForTenantContext.__tenantContextStore
+  ?? new AsyncLocalStorage<TenantObservationContext>();
+globalForTenantContext.__tenantContextStore = tenantContextStore;
 
 export class TenantContextError extends Error {
   constructor(message: string) {
@@ -38,6 +68,7 @@ export async function withTenantContext<T, Tx extends TenantQueryExecutor = Tena
   database: TenantTransactionalDatabase<Tx>,
   organizationId: string,
   callback: (tx: Tx, organizationId: OrganizationId) => Promise<T>,
+  boundary: TenantBoundary = "unspecified",
 ): Promise<T> {
   const parsedOrganizationId = toOrganizationId(organizationId);
 
@@ -46,12 +77,19 @@ export async function withTenantContext<T, Tx extends TenantQueryExecutor = Tena
   }
 
   return database.transaction((tx) =>
-    tenantContextStore.run(parsedOrganizationId, async () => {
+    tenantContextStore.run({
+      boundary,
+      organizationId: parsedOrganizationId,
+    }, async () => {
       await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${parsedOrganizationId}, true)`);
       await assertTenantContext(tx, parsedOrganizationId);
       return callback(tx, parsedOrganizationId);
     }),
   );
+}
+
+export function getTenantObservationContext(): TenantObservationContext | undefined {
+  return tenantContextStore.getStore();
 }
 
 export async function assertTenantContext(

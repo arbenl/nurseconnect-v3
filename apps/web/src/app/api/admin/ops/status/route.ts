@@ -7,6 +7,7 @@ import {
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import {
   createApiLogContext,
   logApiFailure,
@@ -68,7 +69,9 @@ export async function GET(request: Request) {
       return withRequestId(response, context.requestId);
     }
 
-    const counts = await getAdminOpsStatus();
+    const counts = await withDefaultTenantContext("admin.ops-status", (tx) =>
+      getAdminOpsStatus(tx),
+    );
     const body: AdminOpsStatusResponse = {
       ...counts,
       db: "ok",

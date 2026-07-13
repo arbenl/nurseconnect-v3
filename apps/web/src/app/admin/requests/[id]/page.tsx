@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import { getAdminPaymentTrace } from "@/server/payments/admin-payment-trace";
 
 import PaymentTracePanel from "./payment-trace-panel";
@@ -26,14 +27,12 @@ function formatDate(value: Date | null) {
   }
   return value.toLocaleString();
 }
-
 function actorLabel(actorUserId: string | null) {
   if (!actorUserId) {
     return "system";
   }
   return `actor:${actorUserId.slice(0, 8)}`;
 }
-
 function statusBadgeClassName(status: string) {
   switch (status) {
     case "needs_review":
@@ -46,16 +45,15 @@ function statusBadgeClassName(status: string) {
       return "";
   }
 }
-
 export default async function AdminRequestDetailPage({ params }: PageProps) {
   const { user } = await requirePortalAccessOrRedirect({
     portal: "admin",
     currentPath: `/admin/requests/${params.id}`,
   });
 
-  const request = await db.query.serviceRequests.findFirst({
-    where: eq(serviceRequests.id, params.id),
-  });
+  const request = await withDefaultTenantContext("admin.request-detail", (tx) =>
+    tx.query.serviceRequests.findFirst({ where: eq(serviceRequests.id, params.id) }),
+  );
 
   if (!request) {
     notFound();
@@ -84,11 +82,13 @@ export default async function AdminRequestDetailPage({ params }: PageProps) {
 
   let events;
   try {
-    events = await getVisitTimelineForActor(db, {
-      requestId: request.id,
-      actorUserId: user.id,
-      actorRole: "admin",
-    });
+    events = await withDefaultTenantContext("visit.timeline", (tx) =>
+      getVisitTimelineForActor(tx, {
+        requestId: request.id,
+        actorUserId: user.id,
+        actorRole: "admin",
+      }),
+    );
   } catch (error) {
     if (error instanceof VisitNotFoundError) {
       notFound();

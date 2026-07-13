@@ -1,4 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
+import { closeSync, mkdirSync, openSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -6,6 +8,15 @@ import path from "path";
 dotenv.config({ path: path.resolve(__dirname, ".env.local") });
 
 const launchSlowMoMs = Number(process.env.PLAYWRIGHT_SLOW_MO_MS ?? "0");
+const observationDir = path.resolve(__dirname, "../../artifacts/playwright/tenant-observation");
+const observationRun = `pw-${randomUUID()}`;
+const observationFile = path.join(observationDir, `${observationRun}.jsonl`);
+const observationSummary = path.join(observationDir, `${observationRun}.summary.json`);
+mkdirSync(observationDir, { recursive: true });
+closeSync(openSync(observationFile, "wx"));
+process.env.TENANT_SCOPE_OBSERVATION_RUN = observationRun;
+process.env.TENANT_SCOPE_VIOLATION_FILE = observationFile;
+process.env.TENANT_SCOPE_OBSERVATION_SUMMARY = observationSummary;
 const launchOptions =
     Number.isFinite(launchSlowMoMs) && launchSlowMoMs > 0
         ? { slowMo: launchSlowMoMs }
@@ -25,6 +36,7 @@ export default defineConfig({
         ["line"],
         ["html", { outputFolder: path.resolve(__dirname, "../../artifacts/playwright/report"), open: "never" }],
     ],
+    globalTeardown: path.resolve(__dirname, "tests/tenant-observation-global-teardown.ts"),
     use: {
         baseURL: "http://localhost:3010",
         trace: "retain-on-failure",
@@ -52,8 +64,12 @@ export default defineConfig({
 
     webServer: {
         command: "PORT=3010 E2E_TEST_MODE=1 pnpm dev",
+        env: {
+            TENANT_SCOPE_OBSERVATION_RUN: observationRun,
+            TENANT_SCOPE_VIOLATION_FILE: observationFile,
+        },
         url: "http://localhost:3010/",
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: false,
         timeout: 120 * 1000,
     },
 });

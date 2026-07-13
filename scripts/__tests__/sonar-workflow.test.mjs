@@ -44,9 +44,9 @@ describe("Sonar workflow parity", () => {
   it("makes PR Finalizer depend on and require the Sonar quality gate", () => {
     expect(ciWorkflow).toContain("if: always() && github.event_name == 'pull_request'");
     expect(ciWorkflow).toContain(
-      "needs: [quality, sonar-quality-gate, unit, db-integration, e2e-api, e2e-ui-smoke]",
+      "needs: [quality, sonar-quality-gate, unit, db-integration, e2e-api, e2e-ui-smoke, e2e-ui]",
     );
-    expect(ciWorkflow).toMatch(/PR_FINALIZER_REQUIRED_CHECKS:[\s\S]*Sonar Quality Gate/);
+    expect(ciWorkflow).toMatch(/PR_FINALIZER_REQUIRED_CHECKS:[\s\S]*Sonar Quality Gate[\s\S]*E2E UI Tests/);
   });
 
   it("publishes the PR summary in a separate no-checkout job", () => {

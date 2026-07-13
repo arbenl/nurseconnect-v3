@@ -1,4 +1,4 @@
-import type { DbClient } from "@nurseconnect/database";
+import type { DbExecutor } from "@nurseconnect/database";
 import { and, desc, eq, schema } from "@nurseconnect/database";
 
 import { ReferralPartnerNotFoundError, ReferralPartnerValidationError } from "./errors";
@@ -38,13 +38,13 @@ function normalizeRequestType(value: string): "scheduled" | "same_day" {
   throw new ReferralPartnerValidationError(`Unsupported request type: ${value}`);
 }
 
-async function assertActivePartnerActor(db: DbClient, actorUserId: string) {
+async function assertActivePartnerActor(db: DbExecutor, actorUserId: string) {
   const profile = await getReferralPartnerProfileByUserId({ userId: actorUserId }, db);
   assertReferralPartnerActive(profile.status);
 }
 
 export async function listPartnerRequests(
-  db: DbClient,
+  db: DbExecutor,
   input: { actorUserId: string },
 ): Promise<PartnerRequestListItem[]> {
   await assertActivePartnerActor(db, input.actorUserId);
@@ -82,7 +82,7 @@ export async function listPartnerRequests(
 }
 
 export async function getPartnerRequestDetail(
-  db: DbClient,
+  db: DbExecutor,
   input: { actorUserId: string; requestId: string },
 ): Promise<PartnerRequestDetail> {
   await assertActivePartnerActor(db, input.actorUserId);

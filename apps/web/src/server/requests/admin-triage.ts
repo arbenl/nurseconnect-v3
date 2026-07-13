@@ -1,11 +1,12 @@
 import type { AdminTriageAction, RequestStatus } from "@nurseconnect/contracts";
-import { db, eq, schema } from "@nurseconnect/database";
+import { eq, schema } from "@nurseconnect/database";
 import {
   applyAdminTriageAction as applyAdminTriageActionInDomain,
   type ApplyAdminTriageActionInput,
 } from "@nurseconnect/domain-request";
 
 import { recordAdminAction, type AdminAuditAction } from "@/server/admin/audit";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 
 const { nurses } = schema;
 
@@ -22,7 +23,7 @@ function normalizeReason(reason: string | undefined) {
 }
 
 export async function applyAdminTriageAction(input: ApplyAdminTriageActionInput) {
-  return db.transaction(async (tx) => {
+  return withDefaultTenantContext("request.triage", async (tx) => {
     const result = await applyAdminTriageActionInDomain(tx, input);
 
     for (const sideEffect of result.sideEffects) {
