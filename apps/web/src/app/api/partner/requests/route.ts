@@ -15,7 +15,6 @@ import { z } from "zod";
 import { authErrorResponse, requireRole } from "@/server/auth";
 import { createPartnerPatientShell } from "@/server/partner/create-partner-patient-shell";
 import { createAndAssignRequest } from "@/server/requests/allocate-request";
-import { toPublicServiceRequest } from "@/server/requests/public-request";
 import {
   createApiLogContext,
   logApiFailure,
@@ -122,7 +121,7 @@ export async function POST(request: Request) {
       careType: partnerRequest.careType ?? null,
     });
 
-    const response = NextResponse.json(toPublicServiceRequest(created));
+    const response = NextResponse.json(created);
     logApiSuccess(actorContext, 200, startedAt, {
       source: "partner.requests.create",
       requestId: created.id,

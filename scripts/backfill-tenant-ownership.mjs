@@ -7,6 +7,10 @@ import { tenantBackfillBatchSql, tenantBackfillChecks, tenantBackfillPlans } fro
 const ORG = "00000000-0000-4000-8000-000000000001";
 const BRANCH = "00000000-0000-4000-8000-000000000101";
 const args = new Set(process.argv.slice(2));
+const unknownArgs = [...args].filter((argument) => argument !== "--check-only");
+if (unknownArgs.length > 0) {
+  throw new Error(`unsupported backfill argument: ${unknownArgs.join(", ")}`);
+}
 const batchSize = Number(process.env.NC_TB_01_BACKFILL_BATCH_SIZE || 1000);
 const lockTimeout = timeoutValue("NC_TB_01_BACKFILL_LOCK_TIMEOUT", "5s");
 const statementTimeout = timeoutValue("NC_TB_01_BACKFILL_STATEMENT_TIMEOUT", "60s");
