@@ -115,7 +115,16 @@ describe.sequential("createAndAssignRequest", () => {
         });
 
         uuidLike(req.id);
-        expect(req).toMatchObject({ organizationId: DEFAULT_ORGANIZATION_ID, branchId: DEFAULT_BRANCH_ID });
+        const persisted = await db.execute(sql`
+            SELECT organization_id, branch_id
+            FROM service_requests
+            WHERE id = ${req.id}
+        `);
+        const [tenantColumns] = Array.isArray(persisted) ? persisted : persisted.rows ?? [];
+        expect(tenantColumns).toEqual({
+            organization_id: DEFAULT_ORGANIZATION_ID,
+            branch_id: DEFAULT_BRANCH_ID,
+        });
         expect(req.patientUserId).toBe(patient!.id);
         expect(req.serviceAreaId).toBe(originArea.id);
         expect(req.status).toBe("assigned");
