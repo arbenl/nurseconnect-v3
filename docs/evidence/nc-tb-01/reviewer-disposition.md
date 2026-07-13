@@ -42,12 +42,13 @@ debate therefore completed no model lanes and is advisory evidence only.
 
 ## Codex Senior Review Disposition
 
-The final schema-focused receipt is `reviews/codex-senior-review.json`, executed
-with Codex `gpt-5.5` against `origin/main...e78cc3af`. Its substantive review
-reported no actionable correctness, security, or maintainability regressions;
-the deterministic checks it ran passed where the local environment permitted.
-The receipt is nevertheless `blocked` because Codex shutdown emitted an MCP
-OAuth/authentication error (the same receipt records the exact transport
-failure), so it is not counted as approval. The earlier pre-commit packaging
-observation is resolved: the final committed diff contains all referenced
-modules and the static scope enumerates the complete 69-file slice.
+The first final-commit receipt used Codex `gpt-5.5` against
+`origin/main...e78cc3af`; its packaging observation was resolved by committing
+all referenced modules. The refreshed Codex `gpt-5.6-sol` receipt identified two
+real P1s: the default branch jurisdiction was incorrectly seeded as US, and
+backfill applied before auditing pseudo-tenant signals. Both are fixed in
+`93096804`: the canonical seed is Kosovo (`XK` / `Pristina`) across migration,
+runtime, and helpers, and the runner now blocks before updates when referral,
+service-area, or operator-group signals are ambiguous. A final post-fix senior
+receipt is required before push; blocked MCP OAuth/shutdown errors remain
+operational evidence, never approval.
