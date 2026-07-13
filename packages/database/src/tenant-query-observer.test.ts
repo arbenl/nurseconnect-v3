@@ -54,6 +54,16 @@ describe("tenant query observer", () => {
     });
   });
 
+  it.each(["findMany", "findFirst", "SELECT"])("normalizes %s provenance", (operation) => {
+    const records: Record<string, unknown>[] = [];
+    const observer = new TenantQueryObserver({ write: (record) => records.push(record) });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    observer.recordWrongExecutor("request.create", operation);
+
+    expect(records.at(-1)).toMatchObject({ operation: "select", reason: "wrong_executor" });
+  });
+
   it("fails closed when the harness sink rejects a violation", () => {
     const observer = new TenantQueryObserver({
       write: (record) => {
@@ -73,5 +83,22 @@ describe("tenant query observer", () => {
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
+  });
+
+  it("rejects incomplete harness configuration", () => {
+    expect(() => new TenantQueryObserver({ runId: "run-one" })).toThrow(
+      "Tenant observation harness configuration is incomplete",
+    );
+  });
+
+  it("records oversized input without retaining query content", () => {
+    const records: Record<string, unknown>[] = [];
+    const observer = new TenantQueryObserver({ write: (record) => records.push(record) });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    observer.logQuery(`SELECT '${"private".repeat(50_000)}'`, []);
+
+    expect(records.at(-1)).toMatchObject({ reason: "oversize_query", operation: "unknown" });
+    expect(JSON.stringify(records)).not.toContain("private");
   });
 });

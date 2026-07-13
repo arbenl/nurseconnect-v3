@@ -47,4 +47,16 @@ describe("tenant observation evidence", () => {
       requireTrackedQuery: false,
     })).toEqual({ instances: 0, readyRecords: 0, trackedQueryRecords: 0, violationCount: 0 });
   });
+
+  it.each([
+    ["non-object", "[]"],
+    ["invalid schema", JSON.stringify({ v: 2, run: "run-one", instance: "one", type: "ready" })],
+    ["instance without ready", [
+      line({ instance: "one", type: "ready" }),
+      line({ instance: "one", type: "tracked_query_seen" }),
+      line({ instance: "two", type: "violation" }),
+    ].join("\n")],
+  ])("rejects %s records", (_label, evidence) => {
+    expect(() => parseTenantObservationEvidence(evidence, "run-one")).toThrow();
+  });
 });

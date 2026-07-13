@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 
-import type { TenantTransactionalDatabase } from "@nurseconnect/database";
+import type { TenantQueryExecutor } from "@nurseconnect/database";
 
 import { DEFAULT_ORGANIZATION_ID } from "./default-tenant-constants";
 
@@ -34,7 +34,7 @@ export class DefaultBranchIdentityConflictError extends Error {
   }
 }
 
-export async function ensureDefaultBranch(executor: TenantTransactionalDatabase) {
+export async function ensureDefaultBranch(executor: TenantQueryExecutor) {
   const before = await selectCanonicalCandidates(executor);
   assertCanonicalCandidates(before);
 
@@ -57,7 +57,7 @@ export async function ensureDefaultBranch(executor: TenantTransactionalDatabase)
   assertCanonicalCandidates(await selectCanonicalCandidates(executor));
 }
 
-async function selectCanonicalCandidates(executor: TenantTransactionalDatabase) {
+async function selectCanonicalCandidates(executor: TenantQueryExecutor) {
   return rowsFrom<DefaultBranchRow>(await executor.execute(sql`
     SELECT id, organization_id, name, slug, status, jurisdiction_country, jurisdiction_region
     FROM branches

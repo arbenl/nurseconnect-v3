@@ -38,4 +38,17 @@ describe("tenant query classifier", () => {
       tables: [],
     });
   });
+
+  it("handles recursive and multi-CTE statements", () => {
+    expect(classifyTenantQuery(`
+      WITH RECURSIVE first AS (SELECT * FROM users),
+      second AS (SELECT * FROM patients)
+      SELECT * FROM first JOIN second ON true
+    `).tables).toEqual(["patients"]);
+  });
+
+  it("masks escaped literals and block comments", () => {
+    expect(classifyTenantQuery(`SELECT 'it''s FROM patients' FROM users`).tables).toEqual([]);
+    expect(classifyTenantQuery(`SELECT 1 /* FROM patients */ FROM users`).tables).toEqual([]);
+  });
 });

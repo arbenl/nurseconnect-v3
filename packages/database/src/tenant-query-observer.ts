@@ -97,9 +97,12 @@ export class TenantQueryObserver implements Logger {
 }
 
 function safeOperation(operation: string): QueryOperation {
-  return operation === "insert" || operation === "update" || operation === "delete" || operation === "select"
-    ? operation
-    : "unknown";
+  const normalized = operation.toLowerCase();
+  if (normalized === "findmany" || normalized === "findfirst") return "select";
+  if (normalized === "insert" || normalized === "update" || normalized === "delete" || normalized === "select") {
+    return normalized;
+  }
+  return "unknown";
 }
 
 const globalForObserver = globalThis as unknown as { __tenantQueryObserver?: TenantQueryObserver };

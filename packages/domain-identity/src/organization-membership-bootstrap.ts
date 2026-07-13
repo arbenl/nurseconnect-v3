@@ -46,7 +46,7 @@ export async function bootstrapDefaultOrganizationMemberships(
   const executor = database ?? (await defaultDatabase());
   await ensureDefaultOrganization(executor);
   return withTenantContext(executor, DEFAULT_ORGANIZATION_ID, async (tx) => {
-    await ensureDefaultBranch(tx as TenantTransactionalDatabase);
+    await ensureDefaultBranch(tx);
     return membershipResult(await grantDefaultOrganizationMemberships(tx));
   }, "organization.membership");
 }
@@ -58,7 +58,7 @@ export async function bootstrapDefaultOrganizationMembershipForAdmin(
   const executor = database ?? (await defaultDatabase());
   await ensureDefaultOrganization(executor);
   return withTenantContext(executor, DEFAULT_ORGANIZATION_ID, async (tx) => {
-    await ensureDefaultBranch(tx as TenantTransactionalDatabase);
+    await ensureDefaultBranch(tx);
     return membershipResult(await grantDefaultOrganizationMemberships(tx, userId));
   }, "organization.membership");
 }

@@ -53,7 +53,9 @@ function guardGlobalValue<T>(value: T, operation = "unknown", guarded = false, o
     const proxy = new Proxy(value, {
         get(target, property) {
             const child = Reflect.get(target, property, target) as unknown;
-            const nextOperation = operation === "unknown" ? String(property) : operation;
+            const nextOperation = operation === "unknown" || (operation === "query" && typeof child === "function")
+                ? String(property)
+                : operation;
             return guardGlobalValue(child, nextOperation, guarded, target);
         },
     });

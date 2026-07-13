@@ -121,4 +121,5 @@ describe("withTenantContext", () => {
 
     expect(getTenantObservationSnapshot().violations).toBe(before + 3);
   });
+
 });
