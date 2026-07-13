@@ -49,7 +49,7 @@ export async function ensureDefaultBranch(executor: TenantTransactionalDatabase)
       )
       INSERT INTO admin_audit_logs (actor_user_id, action, target_entity_type, target_entity_id, details)
       SELECT NULL, 'tenant_bootstrap.branch_seed', 'branch', id,
-        jsonb_build_object('source', 'NC-TB-01', 'organization_id', ${DEFAULT_ORGANIZATION_ID})
+        jsonb_build_object('source', 'NC-TB-01')
       FROM inserted
     `);
   }
