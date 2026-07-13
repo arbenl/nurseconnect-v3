@@ -44,3 +44,5 @@ Deferred tables:
   table before PR, including care-site scope on request/visit rows.
 - Rollback/down-path rehearsal must define FK/index drop order, seed handling,
   and nullable-column ignore/remove proof on a disposable database.
+- PR #114 merged at `48eb6fab9bd83712245716998c0cdf9bd6bbe196`; the exact
+  reverse-order 0018/0017 rollback rehearsal passed on `nurseconnect_test`.

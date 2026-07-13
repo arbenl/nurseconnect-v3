@@ -57,3 +57,5 @@ amendments before migration generation.
 - Seed-twice, zero-null, relationship consistency, and rollback evidence are
   required before PR.
 - `tenant:isolation` readiness/guard output must be recorded with disposition.
+- PR #114 merged at `48eb6fab9bd83712245716998c0cdf9bd6bbe196` after
+  reviewer/security disposition, required remote checks, and thread audit passed.
