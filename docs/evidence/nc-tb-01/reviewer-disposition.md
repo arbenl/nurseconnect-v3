@@ -49,8 +49,11 @@ real P1s: the default branch jurisdiction was incorrectly seeded as US, and
 backfill applied before auditing pseudo-tenant signals. Both are fixed in
 `93096804`: the canonical seed is Kosovo (`XK` / `Pristina`) across migration,
 runtime, and helpers, and the runner now blocks before updates when referral,
-service-area, or operator-group signals are ambiguous. The same Sol review
-raised one P2 about preserving PostgreSQL `host`/`hostaddr` query overrides;
-`3dfd874a` is corrected in the follow-up connection helper and its real-runner
-test. A final post-fix senior receipt is required before push; blocked MCP
-OAuth/shutdown errors remain operational evidence, never approval.
+service-area, or operator-group signals are ambiguous. The next Sol review
+also required resumable preflight semantics, co-committed audit evidence, and
+a payout-to-assigned-nurse mismatch guard; these are fixed in the current
+follow-up: null ownership is ignored only during preflight, each batch appends
+an `admin_audit_logs` evidence row in the same transaction, and payout nurse
+identity is checked before mutation. A final post-fix senior receipt is
+required before push; blocked MCP OAuth/shutdown errors remain operational
+evidence, never approval.

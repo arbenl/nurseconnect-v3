@@ -2,7 +2,7 @@
 import { execFileSync } from "node:child_process";
 
 import { libpqTransportEnvironment } from "./lib/tenant-backfill-connection.mjs";
-import { tenantBackfillChecks, tenantBackfillPlans } from "./lib/tenant-backfill-plan.mjs";
+import { tenantBackfillBatchSql, tenantBackfillChecks, tenantBackfillPlans } from "./lib/tenant-backfill-plan.mjs";
 
 const ORG = "00000000-0000-4000-8000-000000000001";
 const BRANCH = "00000000-0000-4000-8000-000000000101";
@@ -81,6 +81,7 @@ const preflightCheckNames = new Set([
   "payment_authorization_request_org_mismatch",
   "payment_authorization_patient_mismatch",
   "nurse_payout_request_org_mismatch",
+  "nurse_payout_request_nurse_mismatch",
 ]);
 
 function applyBackfill() {
@@ -88,7 +89,7 @@ function applyBackfill() {
   for (const plan of plans) {
     let rows = 0;
     for (;;) {
-      const count = countFrom(psql(timedTransaction(`WITH updated AS (${plan.sql} RETURNING 1) SELECT count(*) FROM updated`)));
+      const count = countFrom(psql(timedTransaction(tenantBackfillBatchSql(plan, ORG))));
       rows += count;
       if (count === 0) break;
     }

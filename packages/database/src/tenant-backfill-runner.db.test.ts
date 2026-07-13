@@ -20,6 +20,10 @@ describe.sequential("tenant ownership backfill runner", () => {
 
   it("backfills nullable child ownership and reconciles to zero", async () => {
     await seedTenantBackfillFixture();
+    const beforeAudit = await db.execute<{ count: number }>(sql`
+      SELECT count(*)::int AS count FROM admin_audit_logs WHERE action = 'tenant_backfill.batch'
+    `);
+    const [{ count: beforeCount }] = Array.isArray(beforeAudit) ? beforeAudit : beforeAudit.rows;
 
     const result = runBackfill();
     expect(result.status, result.stderr).toBe(0);
@@ -27,10 +31,20 @@ describe.sequential("tenant ownership backfill runner", () => {
     expect(evidence.status).toBe("pass");
     expect(evidence.reconciliation.every((row: { count: number }) => row.count === 0)).toBe(true);
     expect(evidence.updates.every((row: { rows: number }) => row.rows === 1)).toBe(true);
+    const afterAudit = await db.execute<{ count: number }>(sql`
+      SELECT count(*)::int AS count FROM admin_audit_logs WHERE action = 'tenant_backfill.batch'
+    `);
+    const [{ count: afterCount }] = Array.isArray(afterAudit) ? afterAudit : afterAudit.rows;
+    expect(afterCount - beforeCount).toBe(7);
 
     const second = runBackfill();
     expect(second.status, second.stderr).toBe(0);
     expect(JSON.parse(second.stdout).updates.every((row: { rows: number }) => row.rows === 0)).toBe(true);
+    const finalAudit = await db.execute<{ count: number }>(sql`
+      SELECT count(*)::int AS count FROM admin_audit_logs WHERE action = 'tenant_backfill.batch'
+    `);
+    const [{ count: finalCount }] = Array.isArray(finalAudit) ? finalAudit : finalAudit.rows;
+    expect(finalCount).toBe(afterCount);
 
     const queryResult = await db.execute<{ count: number }>(sql`
       SELECT count(*)::int AS count FROM service_request_events WHERE organization_id IS NULL
