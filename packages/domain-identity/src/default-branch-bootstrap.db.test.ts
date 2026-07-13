@@ -8,11 +8,15 @@ import {
   DEFAULT_BRANCH_JURISDICTION_REGION,
   DEFAULT_BRANCH_SLUG,
   DEFAULT_ORGANIZATION_ID,
+  DEFAULT_ORGANIZATION_NAME,
   DEFAULT_ORGANIZATION_SLUG,
+  DefaultBranchIdentityConflictError,
   DefaultBranchSlugConflictError,
+  DefaultOrganizationIdentityConflictError,
 } from "./organization-membership-bootstrap";
 
 const conflictingBranchId = "11111111-1111-4111-8111-111111111111";
+const conflictingOrganizationId = "22222222-2222-4222-8222-222222222222";
 
 function rowsFrom(result: { rows?: Record<string, unknown>[] } | Record<string, unknown>[]) {
   return Array.isArray(result) ? result : result.rows ?? [];
@@ -50,7 +54,7 @@ describe("default branch bootstrap", () => {
   it("fails when the default branch slug belongs to another branch", async () => {
     await db.execute(sql`
       INSERT INTO organizations (id, name, slug, status)
-      VALUES (${DEFAULT_ORGANIZATION_ID}, 'Default Org', ${DEFAULT_ORGANIZATION_SLUG}, 'active')
+      VALUES (${DEFAULT_ORGANIZATION_ID}, ${DEFAULT_ORGANIZATION_NAME}, ${DEFAULT_ORGANIZATION_SLUG}, 'active')
     `);
     await db.execute(sql`
       INSERT INTO branches (
@@ -74,5 +78,35 @@ describe("default branch bootstrap", () => {
     `);
 
     await expect(bootstrapDefaultOrganizationMemberships()).rejects.toThrow(DefaultBranchSlugConflictError);
+  });
+
+  it("fails when the default branch id belongs to another organization", async () => {
+    await db.execute(sql`
+      INSERT INTO organizations (id, name, slug, status)
+      VALUES (${conflictingOrganizationId}, 'Conflicting Org', 'conflicting-org', 'active')
+    `);
+    await db.execute(sql`
+      INSERT INTO branches (
+        id, organization_id, name, slug, status, jurisdiction_country, jurisdiction_region
+      ) VALUES (
+        ${DEFAULT_BRANCH_ID}, ${conflictingOrganizationId}, 'Conflicting Branch', 'conflicting-branch',
+        'active', ${DEFAULT_BRANCH_JURISDICTION_COUNTRY}, ${DEFAULT_BRANCH_JURISDICTION_REGION}
+      )
+    `);
+
+    await expect(bootstrapDefaultOrganizationMemberships()).rejects.toThrow(
+      DefaultBranchIdentityConflictError,
+    );
+  });
+
+  it("fails when the default organization id has non-canonical attributes", async () => {
+    await db.execute(sql`
+      INSERT INTO organizations (id, name, slug, status)
+      VALUES (${DEFAULT_ORGANIZATION_ID}, 'Conflicting Org', 'conflicting-default', 'suspended')
+    `);
+
+    await expect(bootstrapDefaultOrganizationMemberships()).rejects.toThrow(
+      DefaultOrganizationIdentityConflictError,
+    );
   });
 });

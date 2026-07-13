@@ -26,6 +26,21 @@ VALUES (
 	'active'
 )
 ON CONFLICT ("id") DO NOTHING;--> statement-breakpoint
+DO $$
+BEGIN
+	IF EXISTS (
+		SELECT 1
+		FROM "organizations"
+		WHERE "id" = '00000000-0000-4000-8000-000000000001'
+			AND (
+				"name" <> 'NurseConnect Default Organization'
+				OR "slug" <> 'nurseconnect-default'
+				OR "status" <> 'active'
+			)
+	) THEN
+		RAISE EXCEPTION 'default organization identity is non-canonical';
+	END IF;
+END $$;--> statement-breakpoint
 INSERT INTO "branches" (
 	"id",
 	"organization_id",

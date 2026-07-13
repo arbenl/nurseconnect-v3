@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { getDbClient, resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
-import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID, createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 test.describe("Requests API", () => {
     test.setTimeout(60000); // DB ops + matching might be slow
@@ -340,10 +340,9 @@ test.describe("Requests API", () => {
             const values: unknown[] = [];
             const placeholders: string[] = [];
             for (let index = 0; index < 52; index += 1) {
-                const base = index * 9;
+                const base = index * 11;
                 values.push(
-                    patientUserId,
-                    actorUserId,
+                    DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID, patientUserId, actorUserId,
                     "completed",
                     `Assigned History ${index + 1}`,
                     "42.0",
@@ -353,14 +352,13 @@ test.describe("Requests API", () => {
                     new Date(Date.UTC(2026, 0, 1, 9, 0, index)).toISOString(),
                 );
                 placeholders.push(
-                    `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`,
+                    `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11})`,
                 );
             }
 
             await client.query(
                 `INSERT INTO service_requests (
-                    patient_user_id,
-                    assigned_nurse_user_id,
+                    organization_id, branch_id, patient_user_id, assigned_nurse_user_id,
                     status,
                     address,
                     lat,
@@ -374,17 +372,16 @@ test.describe("Requests API", () => {
 
             await client.query(
                 `INSERT INTO service_requests (
-                    patient_user_id,
-                    assigned_nurse_user_id,
+                    organization_id, branch_id, patient_user_id, assigned_nurse_user_id,
                     status,
                     address,
                     lat,
                     lng,
                     created_at,
                     updated_at
-                ) VALUES ($1, NULL, 'open', $2, '42.5', '21.5', $3, $3)`,
+                ) VALUES ($1, $2, $3, NULL, 'open', $4, '42.5', '21.5', $5, $5)`,
                 [
-                    actorUserId,
+                    DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID, actorUserId,
                     "My Own Open Request",
                     "2026-02-01T08:00:00.000Z",
                 ],

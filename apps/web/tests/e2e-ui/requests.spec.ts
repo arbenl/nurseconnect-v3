@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { getDbClient, resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
-import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID, createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 async function seedAvailableNurse(
   page: Page,
@@ -125,20 +125,20 @@ test.describe("Service Requests", () => {
     try {
       const result = await client.query<{ id: string }>(
         `INSERT INTO service_requests
-          (patient_user_id, status, address, lat, lng, request_type, care_type, completed_at, created_at, updated_at)
+          (organization_id, branch_id, patient_user_id, status, address, lat, lng, request_type, care_type, completed_at, created_at, updated_at)
          VALUES
-          ($1, 'completed', 'Completed Visit Street', '42.662900', '21.165500', 'same_day', 'Wellness check', NOW(), NOW() - interval '1 hour', NOW())
+          ($1, $2, $3, 'completed', 'Completed Visit Street', '42.662900', '21.165500', 'same_day', 'Wellness check', NOW(), NOW() - interval '1 hour', NOW())
          RETURNING id`,
-        [patientUserId],
+        [DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID, patientUserId],
       );
       const requestId = result.rows[0]!.id;
       await client.query(
         `INSERT INTO service_request_events
-          (request_id, type, actor_user_id, from_status, to_status, meta, created_at)
+          (request_id, organization_id, type, actor_user_id, from_status, to_status, meta, created_at)
          VALUES
-          ($1, 'request_created', $2, NULL, 'open', '{}'::jsonb, NOW() - interval '1 hour'),
-          ($1, 'request_completed', $2, 'enroute', 'completed', '{}'::jsonb, NOW())`,
-        [requestId, patientUserId],
+          ($1, $2, 'request_created', $3, NULL, 'open', '{}'::jsonb, NOW() - interval '1 hour'),
+          ($1, $2, 'request_completed', $3, 'enroute', 'completed', '{}'::jsonb, NOW())`,
+        [requestId, DEFAULT_ORGANIZATION_ID, patientUserId],
       );
     } finally {
       await client.end();
@@ -186,10 +186,10 @@ test.describe("Service Requests", () => {
       );
       await client.query(
         `INSERT INTO service_request_events
-          (request_id, type, actor_user_id, from_status, to_status, meta, created_at)
+          (request_id, organization_id, type, actor_user_id, from_status, to_status, meta, created_at)
          VALUES
-          ($1, 'request_accepted', $2, 'assigned', 'accepted', '{}'::jsonb, NOW())`,
-        [requestId, nurseUserId],
+          ($1, $2, 'request_accepted', $3, 'assigned', 'accepted', '{}'::jsonb, NOW())`,
+        [requestId, DEFAULT_ORGANIZATION_ID, nurseUserId],
       );
     } finally {
       await client.end();

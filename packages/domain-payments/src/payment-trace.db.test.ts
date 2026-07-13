@@ -48,7 +48,7 @@ describe.sequential("payment traceability", () => {
       currency: "USD",
       provider: "manual",
       providerReference: "auth-001",
-    });
+    }, request!);
 
     const captured = await updatePaymentAuthorizationTraceStatus(db, {
       requestId: request!.id,
@@ -60,7 +60,7 @@ describe.sequential("payment traceability", () => {
     expect(captured.organizationId).toBe(DEFAULT_TENANT.organizationId);
     expect(captured.capturedAt).toBeInstanceOf(Date);
 
-    const trace = await getAdminRequestPaymentTrace(db, request!.id);
+    const trace = await getAdminRequestPaymentTrace(db, request!.id, request!);
     expect(trace.authorization).toMatchObject({
       requestId: request!.id,
       patientUserId: patient!.id,
@@ -107,7 +107,7 @@ describe.sequential("payment traceability", () => {
       amountCents: 9000,
       currency: "USD",
       provider: "manual",
-    });
+    }, request!);
 
     const paid = await updateNursePayoutTraceStatus(db, {
       requestId: request!.id,
@@ -119,7 +119,7 @@ describe.sequential("payment traceability", () => {
     expect(paid.organizationId).toBe(DEFAULT_TENANT.organizationId);
     expect(paid.paidAt).toBeInstanceOf(Date);
 
-    const trace = await getAdminRequestPaymentTrace(db, request!.id);
+    const trace = await getAdminRequestPaymentTrace(db, request!.id, request!);
     expect(trace.payout).toMatchObject({
       requestId: request!.id,
       nurseUserId: nurseUser!.id,
@@ -157,7 +157,7 @@ describe.sequential("payment traceability", () => {
         nurseUserId: nurseUser!.id,
         amountCents: 9000,
         currency: "USD",
-      }),
+      }, request!),
     ).rejects.toThrow(PaymentTraceConflictError);
   });
 
@@ -188,20 +188,20 @@ describe.sequential("payment traceability", () => {
       requestId: request!.id,
       amountCents: 15000,
       currency: "USD",
-    });
+    }, request!);
     await recordNursePayoutTrace(db, {
       requestId: request!.id,
       nurseUserId: nurseUser!.id,
       amountCents: 9000,
       currency: "USD",
-    });
+    }, request!);
 
     await expect(
       recordPaymentAuthorizationTrace(db, {
         requestId: request!.id,
         amountCents: 15000,
         currency: "USD",
-      }),
+      }, request!),
     ).rejects.toThrow(PaymentTraceConflictError);
     await expect(
       recordNursePayoutTrace(db, {
@@ -209,7 +209,7 @@ describe.sequential("payment traceability", () => {
         nurseUserId: nurseUser!.id,
         amountCents: 9000,
         currency: "USD",
-      }),
+      }, request!),
     ).rejects.toThrow(PaymentTraceConflictError);
 
     expect(await db.select().from(paymentAuthorizations)).toHaveLength(1);

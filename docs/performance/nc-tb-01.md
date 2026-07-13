@@ -6,8 +6,12 @@ NC-TB-01 changes database shape and backfill behavior. It must protect request,
 visit, payment, admin queue, and seed/test paths from avoidable downtime while
 preserving current query behavior.
 
-Runtime behavior remains unchanged except that new write paths populate default
-tenant ownership during the migration window.
+Runtime read behavior remains unchanged. Request-event writes add one indexed
+primary-key lookup of the parent request inside the existing transaction so the
+owning request domain, rather than a caller-provided UUID, determines event
+ownership. This bounded lookup is accepted for NC-TB-01 because accepting an
+unproved `organizationId` would make the new tenant attribution forgeable or
+stale. A future optimization must preserve that fail-closed ownership proof.
 
 ## Verification
 

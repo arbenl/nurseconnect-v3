@@ -2,37 +2,39 @@ import { sql } from "drizzle-orm";
 
 import type { TenantTransactionalDatabase } from "@nurseconnect/database";
 
-export const DEFAULT_ORGANIZATION_ID = "00000000-0000-4000-8000-000000000001";
-export const DEFAULT_ORGANIZATION_SLUG = "nurseconnect-default";
-export const DEFAULT_ORGANIZATION_NAME = "NurseConnect Default Organization";
-export const DEFAULT_BRANCH_ID = "00000000-0000-4000-8000-000000000101";
-export const DEFAULT_BRANCH_SLUG = "nurseconnect-default-branch";
-export const DEFAULT_BRANCH_NAME = "NurseConnect Default Branch";
-export const DEFAULT_BRANCH_JURISDICTION_COUNTRY = "US";
-export const DEFAULT_BRANCH_JURISDICTION_REGION = "default-launch-region";
+import {
+  DEFAULT_BRANCH_ID,
+  ensureDefaultBranch,
+} from "./default-branch-bootstrap";
+import { ensureDefaultOrganization } from "./default-organization-bootstrap";
+import {
+  DEFAULT_ORGANIZATION_ID,
+} from "./default-tenant-constants";
+
+export {
+  DEFAULT_BRANCH_ID,
+  DEFAULT_BRANCH_JURISDICTION_COUNTRY,
+  DEFAULT_BRANCH_JURISDICTION_REGION,
+  DEFAULT_BRANCH_NAME,
+  DEFAULT_BRANCH_SLUG,
+  DefaultBranchIdentityConflictError,
+  DefaultBranchSlugConflictError,
+} from "./default-branch-bootstrap";
+export {
+  DefaultOrganizationIdentityConflictError,
+  DefaultOrganizationSlugConflictError,
+} from "./default-organization-bootstrap";
+export {
+  DEFAULT_ORGANIZATION_ID,
+  DEFAULT_ORGANIZATION_NAME,
+  DEFAULT_ORGANIZATION_SLUG,
+} from "./default-tenant-constants";
+
 
 type BootstrapRow = {
   organization_id: string;
   membership_user_id: string | null;
 };
-
-type DefaultOrganizationSlugRow = {
-  id: string;
-};
-
-export class DefaultOrganizationSlugConflictError extends Error {
-  constructor(existingOrganizationId: string) {
-    super(`Default organization slug "${DEFAULT_ORGANIZATION_SLUG}" already belongs to organization "${existingOrganizationId}", expected "${DEFAULT_ORGANIZATION_ID}".`);
-    this.name = "DefaultOrganizationSlugConflictError";
-  }
-}
-
-export class DefaultBranchSlugConflictError extends Error {
-  constructor(existingBranchId: string) {
-    super(`Default branch slug "${DEFAULT_BRANCH_SLUG}" already belongs to branch "${existingBranchId}", expected "${DEFAULT_BRANCH_ID}".`);
-    this.name = "DefaultBranchSlugConflictError";
-  }
-}
 
 export async function bootstrapDefaultOrganizationMemberships(
   database?: TenantTransactionalDatabase,
@@ -71,48 +73,6 @@ async function grantDefaultOrganizationMemberships(
       RETURNING organization_id, user_id AS membership_user_id
     `);
   });
-}
-
-async function ensureDefaultOrganization(executor: TenantTransactionalDatabase) {
-  const slugOwner = rowsFrom<DefaultOrganizationSlugRow>(
-    await executor.execute(sql`
-      SELECT id
-      FROM organizations
-      WHERE slug = ${DEFAULT_ORGANIZATION_SLUG}
-      LIMIT 1
-    `),
-  ).at(0);
-
-  if (slugOwner && slugOwner.id !== DEFAULT_ORGANIZATION_ID) {
-    throw new DefaultOrganizationSlugConflictError(slugOwner.id);
-  }
-
-  await executor.execute(sql`
-    INSERT INTO organizations (id, name, slug, status)
-    VALUES (${DEFAULT_ORGANIZATION_ID}, ${DEFAULT_ORGANIZATION_NAME}, ${DEFAULT_ORGANIZATION_SLUG}, 'active')
-    ON CONFLICT (id) DO NOTHING
-  `);
-}
-
-async function ensureDefaultBranch(executor: TenantTransactionalDatabase) {
-  const slugOwner = rowsFrom<DefaultOrganizationSlugRow>(
-    await executor.execute(sql`
-      SELECT id FROM branches
-      WHERE organization_id = ${DEFAULT_ORGANIZATION_ID} AND slug = ${DEFAULT_BRANCH_SLUG}
-      LIMIT 1
-    `),
-  ).at(0);
-
-  if (slugOwner && slugOwner.id !== DEFAULT_BRANCH_ID) {
-    throw new DefaultBranchSlugConflictError(slugOwner.id);
-  }
-
-  await executor.execute(sql`
-    INSERT INTO branches (id, organization_id, name, slug, status, jurisdiction_country, jurisdiction_region)
-    VALUES (${DEFAULT_BRANCH_ID}, ${DEFAULT_ORGANIZATION_ID}, ${DEFAULT_BRANCH_NAME}, ${DEFAULT_BRANCH_SLUG},
-      'active', ${DEFAULT_BRANCH_JURISDICTION_COUNTRY}, ${DEFAULT_BRANCH_JURISDICTION_REGION})
-    ON CONFLICT (id) DO NOTHING
-  `);
 }
 
 function membershipResult(result: { rows?: Record<string, unknown>[] } | Record<string, unknown>[]) {

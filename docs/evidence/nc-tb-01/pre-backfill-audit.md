@@ -101,6 +101,10 @@ Local disposable fixture, `nurseconnect_test`, 2026-07-07:
 
 ## Migration Safety
 
+The required compatibility window, mutation hold, deployment order, HOLD
+triggers, and rollback direction are defined in
+`docs/runbooks/nc-tb-01-tenant-expand-rollout.md`.
+
 The migration uses plain `CREATE INDEX` because the current Drizzle migration
 runner applies migrations transactionally, and PostgreSQL does not allow
 `CREATE INDEX CONCURRENTLY` inside a transaction block. This is acceptable only

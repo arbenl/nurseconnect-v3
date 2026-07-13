@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
 import { getDbClient, resetDb } from "../e2e-utils/db";
-import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID, createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
 test.describe("Admin Requests API", () => {
   test.beforeEach(async () => {
@@ -60,11 +60,11 @@ test.describe("Admin Requests API", () => {
     try {
       await client.query(
         `INSERT INTO service_requests
-          (id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, created_at, updated_at, assigned_at)
+          (id, organization_id, branch_id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, created_at, updated_at, assigned_at)
          VALUES
-          ($1, $2, NULL, 'open', '123 Main Street, Pristina', '42.662900', '21.165500', $3, $4, NULL),
-          ($5, $2, $6, 'assigned', '456 Side Street, Pristina', '42.650000', '21.170000', $7, $8, $9),
-          ($10, $2, $6, 'completed', '789 Old Street, Pristina', '42.600000', '21.100000', $11, $12, $13)`,
+          ($1, '${DEFAULT_ORGANIZATION_ID}', '${DEFAULT_BRANCH_ID}', $2, NULL, 'open', '123 Main Street, Pristina', '42.662900', '21.165500', $3, $4, NULL),
+          ($5, '${DEFAULT_ORGANIZATION_ID}', '${DEFAULT_BRANCH_ID}', $2, $6, 'assigned', '456 Side Street, Pristina', '42.650000', '21.170000', $7, $8, $9),
+          ($10, '${DEFAULT_ORGANIZATION_ID}', '${DEFAULT_BRANCH_ID}', $2, $6, 'completed', '789 Old Street, Pristina', '42.600000', '21.100000', $11, $12, $13)`,
         [
           openRequestId,
           patientUserId,
@@ -84,14 +84,14 @@ test.describe("Admin Requests API", () => {
 
       await client.query(
         `INSERT INTO service_request_events
-          (request_id, type, actor_user_id, from_status, to_status, meta, created_at)
+          (request_id, organization_id, type, actor_user_id, from_status, to_status, meta, created_at)
          VALUES
-          ($1, 'request_created', $2, NULL, 'open', '{}'::jsonb, $3),
-          ($1, 'request_assigned', NULL, 'open', 'assigned', '{"nurseUserId":"placeholder"}'::jsonb, $4),
-          ($5, 'request_created', $2, NULL, 'open', '{}'::jsonb, $6),
-          ($5, 'request_assigned', NULL, 'open', 'assigned', '{"nurseUserId":"placeholder"}'::jsonb, $7),
-          ($8, 'request_created', $2, NULL, 'open', '{}'::jsonb, $9),
-          ($8, 'request_completed', $2, 'enroute', 'completed', '{}'::jsonb, $10)`,
+          ($1, '${DEFAULT_ORGANIZATION_ID}', 'request_created', $2, NULL, 'open', '{}'::jsonb, $3),
+          ($1, '${DEFAULT_ORGANIZATION_ID}', 'request_assigned', NULL, 'open', 'assigned', '{"nurseUserId":"placeholder"}'::jsonb, $4),
+          ($5, '${DEFAULT_ORGANIZATION_ID}', 'request_created', $2, NULL, 'open', '{}'::jsonb, $6),
+          ($5, '${DEFAULT_ORGANIZATION_ID}', 'request_assigned', NULL, 'open', 'assigned', '{"nurseUserId":"placeholder"}'::jsonb, $7),
+          ($8, '${DEFAULT_ORGANIZATION_ID}', 'request_created', $2, NULL, 'open', '{}'::jsonb, $9),
+          ($8, '${DEFAULT_ORGANIZATION_ID}', 'request_completed', $2, 'enroute', 'completed', '{}'::jsonb, $10)`,
         [
           openRequestId,
           patientUserId,
@@ -159,16 +159,16 @@ test.describe("Admin Requests API", () => {
     try {
       await client.query(
         `INSERT INTO service_requests
-          (id, patient_user_id, status, address, lat, lng, needs_review_at, created_at, updated_at)
+          (id, organization_id, branch_id, patient_user_id, status, address, lat, lng, needs_review_at, created_at, updated_at)
          VALUES
-          ($1, $2, 'needs_review', 'Exception Queue Street', '42.662900', '21.165500', NOW(), NOW(), NOW())`,
+          ($1, '${DEFAULT_ORGANIZATION_ID}', '${DEFAULT_BRANCH_ID}', $2, 'needs_review', 'Exception Queue Street', '42.662900', '21.165500', NOW(), NOW(), NOW())`,
         [exceptionRequestId, patientUserId],
       );
       await client.query(
         `INSERT INTO service_request_events
-          (request_id, type, actor_user_id, from_status, to_status, meta, created_at)
+          (request_id, organization_id, type, actor_user_id, from_status, to_status, meta, created_at)
          VALUES
-          ($1, 'request_needs_review', $2, 'open', 'needs_review', '{"reason":"Needs operator review"}'::jsonb, NOW())`,
+          ($1, '${DEFAULT_ORGANIZATION_ID}', 'request_needs_review', $2, 'open', 'needs_review', '{"reason":"Needs operator review"}'::jsonb, NOW())`,
         [exceptionRequestId, adminUserId],
       );
     } finally {

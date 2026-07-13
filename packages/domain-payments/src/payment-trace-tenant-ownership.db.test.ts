@@ -36,7 +36,7 @@ describe.sequential("payment trace tenant ownership", () => {
       requestId: request!.id,
       amountCents: 15000,
       currency: "USD",
-    })).rejects.toThrow("Payment trace requires tenant-owned request");
+    }, request!)).rejects.toThrow("Payment trace requires tenant-owned request");
 
     expect(await db.select().from(paymentAuthorizations)).toHaveLength(0);
   });

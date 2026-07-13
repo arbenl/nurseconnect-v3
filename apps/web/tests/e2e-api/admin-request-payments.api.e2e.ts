@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
 import { getDbClient, resetDb, seedNurse } from "../e2e-utils/db";
-import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID, createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
 test.describe("Admin Request Payments API", () => {
   test.beforeEach(async () => {
@@ -55,10 +55,10 @@ test.describe("Admin Request Payments API", () => {
     try {
       await client.query(
         `INSERT INTO service_requests
-          (id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, completed_at, created_at, updated_at)
+          (id, organization_id, branch_id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, completed_at, created_at, updated_at)
          VALUES
-          ($1, $2, $3, 'completed', 'Admin Payments Street', '42.662900', '21.165500', NOW(), NOW(), NOW())`,
-        [requestId, patientUserId, nurseUserId],
+          ($1, $2, $3, $4, $5, 'completed', 'Admin Payments Street', '42.662900', '21.165500', NOW(), NOW(), NOW())`,
+        [requestId, DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID, patientUserId, nurseUserId],
       );
     } finally {
       await client.end();
