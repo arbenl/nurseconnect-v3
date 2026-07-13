@@ -18,14 +18,21 @@ CREATE TRIGGER branches_updated_at_trigger
 BEFORE UPDATE ON "branches"
 FOR EACH ROW
 EXECUTE FUNCTION set_current_timestamp_updated_at();--> statement-breakpoint
-INSERT INTO "organizations" ("id", "name", "slug", "status")
-VALUES (
-	'00000000-0000-4000-8000-000000000001',
-	'NurseConnect Default Organization',
-	'nurseconnect-default',
-	'active'
+WITH inserted AS (
+	INSERT INTO "organizations" ("id", "name", "slug", "status")
+	VALUES (
+		'00000000-0000-4000-8000-000000000001',
+		'NurseConnect Default Organization',
+		'nurseconnect-default',
+		'active'
+	)
+	ON CONFLICT ("id") DO NOTHING
+	RETURNING "id"
 )
-ON CONFLICT ("id") DO NOTHING;--> statement-breakpoint
+INSERT INTO "admin_audit_logs" ("actor_user_id", "action", "target_entity_type", "target_entity_id", "details")
+SELECT NULL, 'tenant_bootstrap.organization_seed', 'organization', "id",
+	jsonb_build_object('source', 'NC-TB-01')
+FROM inserted;--> statement-breakpoint
 DO $$
 BEGIN
 	IF EXISTS (

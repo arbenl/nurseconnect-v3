@@ -35,9 +35,16 @@ export async function ensureDefaultOrganization(executor: TenantTransactionalDat
 
   if (!before.some((row) => row.id === DEFAULT_ORGANIZATION_ID)) {
     await executor.execute(sql`
-      INSERT INTO organizations (id, name, slug, status)
-      VALUES (${DEFAULT_ORGANIZATION_ID}, ${DEFAULT_ORGANIZATION_NAME}, ${DEFAULT_ORGANIZATION_SLUG}, 'active')
-      ON CONFLICT (id) DO NOTHING
+      WITH inserted AS (
+        INSERT INTO organizations (id, name, slug, status)
+        VALUES (${DEFAULT_ORGANIZATION_ID}, ${DEFAULT_ORGANIZATION_NAME}, ${DEFAULT_ORGANIZATION_SLUG}, 'active')
+        ON CONFLICT (id) DO NOTHING
+        RETURNING id
+      )
+      INSERT INTO admin_audit_logs (actor_user_id, action, target_entity_type, target_entity_id, details)
+      SELECT NULL, 'tenant_bootstrap.organization_seed', 'organization', id,
+        jsonb_build_object('source', 'NC-TB-01')
+      FROM inserted
     `);
   }
 

@@ -58,7 +58,9 @@ identity is checked before mutation. The final follow-up also rejects
 partially owned children when their parent is still null, records audit evidence
 for the migration/runtime default-branch seed, uses the branded
 `OrganizationId` for default request creation, and blocks payouts whose parent
-has no assigned nurse.
+has no assigned nurse. The final receipt additionally identified the
+organization seed as an unaudited domain mutation; both migration and runtime
+organization bootstrap now co-commit the sanitized audit row with the insert.
 
 The senior review also questioned the required tenant-isolation guard because
 NC-TB-01 intentionally has no executable two-tenant assertion refs. This is a
