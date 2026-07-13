@@ -3,7 +3,7 @@ plan_role: canonical_program
 status: active
 source_of_truth: true
 owner: platform
-last_reviewed: 2026-07-05
+last_reviewed: 2026-07-13
 tracker_path: docs/plans/current-tracker.md
 architecture_program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
@@ -97,6 +97,9 @@ Completed closeout evidence:
 - `NC-E2-04 / medical-evidence-brand` merged in PR #111 on 2026-07-05.
 - Merge commit: `b79a345267249fe7d431c7026dd0a44d59be486f`.
 - Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, local gate:release, and subagent evidence. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260704T112031Z-dd7b4c`.
+- `NC-TB-01 / tenant-expand` merged in PR #114 on 2026-07-13.
+- Merge commit: `48eb6fab9bd83712245716998c0cdf9bd6bbe196`.
+- Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, rollback rehearsal, reviewer/security disposition, and bot-thread audit. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260713T143528Z-c719ad`; blocked Sonnet/Gemini routes were recorded honestly and were not counted as approval.
 
 Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
 ADR-001 Decision B:
@@ -118,13 +121,13 @@ Decision scope:
 The program now executes under the **Phase C Enterprise Upgrade** map
 (`docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`). The enterprise verification gate
 band (`NC-EG`) landed before further implementation slices, so all subsequent
-work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating. `NC-TB-01 /
-tenant-expand` is promoted next after `NC-E2-04 / medical-evidence-brand`.
+work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating. `NC-TB-02 /
+tenant-observe` is promoted next after `NC-TB-01 / tenant-expand`.
 
 The next implementation slices are:
 
 ```text
-NC-TB-01 / codex/tenant-expand   (promoted next)
+NC-TB-02 / codex/tenant-observe   (promoted next)
 ```
 
 ## Slice Execution Contract
