@@ -23,6 +23,7 @@ export async function seedTenantBackfillFixture() {
   const nurse = await seedNurse(nurseUserId);
   const [request] = await db.insert(serviceRequests).values({
     patientUserId,
+    assignedNurseUserId: nurseUserId,
     organizationId: null,
     branchId: null,
     address: "Synthetic Test Address",

@@ -40,10 +40,17 @@ export async function ensureDefaultBranch(executor: TenantTransactionalDatabase)
 
   if (!before.some((row) => row.id === DEFAULT_BRANCH_ID)) {
     await executor.execute(sql`
-      INSERT INTO branches (id, organization_id, name, slug, status, jurisdiction_country, jurisdiction_region)
-      VALUES (${DEFAULT_BRANCH_ID}, ${DEFAULT_ORGANIZATION_ID}, ${DEFAULT_BRANCH_NAME}, ${DEFAULT_BRANCH_SLUG},
-        'active', ${DEFAULT_BRANCH_JURISDICTION_COUNTRY}, ${DEFAULT_BRANCH_JURISDICTION_REGION})
-      ON CONFLICT (id) DO NOTHING
+      WITH inserted AS (
+        INSERT INTO branches (id, organization_id, name, slug, status, jurisdiction_country, jurisdiction_region)
+        VALUES (${DEFAULT_BRANCH_ID}, ${DEFAULT_ORGANIZATION_ID}, ${DEFAULT_BRANCH_NAME}, ${DEFAULT_BRANCH_SLUG},
+          'active', ${DEFAULT_BRANCH_JURISDICTION_COUNTRY}, ${DEFAULT_BRANCH_JURISDICTION_REGION})
+        ON CONFLICT (id) DO NOTHING
+        RETURNING id
+      )
+      INSERT INTO admin_audit_logs (actor_user_id, action, target_entity_type, target_entity_id, details)
+      SELECT NULL, 'tenant_bootstrap.branch_seed', 'branch', id,
+        jsonb_build_object('source', 'NC-TB-01', 'organization_id', ${DEFAULT_ORGANIZATION_ID})
+      FROM inserted
     `);
   }
 

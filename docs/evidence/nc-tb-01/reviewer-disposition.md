@@ -54,6 +54,21 @@ also required resumable preflight semantics, co-committed audit evidence, and
 a payout-to-assigned-nurse mismatch guard; these are fixed in the current
 follow-up: null ownership is ignored only during preflight, each batch appends
 an `admin_audit_logs` evidence row in the same transaction, and payout nurse
-identity is checked before mutation. A final post-fix senior receipt is
-required before push; blocked MCP OAuth/shutdown errors remain operational
-evidence, never approval.
+identity is checked before mutation. The final follow-up also rejects
+partially owned children when their parent is still null, records audit evidence
+for the migration/runtime default-branch seed, uses the branded
+`OrganizationId` for default request creation, and blocks payouts whose parent
+has no assigned nurse.
+
+The senior review also questioned the required tenant-isolation guard because
+NC-TB-01 intentionally has no executable two-tenant assertion refs. This is a
+technical rejection, not an ignored finding: the versioned contract and
+`tenant-isolation-guard-refs.md` explicitly define
+`ADVISORY_PASS_PENDING_SCENARIOS` as the expected NC-TB-01 guard result, while
+NC-TB-03 owns enforce-mode assertions. Guard mode still fails closed for unsafe
+partial schema, invalid refs, and missing boundary tables; the required gate
+therefore preserves the existing promotion trigger without claiming tenant
+isolation evidence.
+
+A final post-fix senior receipt is required before push; blocked MCP
+OAuth/shutdown errors remain operational evidence, never approval.

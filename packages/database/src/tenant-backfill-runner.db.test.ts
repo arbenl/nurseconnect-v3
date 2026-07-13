@@ -108,6 +108,24 @@ describe.sequential("tenant ownership backfill runner", () => {
       count: 1,
     });
   });
+
+  it("fails closed when a child is owned before its parent", async () => {
+    await seedTenantBackfillFixture();
+    await db.execute(sql`
+      UPDATE service_request_events
+      SET organization_id = ${primaryOrganizationId}
+    `);
+
+    const result = runBackfill();
+    expect(result.status).toBe(1);
+    const evidence = JSON.parse(result.stdout);
+    expect(evidence.blocked).toBe("preflight_audit");
+    expect(evidence.updates).toEqual([]);
+    expect(evidence.reconciliation).toContainEqual({
+      name: "event_request_org_mismatch",
+      count: 1,
+    });
+  });
 });
 
 function runBackfill(argument?: string) {
