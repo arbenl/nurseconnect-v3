@@ -64,12 +64,12 @@ if (!modelRoutes.includes('export const defaultReviewers = ["sonnet46", "gemini"
   fail("model-review default reviewers must be sonnet46,gemini");
 }
 
-if (!modelRoutes.includes('CLAUDE_48_REVIEW_MODEL || "claude-opus-4-8"')) {
-  fail("claude48 route must default to callable claude-opus-4-8");
+if (!modelRoutes.includes('CLAUDE_48_REVIEW_MODEL || DEFAULT_CLAUDE_OPUS_MODEL')) {
+  fail("claude48 route must default to the current Claude Opus alias");
 }
 
-if (!modelRoutes.includes('CLAUDE_47_REVIEW_MODEL || "claude-sonnet-4-6"')) {
-  fail("claude47 route must default to callable claude-sonnet-4-6");
+if (!modelRoutes.includes('CLAUDE_47_REVIEW_MODEL || DEFAULT_CLAUDE_SONNET_MODEL')) {
+  fail("claude47 route must default to the current Claude Sonnet alias");
 }
 
 for (const suite of ["build_health", "unit", "api", "smoke", "release"]) {

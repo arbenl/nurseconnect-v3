@@ -3,15 +3,14 @@ approval_policy = "on-request"
 evidence_root = "/tmp/nurseconnect-evidence"
 features.multi_agent = true
 
+# Codex 5.6 is the current project default. Terra and Luna remain available
+# for explicit review/runner overrides via CODEX_MODEL or codex -m.
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+
 [agents]
 max_threads = 5
 max_depth = 1
-
-[profiles.prepr]
-model = "gpt-5.5"
-model_reasoning_effort = "high"
-approval_policy = "never"
-sandbox_mode = "workspace-write"
 
 [mcp_servers.context7]
 command = "npx"

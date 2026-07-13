@@ -31,7 +31,7 @@ describe("model-review route checks", () => {
       const report = JSON.parse(readFileSync(join(root, "reviews/model-review-preflight.json"), "utf8"));
       const markdown = readFileSync(join(root, "reviews/model-review-preflight.md"), "utf8");
       expect(report.status).toBe("pass");
-      expect(report.results.map((result) => result.model)).toEqual(["claude-opus-4-8", "gemini-3.1-pro-preview", "claude-sonnet-4.6"]);
+      expect(report.results.map((result) => result.model)).toEqual(["opus", "gemini-3.1-pro-preview", "claude-sonnet-4.6"]);
       expect(markdown).toContain("Model Review Route Preflight");
     } finally {
       rmSync(root, { recursive: true, force: true });
