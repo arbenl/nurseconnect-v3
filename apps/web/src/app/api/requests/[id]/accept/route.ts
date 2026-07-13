@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { authErrorResponse, requireRole } from "@/server/auth";
 import { requestActionErrorResponse } from "@/server/requests/request-action-http";
 import { applyRequestAction } from "@/server/requests/request-actions";
+import { toPublicServiceRequest } from "@/server/requests/public-request";
 import {
   createApiLogContext,
   logApiStart,
@@ -30,7 +31,7 @@ export async function POST(_: Request, { params }: Params) {
       actorUserId: user.id,
       action: "accept",
     });
-    const response = NextResponse.json({ request: updated });
+    const response = NextResponse.json({ request: toPublicServiceRequest(updated) });
     logApiSuccess(actorContext, 200, startedAt, { action: "accept", requestId: params.id });
     return withRequestId(response, context.requestId);
   } catch (error) {

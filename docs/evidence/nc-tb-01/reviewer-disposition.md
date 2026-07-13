@@ -61,6 +61,10 @@ for the migration/runtime default-branch seed, uses the branded
 has no assigned nurse. The final receipt additionally identified the
 organization seed as an unaudited domain mutation; both migration and runtime
 organization bootstrap now co-commit the sanitized audit row with the insert.
+The follow-up also rejected payouts when the completed request has no assigned
+nurse, strips internal tenant routing keys from every request API response,
+and preserves libpq timeout, routing, and `options` URI parameters in the
+backfill runner.
 
 The senior review also questioned the required tenant-isolation guard because
 NC-TB-01 intentionally has no executable two-tenant assertion refs. This is a

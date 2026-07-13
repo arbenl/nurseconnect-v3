@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { requireRole } from "@/server/auth";
 import { applyAdminTriageAction } from "@/server/requests/admin-triage";
+import { toPublicServiceRequest } from "@/server/requests/public-request";
 import {
   createApiLogContext,
   logApiFailure,
@@ -41,7 +42,7 @@ export async function POST(
       reason: parsed.reason,
     });
 
-    const response = NextResponse.json({ request: updatedRequest });
+    const response = NextResponse.json({ request: toPublicServiceRequest(updatedRequest) });
     logApiSuccess(actorContext, 200, startedAt, {
       action: "admin.request.triage",
       requestId,

@@ -1,6 +1,9 @@
 const LIBPQ_URI_PARAMETERS = new Map([
   ["host", "PGHOST"],
   ["hostaddr", "PGHOSTADDR"],
+  ["connect_timeout", "PGCONNECT_TIMEOUT"],
+  ["target_session_attrs", "PGTARGETSESSIONATTRS"],
+  ["options", "PGOPTIONS"],
   ["channel_binding", "PGCHANNELBINDING"],
   ["gssencmode", "PGGSSENCMODE"],
   ["gsslib", "PGGSSLIB"],

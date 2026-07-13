@@ -12,7 +12,8 @@ it("preserves PostgreSQL transport and authentication URI parameters", () => {
     "postgresql://user:password@database.example/nurseconnect"
       + "?sslmode=verify-full&sslrootcert=%2Fcerts%2Froot.pem"
       + "&sslcert=%2Fcerts%2Fclient.pem&sslkey=%2Fcerts%2Fclient.key"
-      + "&channel_binding=require&require_auth=scram-sha-256",
+      + "&channel_binding=require&require_auth=scram-sha-256"
+      + "&connect_timeout=15&target_session_attrs=read-write&options=-c%20statement_timeout%3D60000",
   );
 
   expect(libpqTransportEnvironment(url)).toEqual({
@@ -22,6 +23,9 @@ it("preserves PostgreSQL transport and authentication URI parameters", () => {
     PGSSLKEY: "/certs/client.key",
     PGSSLMODE: "verify-full",
     PGSSLROOTCERT: "/certs/root.pem",
+    PGCONNECT_TIMEOUT: "15",
+    PGTARGETSESSIONATTRS: "read-write",
+    PGOPTIONS: "-c statement_timeout=60000",
   });
   });
 it("does not override libpq settings when the URI omits them", () => {

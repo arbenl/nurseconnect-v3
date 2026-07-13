@@ -8,6 +8,7 @@ import {
   RequestReassignValidationError,
   reassignRequest,
 } from "@/server/requests/admin-reassign";
+import { toPublicServiceRequest } from "@/server/requests/public-request";
 import {
   createApiLogContext,
   logApiFailure,
@@ -42,7 +43,7 @@ export async function POST(
       nurseUserId: parsed.nurseUserId,
     });
 
-    const response = NextResponse.json({ request: updatedRequest });
+    const response = NextResponse.json({ request: toPublicServiceRequest(updatedRequest) });
     logApiSuccess(actorContext, 200, startedAt, {
       action: "admin.request.reassign",
       requestId,

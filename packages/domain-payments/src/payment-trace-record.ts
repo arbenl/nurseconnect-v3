@@ -73,7 +73,7 @@ export async function recordNursePayoutTrace(
   if (request.status !== "completed") {
     throw new PaymentTraceConflictError("Nurse payout can only be recorded after completion");
   }
-  if (request.assignedNurseUserId && request.assignedNurseUserId !== parsed.nurseUserId) {
+  if (!request.assignedNurseUserId || request.assignedNurseUserId !== parsed.nurseUserId) {
     throw new PaymentTraceConflictError("Payout nurse must match the completed request assignment");
   }
   await assertNoPayout(db, input.requestId);
