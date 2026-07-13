@@ -37,4 +37,5 @@ conditions, orphan checks, zero-null reconciliation, rollback order, and the
 transactional-migration justification for non-concurrent index/FK creation.
 
 PR #114 merged at `48eb6fab9bd83712245716998c0cdf9bd6bbe196` after the
-performance reviewer, release gates, API/UI suites, and Sonar checks passed.
+performance reviewer, release gates, E2E API suite, UI smoke gate, and Sonar
+checks passed.
