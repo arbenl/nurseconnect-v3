@@ -1,5 +1,5 @@
 import { db, schema, sql } from "@nurseconnect/database";
-import { bootstrapDefaultOrganizationMemberships, DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID } from "@nurseconnect/domain-identity";
+import { bootstrapDefaultOrganizationMemberships } from "@nurseconnect/domain-identity";
 import { RequestCreationValidationError } from "@nurseconnect/domain-request";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
