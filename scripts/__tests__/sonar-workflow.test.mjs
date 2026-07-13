@@ -65,8 +65,10 @@ describe("Sonar workflow parity", () => {
   it("keeps database coverage generated and imported by Sonar", () => {
     expect(sonarCoverageScript).toContain('["@nurseconnect/database", "vitest.config.ts"]');
     expect(sonarCoverageScript).toContain('filter: "@nurseconnect/database"');
+    expect(sonarCoverageScript).toContain('filter: "@nurseconnect/domain-payments"');
     expect(sonarProjectProperties).toContain("packages/database/coverage/lcov.info");
     expect(sonarProjectProperties).toContain("packages/database/coverage/db/lcov.info");
+    expect(sonarProjectProperties).toContain("packages/domain-payments/coverage/db/lcov.info");
   });
 
   it("keeps the baseline workflow advisory and out of pull request enforcement", () => {
