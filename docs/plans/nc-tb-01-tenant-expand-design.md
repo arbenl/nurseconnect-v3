@@ -85,8 +85,9 @@ reviewed tracker and contract amendment before schema generation.
 
 ## Non-Scope
 
-- Production RLS enforcement, `organization_id NOT NULL`, composite FK
-  contract, two-tenant abuse fixture, tenant observe telemetry, outbox, CQRS
+- Production RLS enforcement, `organization_id NOT NULL`, a tenant-wide
+  composite FK contract beyond the narrow payment/request ownership invariant,
+  two-tenant abuse fixture, tenant observe telemetry, outbox, CQRS
   repair, PHI read audit, encryption, retention, erasure, and broad route
   behavior changes.
 

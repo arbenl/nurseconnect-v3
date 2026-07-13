@@ -62,6 +62,14 @@ place. Treat any post-release schema removal as an operations incident and a
 separate reviewed cleanup. Do not drop tenant columns while any deployed writer
 depends on them.
 
+If that separate cleanup is authorized, its reverse order must start by
+dropping `payment_authorizations_request_owner_fk` and
+`nurse_payouts_request_owner_fk`, followed by
+`service_requests_payment_owner_uidx` and
+`service_requests_payout_owner_uidx`. Only then may the 0017 tenant FKs,
+indexes, and nullable columns be removed. This 0017+0018 order was rehearsed on
+the disposable `nurseconnect_test` database inside a rolled-back transaction.
+
 Release traffic only after the incident owner records a zero-count reconciliation
 and confirms the serving version. If zero reconciliation cannot be restored,
 stop the rollout and escalate; NC-TB-01 is not deployable in that environment.

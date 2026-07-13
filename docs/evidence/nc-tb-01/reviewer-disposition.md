@@ -86,5 +86,11 @@ previously forgeable context and proves the insert fails without leaving a
 payment row. The migration applies cleanly from an empty test database and all
 six payment DB tests pass.
 
+The next exact-head receipt found that the disposable rollback sequence did not
+name the new 0018 constraints. The runbook and pre-backfill evidence now require
+dropping both payment-owner FKs and both supporting request unique indexes
+before reversing the 0017 tenant surface. The full 0017+0018 sequence was
+rehearsed successfully inside a rolled-back `nurseconnect_test` transaction.
+
 A final post-fix senior receipt is required before push; quota, MCP OAuth, and
 shutdown errors remain operational evidence, never approval.

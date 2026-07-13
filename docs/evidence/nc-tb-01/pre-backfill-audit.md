@@ -126,14 +126,16 @@ runbook before applying to that environment.
 If the migration has not been released, rollback is to drop the uncommitted
 migration artifacts and regenerate metadata from schema.
 
-If the migration was applied to a disposable database, rehearse the reverse
-order:
+If applied to a disposable database, rehearse this reverse order:
 
-1. Drop indexes on `organization_id` and `branch_id`.
-2. Drop FKs from tenant-owned tables to `organizations` and `branches`.
-3. Drop nullable `organization_id` and `branch_id` columns from included tables.
-4. Drop the `branches` table and `branch_status` enum.
-5. Keep the pre-existing `organizations` and `org_memberships` structures.
+1. Drop `payment_authorizations_request_owner_fk` and
+   `nurse_payouts_request_owner_fk`.
+2. Drop `service_requests_payment_owner_uidx` and
+   `service_requests_payout_owner_uidx`, then the 0017 tenant indexes.
+3. Drop FKs from tenant-owned tables to `organizations` and `branches`.
+4. Drop nullable `organization_id` and `branch_id` columns from included tables.
+5. Drop the `branches` table and `branch_status` enum.
+6. Keep the pre-existing `organizations` and `org_memberships` structures.
 
 Production rollback after release must be treated as an operations incident.
 Because write paths begin depending on tenant columns in this slice, rollback
@@ -141,10 +143,8 @@ must first deploy an application revert that no longer writes tenant ownership.
 The preferred database rollback is then to leave nullable inert columns in place
 until a reviewed cleanup slice.
 
-Local disposable full-surface rollback rehearsal, `nurseconnect_test`,
-2026-07-07:
+Local full-surface rehearsal, `nurseconnect_test`, 2026-07-13:
 
-- Ran the reverse order for all new tenant indexes, FKs, nullable tenant
-  columns, `branches`, and `branch_status` inside an explicit transaction.
-- Rolled the transaction back before commit.
-- Result: `full_rollback_rehearsal_transaction | rolled_back`.
+- Reversed both 0018 owner FKs/indexes, every 0017 tenant FK/index/column,
+  `branches`, and `branch_status` inside an explicit transaction.
+- Rolled back before commit: `full_rollback_rehearsal_transaction | rolled_back`.
