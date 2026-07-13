@@ -133,7 +133,7 @@ function runBackfill(argument?: string) {
     encoding: "utf8",
     env: {
       ...process.env,
-      PSQL_BIN: process.env.PSQL_BIN ?? "/opt/homebrew/opt/libpq/bin/psql",
+      PSQL_BIN: process.env.PSQL_BIN ?? "psql",
       NC_TB_01_BACKFILL_BATCH_SIZE: "1",
     },
   });
