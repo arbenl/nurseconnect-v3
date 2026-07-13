@@ -69,6 +69,7 @@ The runner fails closed before updates when it finds multiple referral/care-prov
 These checks are `pseudo_tenant_referral_or_care_provider_groups`,
 `pseudo_tenant_service_area_groups`, and `pseudo_tenant_operator_groups` in
 `scripts/lib/tenant-backfill-plan.mjs`; any non-zero result holds rollout for a mapping slice. The disposable fixture returned zero for each; its integration test proves two referral organizations make `--check-only` fail before updates.
+The same preflight blocks non-default existing ownership, orphan, and parent/child mismatch signals before any batch commits.
 
 ## Post-Backfill Reconciliation
 

@@ -61,6 +61,27 @@ function timedTransaction(body) {
 }
 
 const plans = tenantBackfillPlans(ORG, BRANCH, batchSize);
+const preflightCheckNames = new Set([
+  "pseudo_tenant_referral_or_care_provider_groups",
+  "pseudo_tenant_service_area_groups",
+  "pseudo_tenant_operator_groups",
+  "service_request_non_default_org",
+  "service_request_non_default_branch",
+  "patient_non_default_org",
+  "orphan_assignments",
+  "orphan_visits",
+  "orphan_events",
+  "orphan_payment_authorizations",
+  "orphan_nurse_payouts",
+  "request_branch_org_mismatch",
+  "assignment_request_org_mismatch",
+  "visit_request_org_mismatch",
+  "visit_request_branch_mismatch",
+  "event_request_org_mismatch",
+  "payment_authorization_request_org_mismatch",
+  "payment_authorization_patient_mismatch",
+  "nurse_payout_request_org_mismatch",
+]);
 
 function applyBackfill() {
   const updates = [];
@@ -83,22 +104,22 @@ function runChecks() {
   }));
 }
 
-function runPseudoTenantAudit() {
-  return runChecks().filter((row) => row.name.startsWith("pseudo_tenant_"));
+function runPreflight() {
+  return runChecks().filter((row) => preflightCheckNames.has(row.name));
 }
 
 try {
-  const pseudoTenantAudit = runPseudoTenantAudit();
-  const auditFailed = pseudoTenantAudit.some((row) => row.count !== 0);
+  const preflight = runPreflight();
+  const auditFailed = preflight.some((row) => row.count !== 0);
   if (auditFailed) {
     process.stdout.write(`${JSON.stringify({
       status: "fail",
-      blocked: "pseudo_tenant_audit",
+      blocked: "preflight_audit",
       batchSize,
       lockTimeout,
       statementTimeout,
       updates: [],
-      reconciliation: pseudoTenantAudit,
+      reconciliation: preflight,
     }, null, 2)}\n`);
     process.exitCode = 1;
   } else {

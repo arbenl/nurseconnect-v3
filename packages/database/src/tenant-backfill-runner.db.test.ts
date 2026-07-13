@@ -79,6 +79,21 @@ describe.sequential("tenant ownership backfill runner", () => {
       count: 2,
     });
   });
+
+  it("does not overwrite partially owned requests during preflight", async () => {
+    const requestId = await seedOwnedRequest(true);
+    await db.execute(sql`UPDATE service_requests SET branch_id = NULL WHERE id = ${requestId}`);
+
+    const result = runBackfill();
+    expect(result.status).toBe(1);
+    const evidence = JSON.parse(result.stdout);
+    expect(evidence.blocked).toBe("preflight_audit");
+    expect(evidence.updates).toEqual([]);
+    expect(evidence.reconciliation).toContainEqual({
+      name: "service_request_non_default_org",
+      count: 1,
+    });
+  });
 });
 
 function runBackfill(argument?: string) {

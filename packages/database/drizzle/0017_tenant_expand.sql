@@ -56,7 +56,7 @@ VALUES (
 	'NurseConnect Default Branch',
 	'nurseconnect-default-branch',
 	'active',
-	'US',
+	'XK',
 	'Pristina'
 )
 ON CONFLICT ("id") DO NOTHING;--> statement-breakpoint
