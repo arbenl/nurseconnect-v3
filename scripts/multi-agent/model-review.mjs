@@ -22,6 +22,7 @@ Usage: pnpm model-review -- --packet <file> [options]
 Options:
   --run-root <path>          Evidence root. Defaults to tmp/multi-agent/model-review/<timestamp>
   --reviewers <list>         Comma list: claude48,claude47,sonnet46,claude,gemini,copilot,codex
+                             Codex model: gpt-5.6-sol (default), gpt-5.6-terra, or gpt-5.6-luna
   --preflight                Check selected reviewer CLI routes and write route-readiness evidence
   --access-check             Call selected reviewer routes with a minimal non-sensitive prompt
   --debate                   Write a critique debate synthesis from reviewer receipts

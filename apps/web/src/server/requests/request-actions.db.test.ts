@@ -1,25 +1,20 @@
 import { db, eq, schema, sql } from "@nurseconnect/database";
-import {
-  RequestConflictError,
-  RequestForbiddenError,
-} from "@nurseconnect/domain-request";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { bootstrapDefaultOrganizationMemberships, DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID } from "@nurseconnect/domain-identity";
+import { RequestConflictError, RequestForbiddenError } from "@nurseconnect/domain-request";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { applyRequestAction } from "./request-actions";
 
-const { users, nurses, serviceRequests } = schema;
+const { users, nurses, serviceRequests } = schema; const DEFAULT_TENANT = { organizationId: DEFAULT_ORGANIZATION_ID, branchId: DEFAULT_BRANCH_ID };
 
 describe.sequential("applyRequestAction", () => {
-  beforeAll(async () => {
-    await db.execute(sql`SELECT 1`);
-  });
-
   beforeEach(async () => {
     await db.execute(sql`TRUNCATE TABLE service_request_events RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE service_requests RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE nurse_locations RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE nurses RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
+    await bootstrapDefaultOrganizationMemberships();
   });
 
   it("allows assigned nurse to accept and forbids other nurses", async () => {
@@ -58,6 +53,7 @@ describe.sequential("applyRequestAction", () => {
     const [request] = await db
       .insert(serviceRequests)
       .values({
+        ...DEFAULT_TENANT,
         patientUserId: patient!.id,
         assignedNurseUserId: nurseA!.id,
         status: "assigned",
@@ -107,6 +103,7 @@ describe.sequential("applyRequestAction", () => {
     const [request] = await db
       .insert(serviceRequests)
       .values({
+        ...DEFAULT_TENANT,
         patientUserId: patient!.id,
         assignedNurseUserId: nurse!.id,
         status: "assigned",
@@ -167,6 +164,7 @@ describe.sequential("applyRequestAction", () => {
     const [request] = await db
       .insert(serviceRequests)
       .values({
+        ...DEFAULT_TENANT,
         patientUserId: patient!.id,
         assignedNurseUserId: nurse!.id,
         status: "assigned",

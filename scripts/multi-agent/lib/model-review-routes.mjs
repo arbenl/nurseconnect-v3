@@ -1,3 +1,10 @@
+import {
+  CODEX_MODELS,
+  DEFAULT_CLAUDE_OPUS_MODEL,
+  DEFAULT_CLAUDE_SONNET_MODEL,
+  DEFAULT_CODEX_MODEL,
+} from "./model-catalog.mjs";
+
 export const defaultReviewers = ["sonnet46", "gemini"];
 
 function claudeRoute({ label, model, role, overrideEnv }) {
@@ -16,32 +23,32 @@ export const routes = {
   codex: {
     label: "Codex implementation critique",
     provider: "codex",
-    model: process.env.CODEX_REVIEW_MODEL || "gpt-5.5",
+    model: process.env.CODEX_REVIEW_MODEL || process.env.CODEX_MODEL || DEFAULT_CODEX_MODEL,
     role: "primary implementation critique",
     command: "codex",
-    args: ["exec", "--model", process.env.CODEX_REVIEW_MODEL || "gpt-5.5", "{prompt}"],
+    args: ["exec", "--model", process.env.CODEX_REVIEW_MODEL || process.env.CODEX_MODEL || DEFAULT_CODEX_MODEL, "{prompt}"],
   },
   claude48: claudeRoute({
-    label: "Claude 4.8 enterprise architecture review",
-    model: process.env.CLAUDE_48_REVIEW_MODEL || "claude-opus-4-8",
+    label: "Current Claude Opus enterprise architecture review",
+    model: process.env.CLAUDE_48_REVIEW_MODEL || DEFAULT_CLAUDE_OPUS_MODEL,
     role: "strongest configured Claude review",
     overrideEnv: "CLAUDE_48_REVIEW_MODEL",
   }),
   claude47: claudeRoute({
-    label: "Claude 4.7 fallback architecture review",
-    model: process.env.CLAUDE_47_REVIEW_MODEL || "claude-sonnet-4-6",
+    label: "Current Claude Sonnet fallback architecture review",
+    model: process.env.CLAUDE_47_REVIEW_MODEL || DEFAULT_CLAUDE_SONNET_MODEL,
     role: "Claude fallback review",
     overrideEnv: "CLAUDE_47_REVIEW_MODEL",
   }),
   sonnet46: claudeRoute({
-    label: "Claude Sonnet 4.6 implementation review",
-    model: process.env.CLAUDE_SONNET_46_REVIEW_MODEL || "claude-sonnet-4-6",
+    label: "Current Claude Sonnet implementation review",
+    model: process.env.CLAUDE_SONNET_46_REVIEW_MODEL || DEFAULT_CLAUDE_SONNET_MODEL,
     role: "Sonnet implementation fallback review",
     overrideEnv: "CLAUDE_SONNET_46_REVIEW_MODEL",
   }),
   claude: claudeRoute({
-    label: "Claude Sonnet 4.6 implementation review",
-    model: process.env.CLAUDE_SONNET_46_REVIEW_MODEL || "claude-sonnet-4-6",
+    label: "Current Claude Sonnet implementation review",
+    model: process.env.CLAUDE_SONNET_46_REVIEW_MODEL || DEFAULT_CLAUDE_SONNET_MODEL,
     role: "Backward-compatible alias for sonnet46",
     overrideEnv: "CLAUDE_SONNET_46_REVIEW_MODEL",
   }),
@@ -88,6 +95,8 @@ export const routes = {
     ],
   },
 };
+
+export { CODEX_MODELS };
 
 export function commandArgs(route, prompt) {
   return route.args.map((arg) => (arg === "{prompt}" ? prompt : arg));

@@ -1,4 +1,5 @@
 import {
+  foreignKey,
   index,
   integer,
   pgEnum,
@@ -10,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { serviceRequests } from "./service-requests";
+import { organizations } from "./organizations";
 import { users } from "./users";
 
 export const nursePayoutStatusEnum = pgEnum("nurse_payout_status", [
@@ -26,6 +28,7 @@ export const nursePayouts = pgTable(
     requestId: uuid("request_id")
       .notNull()
       .references(() => serviceRequests.id, { onDelete: "cascade" }),
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "restrict" }),
     nurseUserId: uuid("nurse_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
@@ -45,8 +48,18 @@ export const nursePayouts = pgTable(
   },
   (table) => ({
     requestUniqueIdx: uniqueIndex("nurse_payouts_request_id_uidx").on(table.requestId),
+    organizationIdx: index("nurse_payouts_organization_id_idx").on(table.organizationId),
     nurseIdx: index("nurse_payouts_nurse_user_id_idx").on(table.nurseUserId),
     statusIdx: index("nurse_payouts_status_idx").on(table.status),
     createdAtIdx: index("nurse_payouts_created_at_idx").on(table.createdAt),
+    requestOwnerFk: foreignKey({
+      columns: [table.requestId, table.organizationId, table.nurseUserId],
+      foreignColumns: [
+        serviceRequests.id,
+        serviceRequests.organizationId,
+        serviceRequests.assignedNurseUserId,
+      ],
+      name: "nurse_payouts_request_owner_fk",
+    }).onDelete("cascade"),
   }),
 );

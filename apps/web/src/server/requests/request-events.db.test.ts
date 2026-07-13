@@ -1,4 +1,5 @@
 import { asc, db, eq, schema, sql } from "@nurseconnect/database";
+import { bootstrapDefaultOrganizationMemberships, DEFAULT_ORGANIZATION_ID } from "@nurseconnect/domain-identity";
 import { RequestConflictError } from "@nurseconnect/domain-request";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -11,10 +12,6 @@ const requestActionTypes = {
   request_created: "request_created",
   request_assigned: "request_assigned",
   request_accepted: "request_accepted",
-  request_rejected: "request_rejected",
-  request_enroute: "request_enroute",
-  request_completed: "request_completed",
-  request_canceled: "request_canceled",
 } as const;
 
 async function seedServiceArea() {
@@ -44,6 +41,7 @@ describe.sequential("request events", () => {
     await db.execute(sql`TRUNCATE TABLE nurses RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE service_areas RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
+    await bootstrapDefaultOrganizationMemberships();
   });
 
   it("creates a request_created event for each request", async () => {
@@ -70,6 +68,7 @@ describe.sequential("request events", () => {
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
       requestId: request.id,
+      organizationId: DEFAULT_ORGANIZATION_ID,
       type: requestActionTypes.request_created,
       actorUserId: patient!.id,
       fromStatus: null,
@@ -121,6 +120,7 @@ describe.sequential("request events", () => {
     expect(events).toHaveLength(2);
     expect(events[1]).toMatchObject({
       requestId: request.id,
+      organizationId: DEFAULT_ORGANIZATION_ID,
       type: requestActionTypes.request_assigned,
       actorUserId: null,
       fromStatus: "open",

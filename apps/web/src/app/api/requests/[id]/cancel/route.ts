@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
+import { toPublicServiceRequest } from "@/server/requests/public-request";
 import { requestActionErrorResponse } from "@/server/requests/request-action-http";
 import { applyRequestAction } from "@/server/requests/request-actions";
 import {
@@ -29,7 +30,7 @@ export async function POST(_: Request, { params }: Params) {
       actorUserId: user.id,
       action: "cancel",
     });
-    const response = NextResponse.json({ request: updated });
+    const response = NextResponse.json({ request: toPublicServiceRequest(updated) });
     logApiSuccess(actorContext, 200, startedAt, { action: "cancel", requestId: params.id });
     return withRequestId(response, context.requestId);
   } catch (error) {

@@ -1,19 +1,14 @@
 import { Client } from "pg";
+import { seedDefaultTenant } from "./tenant";
 
 const DATABASE_URL =
     process.env.DATABASE_URL ||
     "postgresql://postgres:postgres@localhost:5432/nurseconnect_test";
 
-/**
- * Get a new pg client for E2E test DB operations.
- */
 export function getDbClient() {
     return new Client({ connectionString: DATABASE_URL });
 }
 
-/**
- * Reset database by truncating all tables in dependency-safe order.
- */
 export async function resetDb() {
     const client = getDbClient();
     await client.connect();
@@ -54,6 +49,7 @@ export async function resetDb() {
                 ('Far Test Coverage', '40.000000', '20.000000', 100000, 'active', NOW(), NOW()),
                 ('Remote Test Coverage', '50.000000', '50.000000', 100000, 'active', NOW(), NOW())`,
         );
+        await seedDefaultTenant(client);
     } finally {
         await client.end();
     }

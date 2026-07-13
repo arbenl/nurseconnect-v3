@@ -13,6 +13,8 @@ import {
 import { recordAdminAction, type AdminAuditAction } from "@/server/admin/audit";
 import { notifyOpsAlert } from "@/server/alerts/ops-alert";
 
+import { resolvePaymentTraceRequestContext } from "./payment-trace-request-context";
+
 const authorizationAuditAction: Record<"capture" | "void" | "fail", AdminAuditAction> = {
   capture: "payment.authorization.captured",
   void: "payment.authorization.voided",
@@ -61,7 +63,8 @@ function adminAuditAction(input: AdminPaymentTraceMutationInput): AdminAuditActi
 }
 
 export async function getAdminPaymentTrace(requestId: string) {
-  return getAdminRequestPaymentTrace(db, requestId);
+  const request = await resolvePaymentTraceRequestContext(db, requestId);
+  return getAdminRequestPaymentTrace(db, requestId, request);
 }
 
 export async function mutateAdminPaymentTrace(
@@ -72,6 +75,7 @@ export async function mutateAdminPaymentTrace(
   const auditAction = adminAuditAction(input);
 
   await db.transaction(async (tx) => {
+    const request = await resolvePaymentTraceRequestContext(tx, requestId);
     if (input.kind === "authorization") {
       if (input.action === "record") {
         await recordPaymentAuthorizationTrace(tx, {
@@ -81,7 +85,7 @@ export async function mutateAdminPaymentTrace(
           provider: input.provider,
           providerReference: input.providerReference,
           note: input.note,
-        });
+        }, request);
       } else {
         await updatePaymentAuthorizationTraceStatus(tx, {
           requestId,
@@ -102,7 +106,7 @@ export async function mutateAdminPaymentTrace(
         provider: input.provider,
         providerReference: input.providerReference,
         note: input.note,
-      });
+      }, request);
     } else {
       await updateNursePayoutTraceStatus(tx, {
         requestId,

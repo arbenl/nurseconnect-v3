@@ -41,6 +41,11 @@ const dbCoverageTargets = [
     config: "vitest.db.config.ts",
     reportsDirectory: "coverage/db",
   },
+  {
+    filter: "@nurseconnect/domain-payments",
+    config: "vitest.db.config.ts",
+    reportsDirectory: "coverage/db",
+  },
 ];
 
 function runPnpm(args) {

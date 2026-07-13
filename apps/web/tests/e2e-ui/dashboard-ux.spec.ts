@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
 import { getDbClient, resetDb, seedNurse } from "../e2e-utils/db";
-import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID, createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 async function seedPatient(page: Page, email: string) {
   await createTestUser(page.request, email, "Patient User", "patient");
@@ -65,9 +65,7 @@ async function seedLaunchOperatorSignals(page: Page) {
   try {
     await client.query(
       `INSERT INTO service_requests (
-          id,
-          patient_user_id,
-          assigned_nurse_user_id,
+          id, organization_id, branch_id, patient_user_id, assigned_nurse_user_id,
           status,
           address,
           lat,
@@ -81,11 +79,11 @@ async function seedLaunchOperatorSignals(page: Page) {
           updated_at
         )
         VALUES
-          ($1, $6, NULL, 'open', 'M12 Open', '42.662900', '21.165500', 'same_day', 'consumer', NULL, NULL, NULL, $9, $9),
-          ($2, $6, $7, 'assigned', 'M12 Assigned', '42.662900', '21.165500', 'same_day', 'consumer', $8, NULL, NULL, $8, $8),
-          ($3, $6, $7, 'enroute', 'M12 Enroute', '42.662900', '21.165500', 'same_day', 'consumer', $8, $8, NULL, $8, $8),
-          ($4, $6, NULL, 'needs_review', 'M12 Exception', '42.662900', '21.165500', 'same_day', 'consumer', NULL, NULL, $9, $9, $9),
-          ($5, $6, $7, 'completed', 'M12 Payment', '42.662900', '21.165500', 'same_day', 'consumer', $8, $8, NULL, $8, $9)`,
+          ($1, $10, $11, $6, NULL, 'open', 'M12 Open', '42.662900', '21.165500', 'same_day', 'consumer', NULL, NULL, NULL, $9, $9),
+          ($2, $10, $11, $6, $7, 'assigned', 'M12 Assigned', '42.662900', '21.165500', 'same_day', 'consumer', $8, NULL, NULL, $8, $8),
+          ($3, $10, $11, $6, $7, 'enroute', 'M12 Enroute', '42.662900', '21.165500', 'same_day', 'consumer', $8, $8, NULL, $8, $8),
+          ($4, $10, $11, $6, NULL, 'needs_review', 'M12 Exception', '42.662900', '21.165500', 'same_day', 'consumer', NULL, NULL, $9, $9, $9),
+          ($5, $10, $11, $6, $7, 'completed', 'M12 Payment', '42.662900', '21.165500', 'same_day', 'consumer', $8, $8, NULL, $8, $9)`,
       [
         ids.unassigned,
         ids.staleAssigned,
@@ -95,13 +93,12 @@ async function seedLaunchOperatorSignals(page: Page) {
         patient.userId,
         nurse.userId,
         old,
-        now,
+        now, DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID,
       ],
     );
     await client.query(
       `INSERT INTO payment_authorizations (
-          request_id,
-          patient_user_id,
+          request_id, organization_id, patient_user_id,
           status,
           amount_cents,
           currency,
@@ -111,8 +108,8 @@ async function seedLaunchOperatorSignals(page: Page) {
           created_at,
           updated_at
         )
-        VALUES ($1, $2, 'authorized', 5000, 'EUR', 'manual', 'm12-gap', $3, $3, $3)`,
-      [ids.paymentGap, patient.userId, now],
+        VALUES ($1, $2, $3, 'authorized', 5000, 'EUR', 'manual', 'm12-gap', $4, $4, $4)`,
+      [ids.paymentGap, DEFAULT_ORGANIZATION_ID, patient.userId, now],
     );
     await client.query(
       `INSERT INTO admin_audit_logs (
@@ -252,7 +249,7 @@ test.describe("Dashboard UX", () => {
     await expect(launchSignals.getByText("Dispatch attention")).toBeVisible();
     await expect(launchSignals.getByText("Payment follow-up")).toBeVisible();
     await expect(launchSignals.getByText("3 active areas", { exact: true })).toBeVisible();
-    await expect(launchSignals.getByText("1 verified available", { exact: true })).toBeVisible();
+    await expect(launchSignals.getByText("0 lowest area", { exact: true })).toBeVisible();
     await expect(launchSignals.getByText("1 unassigned", { exact: true })).toBeVisible();
     await expect(launchSignals.getByText("1 stale assigned", { exact: true })).toBeVisible();
     await expect(launchSignals.getByText("1 stale enroute", { exact: true })).toBeVisible();

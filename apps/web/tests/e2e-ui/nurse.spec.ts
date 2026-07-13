@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { getDbClient, resetDb, seedNurse, seedNurseLocation } from "../e2e-utils/db";
-import { createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID, createTestUser, loginTestUser, markProfileComplete } from "../e2e-utils/helpers";
 
 test.describe("Nurse Features", () => {
     test.beforeEach(async () => {
@@ -159,11 +159,11 @@ test.describe("Nurse Features", () => {
         try {
             await client.query(
                 `INSERT INTO service_requests
-                  (patient_user_id, assigned_nurse_user_id, status, address, lat, lng, request_type, care_type, created_at, updated_at, assigned_at)
+                  (organization_id, branch_id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, request_type, care_type, created_at, updated_at, assigned_at)
                  VALUES
-                  ($1, $2, 'assigned', 'My own patient visit', '42.662900', '21.165500', 'same_day', 'Own request', NOW(), NOW(), NOW()),
-                  ($3, $1, 'assigned', 'Assigned patient visit', '42.650000', '21.170000', 'same_day', 'Assigned request', NOW() - interval '5 minutes', NOW() - interval '5 minutes', NOW() - interval '5 minutes')`,
-                [nurseUserId, otherNurseUserId, patientUserId],
+                  ($1, $2, $3, $4, 'assigned', 'My own patient visit', '42.662900', '21.165500', 'same_day', 'Own request', NOW(), NOW(), NOW()),
+                  ($1, $2, $5, $3, 'assigned', 'Assigned patient visit', '42.650000', '21.170000', 'same_day', 'Assigned request', NOW() - interval '5 minutes', NOW() - interval '5 minutes', NOW() - interval '5 minutes')`,
+                [DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID, nurseUserId, otherNurseUserId, patientUserId],
             );
         } finally {
             await client.end();
@@ -202,10 +202,10 @@ test.describe("Nurse Features", () => {
         try {
             await client.query(
                 `INSERT INTO service_requests
-                  (patient_user_id, assigned_nurse_user_id, status, address, lat, lng, request_type, care_type, created_at, updated_at, assigned_at, accepted_at)
+                  (organization_id, branch_id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, request_type, care_type, created_at, updated_at, assigned_at, accepted_at)
                  VALUES
-                  ($1, $2, 'accepted', 'In-progress visit', '42.662900', '21.165500', 'same_day', 'Wellness check', NOW(), NOW(), NOW(), NOW())`,
-                [patientUserId, nurseUserId],
+                  ($1, $2, $3, $4, 'accepted', 'In-progress visit', '42.662900', '21.165500', 'same_day', 'Wellness check', NOW(), NOW(), NOW(), NOW())`,
+                [DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID, patientUserId, nurseUserId],
             );
         } finally {
             await client.end();

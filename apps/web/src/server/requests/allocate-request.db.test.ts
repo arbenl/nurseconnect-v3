@@ -1,4 +1,5 @@
 import { db, schema, sql } from "@nurseconnect/database";
+import { bootstrapDefaultOrganizationMemberships } from "@nurseconnect/domain-identity";
 import { RequestCreationValidationError } from "@nurseconnect/domain-request";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -7,7 +8,6 @@ import { createAndAssignRequest } from "./allocate-request";
 const { users, nurses, nurseLocations, serviceAreas, serviceRequests } = schema;
 
 function uuidLike(id: string) {
-    // basic sanity (don't overfit)
     expect(id).toMatch(/^[0-9a-f-]{20,}$/i);
 }
 
@@ -37,24 +37,22 @@ async function seedServiceAreas() {
 
 describe.sequential("createAndAssignRequest", () => {
     beforeAll(async () => {
-        // Ensure DB reachable
         await db.execute(sql`SELECT 1`);
     });
 
     beforeEach(async () => {
-        // Truncate in dependency-safe order
         await db.execute(sql`TRUNCATE TABLE service_request_events RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE service_requests RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE nurse_locations RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE nurses RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE service_areas RESTART IDENTITY CASCADE`);
         await db.execute(sql`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
+        await bootstrapDefaultOrganizationMemberships();
     });
 
     it("assigns the nearest available nurse", async () => {
         const { originArea } = await seedServiceAreas();
 
-        // create patient
         const [patient] = await db
             .insert(users)
             .values({
@@ -63,7 +61,6 @@ describe.sequential("createAndAssignRequest", () => {
             })
             .returning();
 
-        // create nurse A near
         const [nurseAUser] = await db
             .insert(users)
             .values({
@@ -87,7 +84,6 @@ describe.sequential("createAndAssignRequest", () => {
             serviceAreaId: originArea.id,
         });
 
-        // create nurse B farther
         const [nurseBUser] = await db
             .insert(users)
             .values({
@@ -119,6 +115,7 @@ describe.sequential("createAndAssignRequest", () => {
         });
 
         uuidLike(req.id);
+        expect(req).not.toHaveProperty("organizationId");
         expect(req.patientUserId).toBe(patient!.id);
         expect(req.serviceAreaId).toBe(originArea.id);
         expect(req.status).toBe("assigned");

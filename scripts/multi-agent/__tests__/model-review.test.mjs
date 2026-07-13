@@ -25,7 +25,7 @@ describe("model-review runner", () => {
       const claude = readFileSync(join(root, "reviews/claude.md"), "utf8");
       const copilot = readFileSync(join(root, "reviews/copilot.md"), "utf8");
       expect(manifest.reviewers).toEqual(["claude", "copilot"]);
-      expect(manifest.results[0].model).toBe("claude-sonnet-4-6");
+      expect(manifest.results[0].model).toBe("sonnet");
       expect(manifest.results[1].args).toEqual(expect.arrayContaining(["claude-sonnet-4.6", "low", "--no-remote", "--no-ask-user", "--stream"]));
       expect(claude).toContain("dry-run");
       expect(copilot).toContain("Copilot Pro+ Sonnet 4.6");
@@ -41,8 +41,8 @@ describe("model-review runner", () => {
       const manifest = JSON.parse(readFileSync(join(root, "reviews/model-review-manifest.json"), "utf8"));
       expect(manifest.reviewers).toEqual(["sonnet46", "gemini"]);
       expect(manifest.fallback.enabled).toBe(false);
-      expect(manifest.results.map((result) => result.model)).toEqual(["claude-sonnet-4-6", "gemini-3.1-pro-preview"]);
-      expect(readFileSync(join(root, "reviews/sonnet46.md"), "utf8")).toContain("Claude Sonnet 4.6 implementation review");
+      expect(manifest.results.map((result) => result.model)).toEqual(["sonnet", "gemini-3.1-pro-preview"]);
+      expect(readFileSync(join(root, "reviews/sonnet46.md"), "utf8")).toContain("Current Claude Sonnet implementation review");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

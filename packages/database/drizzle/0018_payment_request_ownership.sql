@@ -1,0 +1,4 @@
+CREATE UNIQUE INDEX "service_requests_payment_owner_uidx" ON "service_requests" USING btree ("id","organization_id","patient_user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "service_requests_payout_owner_uidx" ON "service_requests" USING btree ("id","organization_id","assigned_nurse_user_id");--> statement-breakpoint
+ALTER TABLE "payment_authorizations" ADD CONSTRAINT "payment_authorizations_request_owner_fk" FOREIGN KEY ("request_id","organization_id","patient_user_id") REFERENCES "public"."service_requests"("id","organization_id","patient_user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "nurse_payouts" ADD CONSTRAINT "nurse_payouts_request_owner_fk" FOREIGN KEY ("request_id","organization_id","nurse_user_id") REFERENCES "public"."service_requests"("id","organization_id","assigned_nurse_user_id") ON DELETE cascade ON UPDATE no action;

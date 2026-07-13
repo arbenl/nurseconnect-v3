@@ -7,7 +7,10 @@ import {
     getActiveServiceAreas,
     selectDispatchCandidate,
 } from "@nurseconnect/domain-dispatch";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID } from "@nurseconnect/domain-identity";
 import { appendRequestEvent, assertCreateRequestInvariants } from "@nurseconnect/domain-request";
+
+import { toPublicServiceRequest } from "./public-request";
 
 const { serviceRequests } = schema;
 
@@ -49,6 +52,8 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
             .insert(serviceRequests)
             .values({
                 patientUserId,
+                organizationId: DEFAULT_ORGANIZATION_ID,
+                branchId: DEFAULT_BRANCH_ID,
                 address,
                 lat: String(lat), // NUMERIC in db; store as string for drizzle numeric
                 lng: String(lng),
@@ -78,13 +83,14 @@ export async function createAndAssignRequest(input: CreateRequestInput) {
         const chosen = await selectDispatchCandidate(tx, { lat, lng }, serviceAreaId);
         if (!chosen) {
             // leave as open (unassigned)
-            return req;
+            return toPublicServiceRequest(req);
         }
 
-        return assignRequestToNurse(tx, {
+        const assigned = await assignRequestToNurse(tx, {
             request: req,
             nurseUserId: chosen.nurseUserId,
             skipEligibilityValidation: true,
         });
+        return toPublicServiceRequest(assigned);
     });
 }

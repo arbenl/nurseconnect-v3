@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
 import { getDbClient, resetDb, seedNurse } from "../e2e-utils/db";
-import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID, createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
 let contractsModulePromise: Promise<typeof import("@nurseconnect/contracts")> | null = null;
 
@@ -95,10 +95,10 @@ test.describe("Admin Request Reassign API", () => {
     try {
       await client.query(
         `INSERT INTO service_requests
-          (id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, created_at, updated_at)
+          (id, organization_id, branch_id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, created_at, updated_at)
          VALUES
-          ($1, $2, NULL, 'open', 'Admin Reassign Street', '42.662900', '21.165500', NOW(), NOW())`,
-        [requestId, patientUserId],
+          ($1, $2, $3, $4, NULL, 'open', 'Admin Reassign Street', '42.662900', '21.165500', NOW(), NOW())`,
+        [requestId, DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID, patientUserId],
       );
     } finally {
       await client.end();
@@ -243,10 +243,10 @@ test.describe("Admin Request Reassign API", () => {
     try {
       await client.query(
         `INSERT INTO service_requests
-          (id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, created_at, updated_at)
+          (id, organization_id, branch_id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, created_at, updated_at)
          VALUES
-          ($1, $2, NULL, 'open', 'Admin Reassign Block Street', '42.662900', '21.165500', NOW(), NOW())`,
-        [requestId, patientUserId],
+          ($1, $2, $3, $4, NULL, 'open', 'Admin Reassign Block Street', '42.662900', '21.165500', NOW(), NOW())`,
+        [requestId, DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID, patientUserId],
       );
     } finally {
       await client.end();

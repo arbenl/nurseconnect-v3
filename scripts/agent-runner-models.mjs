@@ -1,4 +1,7 @@
-export const DEFAULT_OPENAI_MODEL = "gpt-5.5";
+import { CODEX_MODELS, DEFAULT_CODEX_MODEL } from "./multi-agent/lib/model-catalog.mjs";
+
+export { CODEX_MODELS };
+export const DEFAULT_OPENAI_MODEL = DEFAULT_CODEX_MODEL;
 
 export function resolveRequestedProviderModel(provider, env = process.env) {
   const sharedModel = env.STEER_MODEL || env.AGENT_MODEL;

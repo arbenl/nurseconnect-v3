@@ -1,14 +1,10 @@
 
 import { APIRequestContext, expect } from "@playwright/test";
-import {
-    DEFAULT_ORGANIZATION_ID,
-    DEFAULT_ORGANIZATION_NAME,
-    DEFAULT_ORGANIZATION_SLUG,
-} from "@nurseconnect/domain-identity";
-
 import { getDbClient } from "./db";
+import { DEFAULT_ORGANIZATION_ID } from "./tenant";
 
 export const TEST_PASSWORD = "password123";
+export { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID } from "./tenant";
 
 export async function createTestUser(
     request: APIRequestContext,
@@ -47,12 +43,6 @@ export async function createTestUser(
         const res = await client.query("SELECT id FROM users WHERE email = $1", [email]);
         const userId = res.rows[0].id as string;
         if (role === "admin") {
-            await client.query(
-                `INSERT INTO organizations (id, name, slug, status, created_at, updated_at)
-                 VALUES ($1, $2, $3, 'active', NOW(), NOW())
-                 ON CONFLICT (id) DO UPDATE SET status = 'active', updated_at = NOW()`,
-                [DEFAULT_ORGANIZATION_ID, DEFAULT_ORGANIZATION_NAME, DEFAULT_ORGANIZATION_SLUG],
-            );
             await client.query(
                 `INSERT INTO org_memberships
                     (organization_id, user_id, role, status, source, activated_at, created_at, updated_at)

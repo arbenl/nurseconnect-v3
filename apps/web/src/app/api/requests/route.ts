@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
 import { createAndAssignRequest } from "@/server/requests/allocate-request";
+import { toPublicServiceRequest } from "@/server/requests/public-request";
 import {
   createApiLogContext,
   logApiFailure,
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
       careType: body.careType,
     });
 
-    const response = NextResponse.json(newRequest);
+    const response = NextResponse.json(toPublicServiceRequest(newRequest));
     logApiSuccess(actorContext, 200, startedAt, { action: "request.create", requestId: newRequest.id });
     return withRequestId(response, context.requestId);
   } catch (error) {

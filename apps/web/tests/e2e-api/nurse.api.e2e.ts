@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { getDbClient, resetDb, seedNurse } from "../e2e-utils/db";
-import { createTestUser, loginTestUser } from "../e2e-utils/helpers";
+import { DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID, createTestUser, loginTestUser } from "../e2e-utils/helpers";
 
 async function getNurseRow(userId: string) {
     const client = getDbClient();
@@ -185,10 +185,10 @@ test.describe("Nurse API", () => {
         try {
             await client.query(
                 `INSERT INTO service_requests
-                  (patient_user_id, assigned_nurse_user_id, status, address, lat, lng, request_type, created_at, updated_at, assigned_at)
+                  (organization_id, branch_id, patient_user_id, assigned_nurse_user_id, status, address, lat, lng, request_type, created_at, updated_at, assigned_at)
                  VALUES
-                  ($1, $2, 'assigned', '123 Active Visit', '42.662900', '21.165500', 'same_day', NOW(), NOW(), NOW())`,
-                [patientUserId, nurseUserId],
+                  ($1, $2, $3, $4, 'assigned', '123 Active Visit', '42.662900', '21.165500', 'same_day', NOW(), NOW(), NOW())`,
+                [DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_ID, patientUserId, nurseUserId],
             );
         } finally {
             await client.end();

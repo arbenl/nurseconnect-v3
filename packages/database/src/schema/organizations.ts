@@ -4,6 +4,7 @@ import { check, index, pgEnum, pgTable, timestamp, uniqueIndex, uuid, text } fro
 import { users } from "./users";
 
 export const organizationStatusEnum = pgEnum("organization_status", ["active", "suspended", "archived"]);
+export const branchStatusEnum = pgEnum("branch_status", ["active", "suspended", "archived"]);
 export const orgMemberRoleEnum = pgEnum("org_member_role", [
   "owner",
   "admin",
@@ -33,6 +34,29 @@ export const organizations = pgTable(
   }),
 );
 
+export const branches = pgTable(
+  "branches",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "restrict" }),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    status: branchStatusEnum("status").notNull().default("active"),
+    jurisdictionCountry: text("jurisdiction_country").notNull(),
+    jurisdictionRegion: text("jurisdiction_region").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    organizationSlugIdx: uniqueIndex("branches_organization_slug_idx").on(t.organizationId, t.slug),
+    organizationIdx: index("branches_organization_id_idx").on(t.organizationId),
+    statusIdx: index("branches_status_idx").on(t.status),
+    slugFormatChk: check("branches_slug_format_chk", sql`${t.slug} ~ '^[a-z0-9-]{2,63}$'`),
+  }),
+);
+
 export const orgMemberships = pgTable(
   "org_memberships",
   {
@@ -58,4 +82,4 @@ export const orgMemberships = pgTable(
     organizationIdx: index("org_memberships_organization_id_idx").on(t.organizationId),
     organizationStatusIdx: index("org_memberships_org_status_idx").on(t.organizationId, t.status),
   }),
-);
+).enableRLS();

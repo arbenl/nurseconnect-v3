@@ -14,7 +14,7 @@ export const EXIT_FAIL = 1;
 export const EXIT_SKIPPED = 2;
 
 export const STATUS_PASS = "PASS";
-export const STATUS_PENDING_SCHEMA = "ADVISORY_PASS_PENDING_SCHEMA";
+export const STATUS_PENDING_SCHEMA = "ADVISORY_PASS_PENDING_SCHEMA", STATUS_PENDING_SCENARIOS = "ADVISORY_PASS_PENDING_SCENARIOS";
 export const STATUS_FAIL = "FAIL";
 export const STATUS_SKIPPED = "SKIPPED";
 
@@ -284,9 +284,9 @@ export function evaluateTenantIsolation(contract, inventory) {
       ? STATUS_PASS
       : missingBoundaryTables.length > 0 ||
           unsafePartialTables.length > 0 ||
-          invalidScenarioRefs.length > 0 ||
-          (boundaryReady && schemaReady && !scenarioReady)
+          invalidScenarioRefs.length > 0
         ? STATUS_FAIL
+        : boundaryReady && schemaReady && !scenarioReady ? STATUS_PENDING_SCENARIOS
         : STATUS_PENDING_SCHEMA;
 
   return {

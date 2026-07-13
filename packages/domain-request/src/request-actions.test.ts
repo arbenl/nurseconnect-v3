@@ -2,11 +2,7 @@ import { serviceRequests } from "@nurseconnect/database/schema";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RequestForbiddenError } from "./errors";
-import {
-  applyAdminTriageAction,
-  applyRequestAction,
-  type RequestSideEffect,
-} from "./request-actions";
+import { applyAdminTriageAction, applyRequestAction, type RequestSideEffect } from "./request-actions";
 
 const { appendRequestEvent } = vi.hoisted(() => ({
   appendRequestEvent: vi.fn().mockResolvedValue(undefined),
@@ -24,6 +20,8 @@ function makeRequestRow(
     id: "request-1",
     patientUserId: "patient-1",
     assignedNurseUserId: "nurse-1",
+    organizationId: null,
+    branchId: null,
     status: "assigned",
     address: "123 Main St",
     lat: "0.000000",
