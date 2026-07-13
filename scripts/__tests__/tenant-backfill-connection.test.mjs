@@ -29,6 +29,13 @@ it("does not override libpq settings when the URI omits them", () => {
     libpqTransportEnvironment(new URL("postgresql://user:password@localhost/nurseconnect")),
   ).toEqual({});
 });
+it("preserves libpq query-host routing overrides", () => {
+  const url = new URL("postgresql://user:password@localhost/nurseconnect?host=%2Fcloudsql%2Fproject%3Aregion%3Ainstance&hostaddr=10.0.0.5");
+  expect(libpqTransportEnvironment(url)).toEqual({
+    PGHOST: "/cloudsql/project:region:instance",
+    PGHOSTADDR: "10.0.0.5",
+  });
+});
 
 it("passes protected connection settings through the real backfill runner", () => {
   const directory = mkdtempSync(join(tmpdir(), "nc-tb-01-connection-"));
@@ -37,6 +44,8 @@ it("passes protected connection settings through the real backfill runner", () =
   writeFileSync(psql, `#!/usr/bin/env node
 import { appendFileSync } from "node:fs";
 appendFileSync(process.env.CAPTURE_FILE, JSON.stringify({
+  host: process.env.PGHOST,
+  hostaddr: process.env.PGHOSTADDR,
   sslmode: process.env.PGSSLMODE,
   channelBinding: process.env.PGCHANNELBINDING,
   rootCertificate: process.env.PGSSLROOTCERT,
@@ -56,7 +65,8 @@ process.stdout.write("0\\n");
         CAPTURE_FILE: captureFile,
         PSQL_BIN: psql,
         DATABASE_URL: "postgresql://user:password@database.example/nurseconnect"
-          + "?sslmode=verify-full&sslrootcert=%2Fcerts%2Froot.pem&channel_binding=require",
+          + "?host=%2Fcloudsql%2Fproject%3Aregion%3Ainstance&hostaddr=10.0.0.5"
+          + "&sslmode=verify-full&sslrootcert=%2Fcerts%2Froot.pem&channel_binding=require",
       },
     },
   );
@@ -64,6 +74,8 @@ process.stdout.write("0\\n");
   expect(result.status, result.stderr).toBe(0);
   const calls = readFileSync(captureFile, "utf8").trim().split("\n").map(JSON.parse);
   expect(calls.length).toBeGreaterThan(0);
+  expect(calls.every((call) => call.host === "/cloudsql/project:region:instance")).toBe(true);
+  expect(calls.every((call) => call.hostaddr === "10.0.0.5")).toBe(true);
   expect(calls.every((call) => call.sslmode === "verify-full")).toBe(true);
   expect(calls.every((call) => call.channelBinding === "require")).toBe(true);
   expect(calls.every((call) => call.rootCertificate === "/certs/root.pem")).toBe(true);
