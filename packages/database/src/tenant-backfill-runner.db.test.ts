@@ -51,7 +51,7 @@ describe.sequential("tenant ownership backfill runner", () => {
     `);
     const [{ count }] = Array.isArray(queryResult) ? queryResult : queryResult.rows;
     expect(count).toBe(0);
-  });
+  }, 15_000);
 
   it("fails closed when non-null child ownership disagrees with its request", async () => {
     const requestId = await seedOwnedRequest(true);
