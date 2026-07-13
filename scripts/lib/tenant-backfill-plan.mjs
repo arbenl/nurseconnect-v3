@@ -34,6 +34,9 @@ export function tenantBackfillPlans(organizationId, branchId, batchSize) {
 
 export function tenantBackfillChecks(organizationId, branchId) {
   return [
+  ["pseudo_tenant_referral_or_care_provider_groups", `SELECT CASE WHEN count(DISTINCT NULLIF(lower(trim(organization_name)), '')) > 1 THEN count(DISTINCT NULLIF(lower(trim(organization_name)), '')) ELSE 0 END FROM referral_partners`],
+  ["pseudo_tenant_service_area_groups", "SELECT CASE WHEN count(DISTINCT service_area_id) > 1 THEN count(DISTINCT service_area_id) ELSE 0 END FROM service_requests WHERE service_area_id IS NOT NULL"],
+  ["pseudo_tenant_operator_groups", "SELECT CASE WHEN count(DISTINCT split_part(lower(email), '@', 2)) > 1 THEN count(DISTINCT split_part(lower(email), '@', 2)) ELSE 0 END FROM users WHERE role = 'admin' AND position('@' in email) > 0"],
   ["service_requests_null_org", "SELECT count(*) FROM service_requests WHERE organization_id IS NULL"],
   ["patients_null_org", "SELECT count(*) FROM patients WHERE organization_id IS NULL"],
   ["assignments_null_org", "SELECT count(*) FROM assignments WHERE organization_id IS NULL"],

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "./db";
-import { requestEvents } from "./schema";
+import { referralPartners, requestEvents, users } from "./schema";
 import { sql } from "drizzle-orm";
 import {
   primaryOrganizationId,
@@ -58,6 +58,25 @@ describe.sequential("tenant ownership backfill runner", () => {
     expect(evidence.reconciliation).toContainEqual({
       name: "service_request_non_default_org",
       count: 1,
+    });
+  });
+
+  it("fails closed when referral organizations encode multiple care-provider groups", async () => {
+    await seedTenantBackfillFixture();
+    const [first, second] = await db.insert(users).values([
+      { email: "provider-one@test.local", role: "referral_partner" },
+      { email: "provider-two@test.local", role: "referral_partner" },
+    ]).returning();
+    await db.insert(referralPartners).values([
+      { userId: first!.id, organizationName: "Provider One" },
+      { userId: second!.id, organizationName: "Provider Two" },
+    ]);
+
+    const result = runBackfill("--check-only");
+    expect(result.status).toBe(1);
+    expect(JSON.parse(result.stdout).reconciliation).toContainEqual({
+      name: "pseudo_tenant_referral_or_care_provider_groups",
+      count: 2,
     });
   });
 });

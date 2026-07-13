@@ -22,7 +22,7 @@ describe.sequential("payment traceability", () => {
     await db.execute(sql`TRUNCATE TABLE nurses RESTART IDENTITY CASCADE`);
     await db.execute(sql`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
     await db.execute(sql`INSERT INTO organizations (id, name, slug, status) VALUES (${DEFAULT_TENANT.organizationId}, 'NurseConnect Default Organization', 'nurseconnect-default', 'active') ON CONFLICT (id) DO NOTHING`);
-    await db.execute(sql`INSERT INTO branches (id, organization_id, name, slug, status, jurisdiction_country, jurisdiction_region) VALUES (${DEFAULT_TENANT.branchId}, ${DEFAULT_TENANT.organizationId}, 'NurseConnect Default Branch', 'nurseconnect-default-branch', 'active', 'US', 'default-launch-region') ON CONFLICT (id) DO NOTHING`);
+    await db.execute(sql`INSERT INTO branches (id, organization_id, name, slug, status, jurisdiction_country, jurisdiction_region) VALUES (${DEFAULT_TENANT.branchId}, ${DEFAULT_TENANT.organizationId}, 'NurseConnect Default Branch', 'nurseconnect-default-branch', 'active', 'XK', 'Pristina') ON CONFLICT (id) DO NOTHING`);
   });
 
   it("records, captures, and exposes a private-pay authorization trace", async () => {

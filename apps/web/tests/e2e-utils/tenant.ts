@@ -19,7 +19,7 @@ export async function seedDefaultTenant(client: Client) {
   );
   await client.query(
     `INSERT INTO branches (id, organization_id, name, slug, status, jurisdiction_country, jurisdiction_region, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, 'active', 'US', 'default-launch-region', NOW(), NOW())
+     VALUES ($1, $2, $3, $4, 'active', 'XK', 'Pristina', NOW(), NOW())
      ON CONFLICT (id) DO NOTHING`,
     [DEFAULT_BRANCH_ID, DEFAULT_ORGANIZATION_ID, DEFAULT_BRANCH_NAME, DEFAULT_BRANCH_SLUG],
   );

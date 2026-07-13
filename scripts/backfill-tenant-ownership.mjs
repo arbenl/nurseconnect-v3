@@ -83,19 +83,38 @@ function runChecks() {
   }));
 }
 
+function runPseudoTenantAudit() {
+  return runChecks().filter((row) => row.name.startsWith("pseudo_tenant_"));
+}
+
 try {
-  const updates = args.has("--check-only") ? [] : applyBackfill();
-  const reconciliation = runChecks();
-  const failed = reconciliation.filter((row) => row.count !== 0);
-  process.stdout.write(`${JSON.stringify({
-    status: failed.length === 0 ? "pass" : "fail",
-    batchSize,
-    lockTimeout,
-    statementTimeout,
-    updates,
-    reconciliation,
-  }, null, 2)}\n`);
-  if (failed.length > 0) process.exitCode = 1;
+  const pseudoTenantAudit = runPseudoTenantAudit();
+  const auditFailed = pseudoTenantAudit.some((row) => row.count !== 0);
+  if (auditFailed) {
+    process.stdout.write(`${JSON.stringify({
+      status: "fail",
+      blocked: "pseudo_tenant_audit",
+      batchSize,
+      lockTimeout,
+      statementTimeout,
+      updates: [],
+      reconciliation: pseudoTenantAudit,
+    }, null, 2)}\n`);
+    process.exitCode = 1;
+  } else {
+    const updates = args.has("--check-only") ? [] : applyBackfill();
+    const reconciliation = runChecks();
+    const failed = reconciliation.filter((row) => row.count !== 0);
+    process.stdout.write(`${JSON.stringify({
+      status: failed.length === 0 ? "pass" : "fail",
+      batchSize,
+      lockTimeout,
+      statementTimeout,
+      updates,
+      reconciliation,
+    }, null, 2)}\n`);
+    if (failed.length > 0) process.exitCode = 1;
+  }
 } catch (error) {
   const message = error instanceof Error && error.message === "DATABASE_URL is required"
     ? error.message

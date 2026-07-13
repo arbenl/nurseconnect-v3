@@ -63,6 +63,13 @@ Local disposable evidence, `nurseconnect_test`, 2026-07-07:
 | `orphan_payment_authorizations` | 0 |
 | `orphan_nurse_payouts` | 0 |
 
+## Pseudo-Tenant Signal Audit
+
+The runner fails closed before updates when it finds multiple referral/care-provider organization names, service-area groups, or operator email domains.
+These checks are `pseudo_tenant_referral_or_care_provider_groups`,
+`pseudo_tenant_service_area_groups`, and `pseudo_tenant_operator_groups` in
+`scripts/lib/tenant-backfill-plan.mjs`; any non-zero result holds rollout for a mapping slice. The disposable fixture returned zero for each; its integration test proves two referral organizations make `--check-only` fail before updates.
+
 ## Post-Backfill Reconciliation
 
 Query shape: count null `organization_id` on all included tenant-owned tables

@@ -57,7 +57,7 @@ VALUES (
 	'nurseconnect-default-branch',
 	'active',
 	'US',
-	'default-launch-region'
+	'Pristina'
 )
 ON CONFLICT ("id") DO NOTHING;--> statement-breakpoint
 ALTER TABLE "service_requests" ADD COLUMN "organization_id" uuid;--> statement-breakpoint

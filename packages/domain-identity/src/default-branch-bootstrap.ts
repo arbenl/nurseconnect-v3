@@ -7,8 +7,8 @@ import { DEFAULT_ORGANIZATION_ID } from "./default-tenant-constants";
 export const DEFAULT_BRANCH_ID = "00000000-0000-4000-8000-000000000101";
 export const DEFAULT_BRANCH_SLUG = "nurseconnect-default-branch";
 export const DEFAULT_BRANCH_NAME = "NurseConnect Default Branch";
-export const DEFAULT_BRANCH_JURISDICTION_COUNTRY = "US";
-export const DEFAULT_BRANCH_JURISDICTION_REGION = "default-launch-region";
+export const DEFAULT_BRANCH_JURISDICTION_COUNTRY = "XK";
+export const DEFAULT_BRANCH_JURISDICTION_REGION = "Pristina";
 
 type DefaultBranchRow = {
   id: string;
