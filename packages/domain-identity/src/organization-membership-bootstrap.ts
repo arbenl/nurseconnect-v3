@@ -1,6 +1,10 @@
 import { sql } from "drizzle-orm";
 
-import type { TenantTransactionalDatabase } from "@nurseconnect/database";
+import {
+  withTenantContext,
+  type TenantQueryExecutor,
+  type TenantTransactionalDatabase,
+} from "@nurseconnect/database";
 
 import {
   DEFAULT_BRANCH_ID,
@@ -41,9 +45,10 @@ export async function bootstrapDefaultOrganizationMemberships(
 ): Promise<{ organizationId: string; branchId: string; grantedMemberships: number }> {
   const executor = database ?? (await defaultDatabase());
   await ensureDefaultOrganization(executor);
-  await ensureDefaultBranch(executor);
-
-  return membershipResult(await grantDefaultOrganizationMemberships(executor));
+  return withTenantContext(executor, DEFAULT_ORGANIZATION_ID, async (tx) => {
+    await ensureDefaultBranch(tx);
+    return membershipResult(await grantDefaultOrganizationMemberships(tx));
+  }, "organization.membership");
 }
 
 export async function bootstrapDefaultOrganizationMembershipForAdmin(
@@ -52,18 +57,17 @@ export async function bootstrapDefaultOrganizationMembershipForAdmin(
 ): Promise<{ organizationId: string; branchId: string; grantedMemberships: number }> {
   const executor = database ?? (await defaultDatabase());
   await ensureDefaultOrganization(executor);
-  await ensureDefaultBranch(executor);
-
-  return membershipResult(await grantDefaultOrganizationMemberships(executor, userId));
+  return withTenantContext(executor, DEFAULT_ORGANIZATION_ID, async (tx) => {
+    await ensureDefaultBranch(tx);
+    return membershipResult(await grantDefaultOrganizationMemberships(tx, userId));
+  }, "organization.membership");
 }
 
 async function grantDefaultOrganizationMemberships(
-  executor: TenantTransactionalDatabase,
+  executor: TenantQueryExecutor,
   userId?: string,
 ) {
-  return executor.transaction(async (tx) => {
-    await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${DEFAULT_ORGANIZATION_ID}, true)`);
-    return tx.execute(sql`
+  return executor.execute(sql`
       INSERT INTO org_memberships (organization_id, user_id, role, status, source, activated_at)
       SELECT ${DEFAULT_ORGANIZATION_ID}, users.id, 'owner', 'active', 'bootstrap', now()
       FROM users
@@ -71,8 +75,7 @@ async function grantDefaultOrganizationMemberships(
       ${userId ? sql`AND users.id = ${userId}` : sql``}
       ON CONFLICT (organization_id, user_id) DO NOTHING
       RETURNING organization_id, user_id AS membership_user_id
-    `);
-  });
+  `);
 }
 
 function membershipResult(result: { rows?: Record<string, unknown>[] } | Record<string, unknown>[]) {

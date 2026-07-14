@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { DbClient } from "@nurseconnect/database";
 
 const databaseMock = vi.hoisted(() => ({
   execute: vi.fn(),
@@ -39,7 +40,7 @@ describe("ops status launch supply query", () => {
       ],
     });
 
-    await expect(getLaunchNurseSupplySummary(now)).resolves.toEqual({
+    await expect(getLaunchNurseSupplySummary(databaseMock as unknown as DbClient, now)).resolves.toEqual({
       verifiedAndAvailable: 12,
       launchMinimum: 10,
       launchShortfall: 0,
@@ -86,7 +87,7 @@ describe("ops status launch supply query", () => {
         ],
       });
 
-    await expect(getAdminOpsStatus({ now })).resolves.toMatchObject({
+    await expect(getAdminOpsStatus(databaseMock as unknown as DbClient, { now })).resolves.toMatchObject({
       generatedAt: now.toISOString(),
       serviceAreas: { active: 1 },
       nurseSupply: {

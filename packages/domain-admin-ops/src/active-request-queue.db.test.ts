@@ -44,7 +44,7 @@ describe.sequential("admin active request queue", () => {
       careType: "wound_care",
     });
 
-    const queue = await getAdminActiveRequestQueue();
+    const queue = await getAdminActiveRequestQueue(db);
 
     expect(queue.items[0]).toMatchObject({
       referralSource: "partner",

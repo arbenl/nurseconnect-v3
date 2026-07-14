@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
 import { requirePortalAccessOrRedirect } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 
 function shortId(value: string | null) {
   return value ? value.slice(0, 8) : "-";
@@ -15,7 +16,9 @@ function transitionLabel(previousNurseUserId: string | null, newNurseUserId: str
 
 export default async function AdminActivityPage() {
   await requirePortalAccessOrRedirect({ portal: "admin", currentPath: "/admin/activity" });
-  const activity = await getAdminReassignmentActivityFeed(200);
+  const activity = await withDefaultTenantContext("admin.activity", (tx) =>
+    getAdminReassignmentActivityFeed(tx, 200),
+  );
 
   return (
     <div className="space-y-6">

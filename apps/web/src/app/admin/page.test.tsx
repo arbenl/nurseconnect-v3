@@ -15,6 +15,10 @@ vi.mock("@/server/auth", () => ({
   requirePortalAccessOrRedirect: mocks.requirePortalAccessOrRedirect,
 }));
 
+vi.mock("@/server/db/default-tenant-context", () => ({
+  withDefaultTenantContext: (_boundary: string, callback: (tx: object) => unknown) => callback({}),
+}));
+
 import AdminDashboardPage from "./page";
 
 const opsStatus: AdminOpsStatusCounts = {

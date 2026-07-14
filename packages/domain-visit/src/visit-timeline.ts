@@ -1,12 +1,12 @@
 import { GetRequestEventsResponseSchema, type GetRequestEventsResponse } from "@nurseconnect/contracts";
-import { asc, eq, type DbClient } from "@nurseconnect/database";
+import { asc, eq, type DbExecutor } from "@nurseconnect/database";
 import { requestEvents, serviceRequests } from "@nurseconnect/database/schema";
 
 import { VisitForbiddenError, VisitNotFoundError } from "./errors";
 import { serializeVisitEvent, type VisitActorRole } from "./event-read-shared";
 
 export async function getVisitTimelineForActor(
-  db: DbClient,
+  db: DbExecutor,
   input: {
     requestId: string;
     actorUserId: string;

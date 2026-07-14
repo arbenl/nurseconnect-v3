@@ -1,5 +1,4 @@
 import { CreateRequestSchema } from "@nurseconnect/contracts";
-import { db } from "@nurseconnect/database";
 import {
   buildPartnerRequestInput,
   getReferralPartnerProfileByUserId,
@@ -13,6 +12,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import { createPartnerPatientShell } from "@/server/partner/create-partner-patient-shell";
 import { createAndAssignRequest } from "@/server/requests/allocate-request";
 import {
@@ -42,14 +42,14 @@ export async function GET(request: Request) {
     action: "partner.requests.list",
   });
   logApiStart(context, startedAt);
-
   let actorContext = context;
-
   try {
     const { user } = await requireRole("referral_partner");
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
-    const items = await listPartnerRequests(db, { actorUserId: user.id });
+    const items = await withDefaultTenantContext("referral.request", (tx) =>
+      listPartnerRequests(tx, { actorUserId: user.id }),
+    );
     const response = NextResponse.json({ items });
     logApiSuccess(actorContext, 200, startedAt, {
       source: "partner.requests.list",

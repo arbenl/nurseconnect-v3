@@ -1,8 +1,8 @@
-import { db } from "@nurseconnect/database";
 import { getNurseVisitProjection } from "@nurseconnect/domain-visit";
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireRole } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import {
   createApiLogContext,
   logApiFailure,
@@ -23,10 +23,9 @@ export async function GET(request: Request) {
     const { user } = await requireRole("nurse");
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
-    const projection = await getNurseVisitProjection(db, {
-      actorUserId: user.id,
-      historyLimit: 5,
-    });
+    const projection = await withDefaultTenantContext("visit.projection", (tx) =>
+      getNurseVisitProjection(tx, { actorUserId: user.id, historyLimit: 5 }),
+    );
 
     const response = NextResponse.json({
       activeAssignment: projection.activeAssignment,

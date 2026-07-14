@@ -1,4 +1,4 @@
-import { and, count, db, desc, eq, or, schema } from "@nurseconnect/database";
+import { and, count, db, desc, eq, or, schema, type DbExecutor } from "@nurseconnect/database";
 
 const { nurses, users } = schema;
 
@@ -93,7 +93,7 @@ export async function submitNurseApplication(input: {
 export async function listNurseCredentials(options?: {
   statuses?: string[];
   limit?: number;
-}) {
+}, database: DbExecutor = db) {
   const validStatuses = options?.statuses ? assertValidStatuses(options.statuses) : [];
   if (options?.statuses && validStatuses.length === 0) {
     return [];
@@ -104,7 +104,7 @@ export async function listNurseCredentials(options?: {
       ? or(...validStatuses.map((status) => eq(nurses.status, status)))
       : undefined;
 
-  const baseQuery = db
+  const baseQuery = database
     .select({
       id: nurses.id,
       userId: nurses.userId,
@@ -136,16 +136,16 @@ export async function listNurseCredentials(options?: {
   return baseQuery;
 }
 
-export async function getNurseCredentialCounts() {
+export async function getNurseCredentialCounts(database: DbExecutor = db) {
   const [statusRows, availableRows] = await Promise.all([
-    db
+    database
       .select({
         status: nurses.status,
         value: count(),
       })
       .from(nurses)
       .groupBy(nurses.status),
-    db
+    database
       .select({
         value: count(),
       })

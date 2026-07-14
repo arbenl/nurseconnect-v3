@@ -3,6 +3,7 @@ import type {
   AdminOpsStatusCounts,
   AdminReassignmentActivityItem,
 } from "@nurseconnect/contracts";
+import type { DbExecutor } from "@nurseconnect/database";
 
 import { DEFAULT_TRIAGE_SEVERITY_POLICY } from "./triage-severity";
 
@@ -114,8 +115,7 @@ export function summarizeOpsDashboard<
     paymentFollowUpItems: input.paymentFollowUpItems,
   };
 }
-
-export async function getAdminOpsDashboard() {
+export async function getAdminOpsDashboard(db: DbExecutor) {
   const generatedAt = new Date().toISOString();
   const recentSince = new Date(
     Date.parse(generatedAt) - RECENT_FAILURE_WINDOW_HOURS * 60 * 60_000,
@@ -142,13 +142,13 @@ export async function getAdminOpsDashboard() {
     dashboardStatusRows,
     paymentFollowUpRows,
   ] = await Promise.all([
-    getAdminActiveRequestQueue({ limit: 200 }),
-    getNurseCredentialCounts(),
-    getLaunchNurseSupplySummary(new Date(generatedAt)),
-    listNurseCredentials({ statuses: Array.from(attentionStatuses), limit: 5 }),
-    getAdminReassignmentActivityFeed(6),
-    getDashboardOpsStatusRows(recentSince),
-    getPaymentFollowUpRows(recentSince),
+    getAdminActiveRequestQueue(db, { limit: 200 }),
+    getNurseCredentialCounts(db),
+    getLaunchNurseSupplySummary(db, new Date(generatedAt)),
+    listNurseCredentials({ statuses: Array.from(attentionStatuses), limit: 5 }, db),
+    getAdminReassignmentActivityFeed(db, 6),
+    getDashboardOpsStatusRows(db, recentSince),
+    getPaymentFollowUpRows(db, recentSince),
   ]);
   const dashboardStatus = dashboardStatusRows.rows[0];
   const opsStatus: AdminOpsStatusCounts = {
@@ -190,8 +190,8 @@ export async function getAdminOpsDashboard() {
   });
 }
 
-async function getDashboardOpsStatusRows(recentSince: Date) {
-  const { db, sql } = await import("@nurseconnect/database");
+async function getDashboardOpsStatusRows(db: DbExecutor, recentSince: Date) {
+  const { sql } = await import("@nurseconnect/database");
 
   return db.execute<DashboardOpsStatusRow>(sql`
     SELECT
@@ -234,8 +234,8 @@ async function getDashboardOpsStatusRows(recentSince: Date) {
   `);
 }
 
-async function getPaymentFollowUpRows(recentSince: Date) {
-  const { db, sql } = await import("@nurseconnect/database");
+async function getPaymentFollowUpRows(db: DbExecutor, recentSince: Date) {
+  const { sql } = await import("@nurseconnect/database");
 
   return db.execute<PaymentFollowUpRow>(sql`
     WITH authorization_gaps AS (

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { db, dbPool } from "./db";
 import * as schema from "./schema";
 import { assertTenantContext, type TenantQueryExecutor, withTenantContext } from "./tenant-context";
+import { getTenantObservationSnapshot } from "./tenant-query-observer";
 
 const orgA = "11111111-1111-4111-8111-111111111111";
 const orgB = "22222222-2222-4222-8222-222222222222";
@@ -95,4 +96,30 @@ describe("withTenantContext", () => {
 
     expect(await currentTenant()).toBe("");
   });
+
+  it("detects global database use inside a tenant-bound transaction", async () => {
+    const before = getTenantObservationSnapshot().violations;
+
+    await withTenantContext(db, orgA, async () => {
+      await db.select({ id: schema.serviceRequests.id }).from(schema.serviceRequests).limit(1);
+    }, "request.create");
+
+    expect(getTenantObservationSnapshot().violations).toBe(before + 1);
+  });
+
+  it("detects detached and prebuilt global queries invoked inside tenant context", async () => {
+    const detachedSelect = db.select;
+    const detachedFindMany = db.query.serviceRequests.findMany;
+    const prebuilt = db.select({ id: schema.serviceRequests.id }).from(schema.serviceRequests).limit(1);
+    const before = getTenantObservationSnapshot().violations;
+
+    await withTenantContext(db, orgA, async () => {
+      await detachedSelect({ id: schema.serviceRequests.id }).from(schema.serviceRequests).limit(1);
+      await detachedFindMany({ limit: 1 });
+      await prebuilt;
+    }, "request.create");
+
+    expect(getTenantObservationSnapshot().violations).toBe(before + 3);
+  });
+
 });

@@ -1,8 +1,10 @@
-import { db, eq, schema } from "@nurseconnect/database";
+import { eq, schema } from "@nurseconnect/database";
 import {
   applyRequestAction as applyRequestActionInDomain,
   type ApplyRequestActionInput,
 } from "@nurseconnect/domain-request";
+
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 
 import type { RequestAction } from "./request-lifecycle";
 
@@ -21,7 +23,7 @@ type ApplyRequestActionAdapterInput = Omit<
 >;
 
 export async function applyRequestAction(input: ApplyRequestActionAdapterInput) {
-  return db.transaction(async (tx) => {
+  return withDefaultTenantContext("request.action", async (tx) => {
     const actorHasNurseProfile = nurseActions.has(input.action)
       ? Boolean(
           (

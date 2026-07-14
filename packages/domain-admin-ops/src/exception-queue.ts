@@ -4,7 +4,7 @@ import {
   type AdminExceptionQueueResponse,
   type ExceptionRequestStatus,
 } from "@nurseconnect/contracts";
-import { db, sql } from "@nurseconnect/database";
+import { sql, type DbExecutor } from "@nurseconnect/database";
 
 import { toLocationHint } from "./triage-severity";
 
@@ -60,6 +60,7 @@ function normalizeReason(value: unknown) {
 }
 
 export async function getAdminExceptionQueue(
+  db: DbExecutor,
   options: GetAdminExceptionQueueOptions = {},
 ): Promise<AdminExceptionQueueResponse> {
   const now = options.now ?? new Date();

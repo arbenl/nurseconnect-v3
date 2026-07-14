@@ -1,5 +1,5 @@
 import type { AdminOpsStatusCounts } from "@nurseconnect/contracts";
-import { db, sql } from "@nurseconnect/database";
+import { sql, type DbExecutor } from "@nurseconnect/database";
 
 import {
   LAUNCH_MINIMUM_VERIFIED_AVAILABLE_NURSES,
@@ -49,7 +49,7 @@ function normalizeRecentWindowHours(value: number | undefined) {
   return Math.max(1, Math.min(168, Math.trunc(value)));
 }
 
-export async function getLaunchNurseSupplySummary(now = new Date()) {
+export async function getLaunchNurseSupplySummary(db: DbExecutor, now = new Date()) {
   const rows = await db.execute<LaunchNurseSupplyRow>(sql`
     WITH active_service_areas AS (
       SELECT id
@@ -108,8 +108,8 @@ export async function getLaunchNurseSupplySummary(now = new Date()) {
     ),
   });
 }
-
 export async function getAdminOpsStatus(
+  db: DbExecutor,
   options: GetAdminOpsStatusOptions = {},
 ): Promise<AdminOpsStatusCounts> {
   const now = options.now ?? new Date();
@@ -129,7 +129,7 @@ export async function getAdminOpsStatus(
         FROM service_areas
         WHERE status = 'active'::service_area_status
       `),
-      getLaunchNurseSupplySummary(now),
+      getLaunchNurseSupplySummary(db, now),
       db.execute<RequestStatusCountRow>(sql`
         WITH latest_request_events AS (
           SELECT request_id, MAX(created_at) AS last_event_at

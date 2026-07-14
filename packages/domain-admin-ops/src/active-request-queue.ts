@@ -4,7 +4,7 @@ import {
   type ActiveRequestStatus,
   type AdminActiveRequestQueueResponse,
 } from "@nurseconnect/contracts";
-import { db, sql } from "@nurseconnect/database";
+import { sql, type DbExecutor } from "@nurseconnect/database";
 
 import {
   ACTIVE_REQUEST_STATUSES,
@@ -50,6 +50,7 @@ function toIsoString(value: Date | string) {
 }
 
 export async function getAdminActiveRequestQueue(
+  db: DbExecutor,
   options: GetAdminActiveRequestQueueOptions = {},
 ): Promise<AdminActiveRequestQueueResponse> {
   const now = options.now ?? new Date();

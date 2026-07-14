@@ -1,4 +1,4 @@
-import { and, db, eq, or, schema } from "@nurseconnect/database";
+import { and, eq, or, schema } from "@nurseconnect/database";
 import { ensureDomainUserFromSession } from "@nurseconnect/domain-identity";
 import {
   NurseAvailabilityError,
@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { assertEmailVerificationAccess, authErrorResponse, getSession } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import {
   createApiLogContext,
   logApiFailure,
@@ -69,16 +70,18 @@ export async function PATCH(request: Request) {
     }
 
     if (isAvailable) {
-      const activeAssignment = await db.query.serviceRequests.findFirst({
-        where: and(
-          eq(schema.serviceRequests.assignedNurseUserId, user.id),
-          or(
-            eq(schema.serviceRequests.status, ACTIVE_ASSIGNMENT_STATUSES[0]),
-            eq(schema.serviceRequests.status, ACTIVE_ASSIGNMENT_STATUSES[1]),
-            eq(schema.serviceRequests.status, ACTIVE_ASSIGNMENT_STATUSES[2]),
+      const activeAssignment = await withDefaultTenantContext("nurse.availability", (tx) =>
+        tx.query.serviceRequests.findFirst({
+          where: and(
+            eq(schema.serviceRequests.assignedNurseUserId, user.id),
+            or(
+              eq(schema.serviceRequests.status, ACTIVE_ASSIGNMENT_STATUSES[0]),
+              eq(schema.serviceRequests.status, ACTIVE_ASSIGNMENT_STATUSES[1]),
+              eq(schema.serviceRequests.status, ACTIVE_ASSIGNMENT_STATUSES[2]),
+            ),
           ),
-        ),
-      });
+        }),
+      );
 
       if (activeAssignment) {
         const response = NextResponse.json(

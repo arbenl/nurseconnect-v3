@@ -1,4 +1,3 @@
-import { db } from "@nurseconnect/database";
 import {
   VisitForbiddenError,
   VisitNotFoundError,
@@ -7,6 +6,7 @@ import {
 import { NextResponse } from "next/server";
 
 import { authErrorResponse, requireAnyRole } from "@/server/auth";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 import {
   createApiLogContext,
   logApiFailure,
@@ -30,11 +30,13 @@ export async function GET(request: Request, { params }: Params) {
     const { user } = await requireAnyRole(["admin", "nurse", "patient"]);
     actorContext = { ...context, actorId: user.id, actorRole: user.role };
 
-    const events = await getVisitTimelineForActor(db, {
-      requestId: params.id,
-      actorUserId: user.id,
-      actorRole: user.role,
-    });
+    const events = await withDefaultTenantContext("visit.timeline", (tx) =>
+      getVisitTimelineForActor(tx, {
+        requestId: params.id,
+        actorUserId: user.id,
+        actorRole: user.role,
+      }),
+    );
     const response = NextResponse.json(events);
     logApiSuccess(actorContext, 200, startedAt, { requestId: params.id });
     return withRequestId(response, context.requestId);

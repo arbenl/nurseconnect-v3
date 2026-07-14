@@ -11,7 +11,7 @@ import {
   lt,
   ne,
   or,
-  type DbClient,
+  type DbExecutor,
 } from "@nurseconnect/database";
 import { serviceRequests } from "@nurseconnect/database/schema";
 import type { SQL } from "drizzle-orm";
@@ -71,7 +71,7 @@ function mapToPatientVisitSummary(
 }
 
 export async function getPatientVisitProjection(
-  db: DbClient,
+  db: DbExecutor,
   input: {
     actorUserId: string;
     historyLimit?: number | null;

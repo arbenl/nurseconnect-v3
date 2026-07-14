@@ -1,8 +1,8 @@
 import type { RequestStatus } from "@nurseconnect/contracts";
-import { db } from "@nurseconnect/database";
 import { reassignRequestInDispatch } from "@nurseconnect/domain-dispatch";
 
 import { recordAdminAction } from "@/server/admin/audit";
+import { withDefaultTenantContext } from "@/server/db/default-tenant-context";
 
 export {
   RequestReassignForbiddenError,
@@ -25,7 +25,7 @@ export async function reassignRequest(input: {
 }): Promise<ReassignResult> {
   const { requestId, actorUserId, nurseUserId } = input;
 
-  return db.transaction(async (tx) => {
+  return withDefaultTenantContext("request.reassign", async (tx) => {
     const result = await reassignRequestInDispatch(tx, {
       requestId,
       actorUserId,

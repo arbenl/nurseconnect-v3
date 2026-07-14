@@ -1,4 +1,4 @@
-import type { DbClient } from "@nurseconnect/database";
+import type { DbExecutor } from "@nurseconnect/database";
 import { referralPartners, users } from "@nurseconnect/database/schema";
 import { eq } from "drizzle-orm";
 
@@ -11,7 +11,7 @@ import {
 export type ReferralPartnerStatus = typeof referralPartners.$inferSelect.status;
 export type ReferralPartnerProfile = typeof referralPartners.$inferSelect;
 
-type Database = DbClient;
+type Database = DbExecutor;
 
 type PostgresErrorLike = {
   code?: string;
