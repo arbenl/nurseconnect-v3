@@ -5,7 +5,7 @@ source_of_truth: false
 authority_note: "current-program.md is the singular source of truth; this tracker defers to current-program.md and current-tracker.md only. It extends nurseconnect-enterprise-architecture-tracker.md, whose pre-Phase-C rows (e.g. the unamended NC-E2-03) are superseded by the amendments recorded here."
 owner: platform
 created: 2026-06-10
-last_reviewed: 2026-06-10
+last_reviewed: 2026-07-14
 program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 current_tracker_bridge: docs/plans/current-tracker.md
 verification_command: pnpm verify-slice
@@ -57,8 +57,13 @@ Executes the already-merged plan in `docs/runbooks/default-tenant-backfill-plan.
 | ID | Status | Slice | Work | Acceptance Criteria (falsifiable) | Risk |
 |---|---|---|---|---|---|
 | `NC-TB-01` | `completed` | `tenant-expand` | Default org/branch bootstrap; add **nullable** `organization_id` (+ accepted care-site scope) to tenant-owned request, assignment, visit, payment, payout, and event tables; platform nurse/location/service-area, referral, audit, and identity surfaces remain deferred per data-lifecycle evidence. | PR #114 merged at `48eb6fab9bd83712245716998c0cdf9bd6bbe196`; reversible migrations, zero-NULL/default-tenant invariants, ownership constraints, forged-context regression, rollback rehearsal, required gates, remote checks, and reviewer/security disposition passed. | High |
-| `NC-TB-02` | `ready` | `tenant-observe` | Observe-before-enforce: tenant-scope violation detection on all domain queries via `withTenantContext`/`withTenant` adoption; violation signal exported. | Harness `guard` mode runs in CI; violation count visible; exit criterion = signal at zero for the full E2E suite. | High |
+| `NC-TB-02` | `completed` | `tenant-observe` | Observe-before-enforce: tenant-scope violation detection on all domain queries via `withTenantContext`/`withTenant` adoption; violation signal exported. | PR #116 merged at `430dc4b48ea075b850921db56ffd87206e2a1ae5`; guard-mode API/UI receipts reported `tenant_scope_violations=0`; required gates, full remote matrix, reviewer/security reconciliation, and zero unresolved threads passed. | High |
 | `NC-TB-03` | `planned` | `tenant-enforce` | Flip: `organization_id NOT NULL`, composite unique `(organization_id, id)` per FK-scoped table, **RLS enforcing** on domain tables with non-bypassing role asserted by `rls-role-assertion.ts`. | Tenant-isolation abuse tests (NC-E1-04 harness, `enforce` mode) prove tenant A cannot read tenant B on every domain table; rollback runbook tested. | High |
+
+`NC-TB-03` is selected next in sequence but remains held at its external
+promotion gate: a representative 14-day zero observation window, restrictive
+staging/two-tenant proof, and resolved support, analytics/export, and payout
+access classifications are still required.
 
 ## Band NC-E3 — Transactional Outbox & Jobs (stop mutating bare rows)
 
@@ -111,6 +116,7 @@ NC-EG-03 ──► NC-E5-01 ──► NC-E5-03 ──► NC-E5-04 ──► NC-E
 | `NC-EG-01 / ent-gate-framework` | `https://github.com/arbenl/nurseconnect-v3/pull/105` + `https://github.com/arbenl/nurseconnect-v3/pull/106` | `246b74e6f569cd20464f6ec82fce7d4bfae5c740` + `08fbced6a586353aa3884a1cfcf238bfa60bca96` | Ent-gate framework and green-check branch-protection parity merged; verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, and branch-protection audit passed. |
 | `NC-E2-03 / platform-authz` | `https://github.com/arbenl/nurseconnect-v3/pull/109` | `945b09362a786c082a71f2e4fbd77a372c7df452` | Platform authz package, branded policy decisions, `AuthorizedTransition` status proof tokens, action/resource-kind binding, raw status-write guard, CAS tests, local verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, bot-thread guard, and model-route blocked disposition passed. |
 | `NC-TB-01 / tenant-expand` | `https://github.com/arbenl/nurseconnect-v3/pull/114` | `48eb6fab9bd83712245716998c0cdf9bd6bbe196` | Nullable tenant/care-site expansion and default backfill, payment-request ownership constraints, forged-context regression, exact rollback rehearsal, verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke gate, reviewer/security disposition, and bot-thread audit passed; blocked external model routes were not counted as approval. |
+| `NC-TB-02 / tenant-observe` | `https://github.com/arbenl/nurseconnect-v3/pull/116` | `430dc4b48ea075b850921db56ffd87206e2a1ae5` | Tenant observer and provenance controls, PHI-safe zero/nonzero evidence, 65/65 API and 4/4 UI smoke receipts with zero violations, full E2E UI, exact-delta security reconciliation, verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, and zero unresolved threads passed; blocked model routes were not counted as approval. |
 
 ## Closeout discipline
 

@@ -4,7 +4,7 @@ status: active
 source_of_truth: false
 authority_note: "current-program.md is the singular source of truth; this tracker defers to it on conflict."
 owner: platform
-last_reviewed: 2026-07-13
+last_reviewed: 2026-07-14
 current_program_path: docs/plans/current-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
 verification_command: pnpm verify-slice
@@ -36,7 +36,7 @@ verification_command: pnpm verify-slice
 | `NC-E2-03` | `completed` | identity + platform | Add in-process tenant/resource-aware policy functions **plus phantom-type guards** (`AuthorizedTransition` brand; branded `PolicyDecision`) per the Phase C amendment in `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`. | PR #109 merged at `945b09362a786c082a71f2e4fbd77a372c7df452`; policy matrix covers allow/deny/cross-tenant/PHI/action-resource cases; negative type-test proves direct `service_requests.status` writes fail `tsc` without an `AuthorizedTransition`; architecture guard blocks raw status writes; verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, API E2E, UI smoke, bot-thread guard, and subagent evidence passed. |
 | `NC-E2-04` | `completed` | identity + platform + clinical | Add `MedicalEvidence` / `VerifiedCredentialEvidence` proof tokens for credential and clinical writes. | PR #111 merged at `b79a345267249fe7d431c7026dd0a44d59be486f`; credential and clinical write proof tokens, wrapper route coverage, type-level negative tests, boundary guards, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, local gate:release, ent-gates, and subagent evidence passed. |
 | `NC-TB-01` | `completed` | platform + database | Default org/branch bootstrap; add nullable `organization_id` plus accepted care-site scope to tenant-owned request, assignment, visit, payment, payout, and event tables; platform nurse/location/service-area, referral, audit, and identity surfaces remain deferred per data-lifecycle evidence. | PR #114 merged at `48eb6fab9bd83712245716998c0cdf9bd6bbe196`; reversible migrations, default-tenant invariants, tenant ownership constraints, forged-context regression, rollback rehearsal, local required gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke gate, reviewer/security disposition, and bot-thread audit passed. |
-| `NC-TB-02` | `ready` | platform + database + observability | Adopt tenant context across domain queries and export observe-before-enforce violation signals. | Harness `guard` mode runs in CI; violation count is visible; signal is zero across the full E2E suite before enforcement is promoted. |
+| `NC-TB-02` | `completed` | platform + database + observability | Adopt tenant context across domain queries and export observe-before-enforce violation signals. | PR #116 merged at `430dc4b48ea075b850921db56ffd87206e2a1ae5`; harness `guard` mode, sanitized observer evidence, 65/65 API and 4/4 UI smoke receipts with `tenant_scope_violations=0`, full E2E UI, focused DB/type proof, reviewer/security reconciliation, required gates, CI, Sonar, GitGuardian, and PR Finalizer passed. |
 
 > Phase C Enterprise Upgrade bands (ent-* gates, type-level guards, tenant
 > backfill execution, outbox, CQRS repair, PHI lifecycle) are mapped in
@@ -45,15 +45,18 @@ verification_command: pnpm verify-slice
 
 ## Next Slice
 
-```text
-NC-TB-02 / codex/tenant-observe   (ready, promoted next)
-```
+No implementation slice is currently promoted while the NC-TB-03 external
+gate remains open. Held candidate: `NC-TB-03 / tenant-enforce`
+(`codex/tenant-enforce`).
 
 Rationale:
 
-- PR #114 completed `NC-TB-01 / tenant-expand` under fail-closed
-  `ent-tm`/`ent-dlv`/`ent-perf` gates.
-- `NC-TB-02 / tenant-observe` is now the next Phase C tenant backfill slice.
+- PR #116 completed `NC-TB-02 / tenant-observe` under fail-closed
+  `ent-tm`/`ent-dlv`/`ent-perf` gates with zero tenant-scope violations.
+- `NC-TB-03 / tenant-enforce` is selected next in the Phase C sequence, but it
+  remains `planned` until the representative 14-day zero window, restrictive
+  staging/two-tenant proof, and support, analytics/export, and payout access
+  classifications clear.
 
 ## Recent Closeout Evidence
 
@@ -76,6 +79,7 @@ Rationale:
 | `NC-E2-03 / platform-authz` | `https://github.com/arbenl/nurseconnect-v3/pull/109` | `945b09362a786c082a71f2e4fbd77a372c7df452` | Platform authz package, branded policy decisions, `AuthorizedTransition` status proof tokens, action/resource-kind binding, raw status-write guard, CAS tests, local verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, bot-thread guard, and model-route blocked disposition passed. |
 | `NC-E2-04 / medical-evidence-brand` | `https://github.com/arbenl/nurseconnect-v3/pull/111` | `b79a345267249fe7d431c7026dd0a44d59be486f` | `MedicalEvidence` and `VerifiedCredentialEvidence` proof tokens, credential route wrappers, negative type tests, raw status-write guard coverage, local `CI=true pnpm gate:release`, verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, and subagent evidence passed. |
 | `NC-TB-01 / tenant-expand` | `https://github.com/arbenl/nurseconnect-v3/pull/114` | `48eb6fab9bd83712245716998c0cdf9bd6bbe196` | Nullable tenant/care-site expansion and default backfill, payment-request ownership constraints, forged-context regression, exact rollback rehearsal, verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke gate, reviewer/security disposition, and bot-thread audit passed; Sonnet and Gemini blocked routes were not counted as approval. |
+| `NC-TB-02 / tenant-observe` | `https://github.com/arbenl/nurseconnect-v3/pull/116` | `430dc4b48ea075b850921db56ffd87206e2a1ae5` | Tenant query classification and provenance observation, sanitized zero/nonzero evidence, 65/65 API and 4/4 UI smoke receipts with `tenant_scope_violations=0`, full E2E UI, focused DB/type proof, exact-delta security reconciliation with zero findings, verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, and zero unresolved threads passed; blocked model routes were not counted as approval. |
 
 ## Status Rules
 

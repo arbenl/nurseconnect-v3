@@ -3,7 +3,7 @@ plan_role: canonical_program
 status: active
 source_of_truth: true
 owner: platform
-last_reviewed: 2026-07-13
+last_reviewed: 2026-07-14
 tracker_path: docs/plans/current-tracker.md
 architecture_program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
@@ -100,6 +100,7 @@ Completed closeout evidence:
 - `NC-TB-01 / tenant-expand` merged in PR #114 on 2026-07-13.
 - Merge commit: `48eb6fab9bd83712245716998c0cdf9bd6bbe196`.
 - Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, rollback rehearsal, reviewer/security disposition, and bot-thread audit. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260713T143528Z-c719ad`; blocked Sonnet/Gemini routes were recorded honestly and were not counted as approval.
+- `NC-TB-02 / tenant-observe` merged in PR #116 on 2026-07-14 at `430dc4b48ea075b850921db56ffd87206e2a1ae5`; Type Check & Lint, unit/DB/API/UI suites, Sonar, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, zero-violation receipts, reviewer/security reconciliation, and bot-thread audit passed. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260713T211047Z-7af7c5`; blocked model routes were not counted as approval.
 
 Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
 ADR-001 Decision B:
@@ -121,14 +122,12 @@ Decision scope:
 The program now executes under the **Phase C Enterprise Upgrade** map
 (`docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`). The enterprise verification gate
 band (`NC-EG`) landed before further implementation slices, so all subsequent
-work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating. `NC-TB-02 /
-tenant-observe` is promoted next after `NC-TB-01 / tenant-expand`.
-
-The next implementation slices are:
-
-```text
-NC-TB-02 / codex/tenant-observe   (promoted next)
-```
+work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating.
+`NC-TB-02 / tenant-observe` is complete. The next selected candidate,
+`NC-TB-03 / tenant-enforce`, is held until the representative 14-day observation
+window is zero, restrictive staging/two-tenant proof passes, and support,
+analytics/export, and payout access classifications are resolved. No
+implementation slice is currently promoted.
 
 ## Slice Execution Contract
 

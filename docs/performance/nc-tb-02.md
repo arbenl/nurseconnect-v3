@@ -23,3 +23,10 @@ zero. A passing run writes no per-query records after the first liveness marker.
 Focused classifier, observer, domain, DB, and Playwright evidence tests plus the
 full release/required gates provide regression evidence. The change does not add
 schema, index, migration, network, or external-service work.
+
+## Closeout
+
+PR #116 merged at `430dc4b48ea075b850921db56ffd87206e2a1ae5` after
+focused performance-sensitive classifier/observer proof, required gates, and
+the complete remote matrix passed. No schema, index, migration, network, or
+external-service work was added.

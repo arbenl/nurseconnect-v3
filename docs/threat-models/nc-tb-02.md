@@ -46,3 +46,11 @@ window and restrictive staging/two-tenant gates pass.
 
 Classifier adversarial tests, wrong-executor DB proof, fail-closed evidence
 parsing, API/full-UI zero receipts, security review, and required ent-gates.
+
+## Closeout
+
+PR #116 merged at `430dc4b48ea075b850921db56ffd87206e2a1ae5` with
+zero findings in final diff-scoped security reconciliation, zero unresolved
+review threads, zero tenant-scope violations in retained API/UI receipts, and
+all required remote checks green. The NC-TB-03 residual-risk gate remains in
+force.
