@@ -122,11 +122,12 @@ Decision scope:
 The program now executes under the **Phase C Enterprise Upgrade** map
 (`docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`). The enterprise verification gate
 band (`NC-EG`) landed before further implementation slices, so all subsequent
-work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating. `NC-TB-02 /
-tenant-observe` is complete. The next selected slice is `NC-TB-03 /
-codex/tenant-enforce`, held until the representative 14-day observation window
-is zero, restrictive staging/two-tenant proof passes, and support,
-analytics/export, and payout access classifications are resolved.
+work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating.
+`NC-TB-02 / tenant-observe` is complete. The next selected candidate,
+`NC-TB-03 / tenant-enforce`, is held until the representative 14-day observation
+window is zero, restrictive staging/two-tenant proof passes, and support,
+analytics/export, and payout access classifications are resolved. No
+implementation slice is currently promoted.
 
 ## Slice Execution Contract
 

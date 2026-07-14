@@ -45,9 +45,9 @@ verification_command: pnpm verify-slice
 
 ## Next Slice
 
-```text
-NC-TB-03 / codex/tenant-enforce   (selected next; held at external promotion gate)
-```
+No implementation slice is currently promoted while the NC-TB-03 external
+gate remains open. Held candidate: `NC-TB-03 / tenant-enforce`
+(`codex/tenant-enforce`).
 
 Rationale:
 
