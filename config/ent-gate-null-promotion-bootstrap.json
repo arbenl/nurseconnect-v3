@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 3,
+  "authorizationVersion": 3,
+  "mode": "one-shot-null-promotion-installer",
+  "baseSha": "e8b3c5c38650ed3bcc0d64de538cc4247598f49a",
+  "branch": "codex/ent-gate-null-promotion-bootstrap",
+  "slice": "NC-EG-06",
+  "fileCount": 15,
+  "fileSetSha256": "a571089ec113f602ef046d14068648fdda5be70bde448dddfbac8adc6f340835",
+  "allowedFiles": [
+    "config/ent-gate-null-promotion-bootstrap.json",
+    "docs/data-lifecycle/nc-eg-06.md",
+    "docs/performance/nc-eg-06.md",
+    "docs/plans/nc-eg-06-null-promotion-bootstrap-design.md",
+    "docs/threat-models/nc-eg-06.md",
+    "scripts/__tests__/check-pr-slice-evidence-fragility.test.mjs",
+    "scripts/__tests__/check-pr-slice-evidence.test.mjs",
+    "scripts/ent-gates/__tests__/ent-gates-tracker.test.mjs",
+    "scripts/ent-gates/__tests__/promotion-policy.test.mjs",
+    "scripts/ent-gates/check.mjs",
+    "scripts/ent-gates/evidence.mjs",
+    "scripts/ent-gates/manifest.mjs",
+    "scripts/ent-gates/promotion-policy.mjs",
+    "scripts/lib/pr-ent-gate-evidence.mjs",
+    "slice-gates.yaml"
+  ]
+}

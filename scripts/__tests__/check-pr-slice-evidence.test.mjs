@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
-
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { validatePrSliceEvidence } from "../check-pr-slice-evidence.mjs";
 import { entGateFiles, goodEvidence, manifestSha } from "./pr-slice-evidence-helpers.mjs";
+
+const fixtureKeys = ["BASE_COMMIT", "CI", "GATE_POLICY_BASE", "GITHUB_ACTIONS", "GITHUB_BASE_REF", "GITHUB_EVENT_NAME", "GITHUB_HEAD_REF", "PR_FILES_COMPLETE"];
+const savedEnv = Object.fromEntries(fixtureKeys.map((key) => [key, process.env[key]]));
+beforeAll(() => { for (const key of fixtureKeys) delete process.env[key]; process.env.PR_FILES_COMPLETE = "1"; });
+afterAll(() => { for (const key of fixtureKeys) savedEnv[key] === undefined ? delete process.env[key] : process.env[key] = savedEnv[key]; });
 
 describe("PR slice evidence validator", () => {
   it("passes a Tier 3 PR body with QA, model-review, debate, and slice evidence entries", () => {
@@ -10,7 +14,6 @@ describe("PR slice evidence validator", () => {
     expect(result.highRisk).toBe(true);
     expect(result.errors).toEqual([]);
   });
-
   it("fails when tracker ID, MUST_FIX disposition, and evidence checks are missing", () => {
     const result = validatePrSliceEvidence({
       body: `
@@ -32,7 +35,6 @@ describe("PR slice evidence validator", () => {
     expect(result.errors).toContain("Evidence section missing ent-gates PASS.");
     expect(result.errors).toContain('Evidence section must include MUST_FIX disposition like "MUST_FIX: 0 (none)" or "MUST_FIX: 2 (all fixed)".');
   });
-
   it("accepts Phase C band tracker IDs (NC-EG/NC-TB/NC-CQ) and still rejects unknown bands", () => {
     for (const id of ["NC-EG-00", "NC-TB-01", "NC-CQ-05", "NC-E2-03"]) {
       const result = validatePrSliceEvidence({ body: goodEvidence.replace(/NC-E\d+-\d+/, id), files: entGateFiles });
@@ -44,7 +46,6 @@ describe("PR slice evidence validator", () => {
       expect(bogus.errors).toContain("PR body must include a NurseConnect tracker ID like NC-E2-03 or NC-EG-00.");
     }
   });
-
   it("requires live model evidence or an explicit blocked-route disposition for protected files", () => {
     const result = validatePrSliceEvidence({
       body: `
@@ -72,7 +73,6 @@ describe("PR slice evidence validator", () => {
     expect(result.errors).toContain("Tier 2/3 or protected-file PRs must include model route access-check evidence.");
     expect(result.errors.join("\n")).toContain("explicit blocked external-review disposition");
   });
-
   it("allows protected PR evidence when external reviewers are blocked and not counted as approval", () => {
     const body = goodEvidence
       .replace(/- \[x\] Subagent results:[^\n]+\n/, "")
@@ -81,7 +81,6 @@ describe("PR slice evidence validator", () => {
     const result = validatePrSliceEvidence({ body, files: [...entGateFiles, "scripts/multi-agent/model-review.mjs"] });
     expect(result.status).toBe("pass");
   });
-
   it("accepts semantic evidence labels when protected workflow routes are blocked", () => {
     const result = validatePrSliceEvidence({
       body: `

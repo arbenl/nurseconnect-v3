@@ -16,6 +16,7 @@ export function loadManifest(file = "slice-gates.yaml") {
 export function parseManifest(source) {
   const manifest = { gates: {} };
   const errors = [];
+  const seenTop = new Set();
   let currentGate = "";
 
   for (const raw of normalizeBlockScalars(source).split(/\r?\n/)) {
@@ -29,15 +30,18 @@ export function parseManifest(source) {
     if (top) {
       currentGate = "";
       const [, key, value] = top;
-      if (key === "slice" || key === "branch") manifest[key] = clean(value);
+      if (seenTop.has(key)) errors.push(`Duplicate manifest key: ${key}`); else seenTop.add(key);
+      if (["slice", "branch", "promotion-mode", "authority-files"].includes(key)) manifest[key] = clean(value);
       else if (key !== "gates") errors.push(`Unknown manifest key: ${key}`);
     } else if (gate) {
       currentGate = gate[1];
+      if (Object.hasOwn(manifest.gates, currentGate)) errors.push(`Duplicate gate: ${currentGate}`);
       const inline = parseInlineMap(gate[2]);
       manifest.gates[currentGate] = inline || {};
       if (gate[2] && !inline) errors.push(`Unsupported inline gate map: ${raw.trim()}`);
       if (inline) currentGate = "";
     } else if (field && currentGate) {
+      if (Object.hasOwn(manifest.gates[currentGate], field[1])) errors.push(`Duplicate ${currentGate} key: ${field[1]}`);
       manifest.gates[currentGate][field[1]] = clean(field[2]);
     } else {
       errors.push(`Unsupported manifest line: ${raw.trim()}`);
@@ -66,6 +70,8 @@ export function validateManifest({ manifest, changedFiles = [], trackerText = ""
   const changed = new Set(changedFiles);
   if (!manifest.slice) errors.push("Manifest missing slice.");
   if (!manifest.branch) errors.push("Manifest missing branch.");
+  if (manifest["promotion-mode"] && !["authority", "bootstrap"].includes(manifest["promotion-mode"])) errors.push("Invalid promotion-mode.");
+  if (manifest["authority-files"] && manifest["promotion-mode"] !== "authority") errors.push("authority-files requires authority promotion mode.");
   for (const gate of GATES) validateGate(errors, gate, manifest.gates[gate], changed, enforceDiffEvidence);
   if (enforcePromotion) {
     const promoted = parsePromotedSlice(trackerText);
@@ -108,6 +114,7 @@ function parseInlineMap(value) {
   for (const part of body.slice(1, -1).split(/,\s*/).map((item) => item.trim()).filter(Boolean)) {
     const match = part.match(/^([A-Za-z-]+):\s*(.*)$/);
     if (!match) return null;
+    if (Object.hasOwn(out, match[1])) return null;
     out[match[1]] = clean(match[2]);
   }
   return out;
