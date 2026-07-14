@@ -25,3 +25,10 @@ payout decisions remain mandatory before NC-TB-03 enforcement.
 
 Observer unit tests prove sanitized records and sink failure behavior. Full API
 and UI teardown receipts prove the retained aggregate is present and zero.
+
+## Closeout
+
+PR #116 merged at `430dc4b48ea075b850921db56ffd87206e2a1ae5`.
+The final API and UI smoke receipts reported `tenant_scope_violations=0`; the
+full remote matrix and required lifecycle gates passed. This closeout does not
+promote enforcement or relax any deferred access classification.
