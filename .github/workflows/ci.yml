@@ -524,8 +524,8 @@ jobs:
         with:
           name: playwright-report-api
           path: |
-            apps/web/playwright-report/
-            apps/web/test-results/
+            artifacts/playwright/report/
+            artifacts/playwright/test-results/
             artifacts/playwright/tenant-observation/
           retention-days: 30
 
@@ -610,8 +610,8 @@ jobs:
         with:
           name: playwright-report-ui-smoke
           path: |
-            apps/web/playwright-report/
-            apps/web/test-results/
+            artifacts/playwright/report/
+            artifacts/playwright/test-results/
             artifacts/playwright/tenant-observation/
           retention-days: 7
 
@@ -694,8 +694,8 @@ jobs:
         with:
           name: playwright-report-ui
           path: |
-            apps/web/playwright-report/
-            apps/web/test-results/
+            artifacts/playwright/report/
+            artifacts/playwright/test-results/
             artifacts/playwright/tenant-observation/
           retention-days: 30
   pr-finalizer:

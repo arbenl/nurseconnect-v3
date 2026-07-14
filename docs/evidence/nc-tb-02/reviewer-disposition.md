@@ -34,20 +34,31 @@ The remediation does not log query text, identifiers, or PHI.
 
 ## Independent Sonar Blocker
 
-The first PR head failed Sonar independently: new-code reliability rating was
-`D` (actual `4`, required `A`) and new-code coverage was `74.8%` (required
-`80%`). Local coverage proof for the remediation exceeds the changed-line
-threshold, but the replacement-head Sonar result remains authoritative. This
-disposition does not claim that the reliability issue is cleared before the
-remote replacement matrix reports success.
+Authenticated Sonar evidence identified its replacement-head reliability issue
+at `packages/database/src/tenant-query-classifier.ts:50`: the parameterless
+`sort()` required an explicit compare function. The classifier now uses a
+narrow, locale-independent `TenantTable` comparator. Focused database tests,
+database type-check, required gates, and the exact delta audit pass. The next
+remote Sonar result remains authoritative.
+
+## Codex Senior Review
+
+The exact-head Codex 5.6 Sol wrapper was classified as quota/auth blocked and is
+not counted as approval. Its semantic output nevertheless raised one valid P2:
+three CI upload steps still referenced Playwright's old report/result paths.
+All three now match `artifacts/playwright/{report,test-results}` while retaining
+tenant-observation evidence. An independent reviewer approved the correction;
+YAML parsing and the 221-test script suite pass.
 
 ## Delta Security Evidence
 
 The exact Copilot-remediation code delta was reviewed at
 `evidence/security-diff-scan-pr-review-fix/`: 10/10 files received full-file
-receipts, with zero candidates and zero deferred findings. The disposition
-document is evidence-only, contains no runtime behavior or secrets, and was
-separately checked before staging.
+receipts, with zero candidates and zero deferred findings. The Sonar comparator
+and senior-review workflow corrections have separate complete zero-finding
+receipts at `evidence/security-diff-scan-sonar-fix/` and
+`evidence/security-diff-scan-sonar-senior-fix/`. The disposition document is
+evidence-only and contains no runtime behavior or secrets.
 
 ## Merge Status
 
