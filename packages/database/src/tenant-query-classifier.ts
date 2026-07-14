@@ -47,7 +47,17 @@ export function classifyTenantQuery(query: string): TenantQueryClassification {
     }
   }
 
-  return { operation: operationFrom(tokens, cte.statementStart), oversize: false, tables: [...tables].sort() };
+  return {
+    operation: operationFrom(tokens, cte.statementStart),
+    oversize: false,
+    tables: [...tables].sort(compareTenantTables),
+  };
+}
+
+function compareTenantTables(left: TenantTable, right: TenantTable): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
 }
 
 function operationFrom(tokens: string[], start: number): QueryOperation {
