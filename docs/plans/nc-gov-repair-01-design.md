@@ -127,3 +127,11 @@ structured final output and completion events; keep all original packet/pass and
 provider-error/timeout assertions, adding runtimeComplete and final-schema assertions.
 This one existing test path expands the final exact inventory to25. No production
 runner behavior changes here; revision2's failed full-gate receipt stays preserved.
+
+## Mode-rejection reliability correction
+
+Revision3 required verification exposed a6773ms timeout against the unchanged5000ms
+negative test. Reject a proven forbidden worktree mode immediately with its nonempty
+errors; do not perform the remaining hundred Git reads after rejection is established.
+All valid-path identity checks, both original negative assertions and timeout remain.
+Revision3 retry results do not erase this source finding or authorize changed bytes.

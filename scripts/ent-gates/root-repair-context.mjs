@@ -15,7 +15,10 @@ export function rootRepairContext(env, cwd = ".") {
     if (git(["for-each-ref", "--format=%(refname)", "refs/replace/"])) errors.push("Root repair forbids replace refs.");
     for (const file of REPAIR_FILES) {
       const stat = lstatSync(`${cwd}/${file}`);
-      if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o111)) errors.push(`Root repair file mode is forbidden: ${file}`);
+      if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o111)) {
+        errors.push(`Root repair file mode is forbidden: ${file}`);
+        return { mainSha, errors };
+      }
       const existedAtBase = Boolean(git(["ls-tree", REPAIR_BASE, "--", file]));
       for (const ref of [REPAIR_BASE, "HEAD"]) {
         const tree = git(["ls-tree", ref, "--", file]);
