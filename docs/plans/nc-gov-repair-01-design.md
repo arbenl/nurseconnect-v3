@@ -9,7 +9,7 @@ One fixed-base amendment at 9882c8b5044d238c398dde8e0ec45b7bf039cc89,
 branch codex/governance-fixture-repair. Preserve all three canonical authority files
 byte-for-byte intentional-null. No product, tenant, schema or runtime feature work;
 03A/03B remain held and EG02/03/04 acceptance is unchanged.
-The exact 24 paths are independently listed in root-repair-policy.mjs and the
+The exact 25 paths are independently listed in root-repair-policy.mjs and the
 candidate authorization record. An external complete inventory and patch hash bind
 all bytes, including policy and record; neither file can hash/authorize itself.
 The record file-set SHA hashes sorted UTF-8 PATH STRINGS plus a final newline, not
@@ -43,7 +43,7 @@ Never bypass or disable a check; later slices use installed ordinary base policy
 ## Admission constraints
 
 Manifest mode governance-repair is distinct from standard, authority and bootstrap.
-Its unique slice/branch/base and exact 24-file regular inventory are compiled into
+Its unique slice/branch/base and exact 25-file regular inventory are compiled into
 policy and checked against the record. All six base/head authority states stay null;
 all three evidence gates are required. Tree mode/symlink/deletion/missing files,
 wrong repository/fork/event/checkout, wrong branch/base/hash and reuse are rejected.
@@ -118,3 +118,12 @@ output-schema in a real protocol probe, so it cannot supply this typed contract.
 Schema/protocol failures, truncation, injected markers, runtime errors and missing
 final output fail closed. Retained diagnostics never determine actual findings.
 Old frozen packet/hash and its failed/partial gate receipts remain separate.
+
+## Existing positive fixture compatibility
+
+The full revision2 script suite caught its old positive senior-review stub returning
+plain prose instead of the new actual runtime protocol. Adapt that fixture to emit
+structured final output and completion events; keep all original packet/pass and
+provider-error/timeout assertions, adding runtimeComplete and final-schema assertions.
+This one existing test path expands the final exact inventory to25. No production
+runner behavior changes here; revision2's failed full-gate receipt stays preserved.

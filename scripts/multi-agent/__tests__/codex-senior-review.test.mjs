@@ -39,11 +39,23 @@ describe("codex senior review command", () => {
   it("writes a packet and passing receipt when codex review completes cleanly", () => {
     const root = makeTemp();
     try {
-      const result = run(root, "#!/usr/bin/env bash\necho 'No findings.'\n");
+      const result = run(root, `#!${process.execPath}
+const fs = require("node:fs");
+const review = { findings: [], overall_correctness: "patch is correct",
+  overall_explanation: "Synthetic completed source review.", overall_confidence_score: 1 };
+const finalPath = process.argv[process.argv.indexOf("--output-last-message") + 1];
+fs.writeFileSync(finalPath, JSON.stringify(review));
+for (const event of [
+  { type: "thread.started", thread_id: "synthetic" },
+  { type: "item.completed", item: { type: "agent_message", text: JSON.stringify(review) } },
+  { type: "turn.completed", usage: {} },
+]) process.stdout.write(JSON.stringify(event) + "\\n");
+`);
 
       expect(result.status).toBe(0);
       expect(existsSync(join(root, "run/reviews/codex-senior-review-packet.md"))).toBe(true);
-      expect(receipt(root)).toMatchObject({ status: "pass", reviewer: "codex-senior", blocker: null });
+      expect(receipt(root)).toMatchObject({ status: "pass", reviewer: "codex-senior", blocker: null,
+        runtimeComplete: true, review: { findings: [], overall_correctness: "patch is correct" } });
     } finally {
       cleanup(root);
     }

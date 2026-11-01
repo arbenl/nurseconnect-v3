@@ -22,6 +22,7 @@ export const REPAIR_FILES = [
   "scripts/ent-gates/root-repair-context.mjs",
   "scripts/ent-gates/root-repair-policy.mjs",
   "scripts/multi-agent/__tests__/codex-senior-review-result.test.mjs",
+  "scripts/multi-agent/__tests__/codex-senior-review.test.mjs",
   "scripts/multi-agent/__tests__/trusted-sentry-collector.test.mjs",
   "scripts/multi-agent/codex-senior-review.mjs",
   "scripts/multi-agent/lib/senior-review-result.mjs",

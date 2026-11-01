@@ -24,12 +24,13 @@
     "scripts/ent-gates/root-repair-context.mjs",
     "scripts/ent-gates/root-repair-policy.mjs",
     "scripts/multi-agent/__tests__/codex-senior-review-result.test.mjs",
+    "scripts/multi-agent/__tests__/codex-senior-review.test.mjs",
     "scripts/multi-agent/__tests__/trusted-sentry-collector.test.mjs",
     "scripts/multi-agent/codex-senior-review.mjs",
     "scripts/multi-agent/lib/senior-review-result.mjs",
     "scripts/multi-agent/trusted-sentry-collector.mjs",
     "slice-gates.yaml"
   ],
-  "fileCount": 24,
-  "fileSetSha256": "27975eb9ceff9dee10b0a156432fd5158261a05c8d8800c14be990036b9f7216"
+  "fileCount": 25,
+  "fileSetSha256": "30242c351faa988c0cc9e59510e7e87d86c2fe56cdf171eb33266bf9176ea6f8"
 }

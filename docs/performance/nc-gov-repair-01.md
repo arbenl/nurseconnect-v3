@@ -3,7 +3,7 @@
 ## Scope
 
 No product query, database, API latency or background job changes. Policy checks
-operate on one fixed 24-file set. Historical tests use disposable local Git clones.
+operate on one fixed 25-file set. Historical tests use disposable local Git clones.
 Sentry collection makes exactly two requests, with no pagination or retries.
 Each uses a total 15-second AbortSignal deadline across connect/headers/body
 and a streamed 1 MiB cap (at most 30 seconds for both requests);
