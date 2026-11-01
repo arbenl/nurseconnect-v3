@@ -55,6 +55,7 @@ for (const event of [
       expect(result.status).toBe(0);
       expect(existsSync(join(root, "run/reviews/codex-senior-review-packet.md"))).toBe(true);
       expect(receipt(root)).toMatchObject({ status: "pass", reviewer: "codex-senior", blocker: null,
+        receiptVersion: 2, protocol: "codex-exec-jsonl-schema",
         runtimeComplete: true, review: { findings: [], overall_correctness: "patch is correct" } });
     } finally {
       cleanup(root);

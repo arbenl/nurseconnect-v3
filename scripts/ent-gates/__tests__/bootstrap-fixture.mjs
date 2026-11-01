@@ -1,8 +1,10 @@
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync, mkdtempSync, readFileSync, mkdirSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { cleanGitEnv } from "../evidence.mjs";
+import { REPAIR_BASE, REPAIR_FILES } from "../root-repair-policy.mjs";
 
 export function bootstrapFixture(root) {
   const file = join(root, "bootstrap.fixture.yaml");
@@ -40,4 +42,23 @@ export function historicalRun(root, args, env = {}, ambientMode) {
   const result = spawnSync(process.execPath, ["--input-type=module", "-e", code, JSON.stringify(args), JSON.stringify(env)], { cwd, env: cleanGitEnv(), encoding: "utf8" });
   if (result.status !== 0) throw new Error(result.stderr);
   return JSON.parse(result.stdout);
+}
+
+export function rootRepairFixture(test) {
+  const dir = mkdtempSync(join(tmpdir(), "nc-root-context-")), cwd = join(dir, "repo");
+  const source = fileURLToPath(new URL("../../../", import.meta.url));
+  const git = (args) => {
+    const result = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd: dir, encoding: "utf8" });
+    if (result.status !== 0) throw new Error("Context fixture failed.");
+  };
+  try {
+    git(["clone", "--shared", "--no-checkout", "--quiet", source, cwd]);
+    git(["-C", cwd, "checkout", "--quiet", "--detach", REPAIR_BASE]);
+    git(["-C", cwd, "update-ref", "refs/remotes/origin/main", REPAIR_BASE]);
+    for (const file of REPAIR_FILES) {
+      mkdirSync(dirname(join(cwd, file)), { recursive: true });
+      writeFileSync(join(cwd, file), readFileSync(join(source, file)));
+    }
+    test(cwd);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 }

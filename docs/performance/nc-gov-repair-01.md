@@ -7,6 +7,9 @@ operate on one fixed 25-file set. Historical tests use disposable local Git clon
 Forbidden worktree modes reject immediately; valid candidates retain all Git checks.
 This removes redundant reads after a proven rejection while preserving the5000ms
 test timeout and both executable/symlink assertions. The6773ms V3 failure is retained.
+Base/head/index entries are read in three NUL-delimited Git batches; every path
+retains its mode/stage checks. Valid local context uses five Git processes; the
+regression budget is ten. Local test workers are bounded to available CI resources.
 Sentry collection makes exactly two requests, with no pagination or retries.
 Each uses a total 15-second AbortSignal deadline across connect/headers/body
 and a streamed 1 MiB cap (at most 30 seconds for both requests);

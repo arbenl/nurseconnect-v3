@@ -117,6 +117,9 @@ turn completion and a matching runtime final result. Built-in exec review ignore
 output-schema in a real protocol probe, so it cannot supply this typed contract.
 Schema/protocol failures, truncation, injected markers, runtime errors and missing
 final output fail closed. Retained diagnostics never determine actual findings.
+These guarantees apply to the producer command. The unchanged legacy receipt
+consumer is inherited debt; this25file slice does not claim consumer hardening.
+The owner explicitly directed that separate concern to remain outside this repair.
 Old frozen packet/hash and its failed/partial gate receipts remain separate.
 
 ## Existing positive fixture compatibility

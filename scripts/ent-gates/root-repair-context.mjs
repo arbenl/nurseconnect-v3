@@ -9,6 +9,15 @@ export function rootRepairContext(env, cwd = ".") {
     if (result.status !== 0) throw new Error("Root repair Git identity is unavailable.");
     return result.stdout.trim();
   };
+  const records = (output) => {
+    const entries = new Map();
+    for (const row of output.split("\0").filter(Boolean)) {
+      const split = row.indexOf("\t"), file = row.slice(split + 1);
+      if (split < 0 || !REPAIR_FILES.includes(file)) throw new Error("Root repair Git inventory is invalid.");
+      entries.set(file, [...(entries.get(file) || []), row.slice(0, split)]);
+    }
+    return entries;
+  };
   let mainSha = "";
   try {
     mainSha = git(["rev-parse", "--verify", "origin/main^{commit}"]);
@@ -19,13 +28,17 @@ export function rootRepairContext(env, cwd = ".") {
         errors.push(`Root repair file mode is forbidden: ${file}`);
         return { mainSha, errors };
       }
-      const existedAtBase = Boolean(git(["ls-tree", REPAIR_BASE, "--", file]));
-      for (const ref of [REPAIR_BASE, "HEAD"]) {
-        const tree = git(["ls-tree", ref, "--", file]);
-        if ((existedAtBase && !tree) || (tree && !tree.startsWith("100644 blob "))) errors.push(`Root repair changes a protected tree mode: ${file}`);
+    }
+    const base = records(git(["ls-tree", "-z", REPAIR_BASE, "--", ...REPAIR_FILES]));
+    const headTree = records(git(["ls-tree", "-z", "HEAD", "--", ...REPAIR_FILES]));
+    const indexTree = records(git(["ls-files", "--stage", "-z", "--", ...REPAIR_FILES]));
+    for (const file of REPAIR_FILES) {
+      const existedAtBase = base.has(file);
+      for (const tree of [base.get(file) || [], headTree.get(file) || []]) {
+        if ((existedAtBase && !tree.length) || (tree.length && (tree.length !== 1 || !tree[0].startsWith("100644 blob ")))) errors.push(`Root repair changes a protected tree mode: ${file}`);
       }
-      const index = git(["ls-files", "--stage", "--", file]);
-      if ((existedAtBase && !index) || (index && !/^100644 [a-f0-9]{40} 0\t[^\n]+$/.test(index))) errors.push(`Root repair index mode is forbidden: ${file}`);
+      const index = indexTree.get(file) || [];
+      if ((existedAtBase && !index.length) || (index.length && (index.length !== 1 || !/^100644 [a-f0-9]{40} 0$/.test(index[0])))) errors.push(`Root repair index mode is forbidden: ${file}`);
     }
     if (env.GITHUB_ACTIONS === "true" || env.GITHUB_EVENT_NAME === "pull_request") {
       if (env.GITHUB_EVENT_NAME !== "pull_request") errors.push("Root repair event must be pull_request.");

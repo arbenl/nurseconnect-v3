@@ -33,6 +33,7 @@ function packetBody({ base, baseSha, headSha, changedFiles, mode }) {
 - changed_files: ${changedFiles.join(", ") || "none"}
 
 Review the entire PR slice diff for correctness, security, test gaps, and maturity regressions.
+Report introduced regressions; label unchanged inherited debt separately and respect the owner-approved scope.
 Prioritize concrete bugs and merge blockers. Use [P0] or [P1] only for issues that must be fixed before push.
 Use the exact base_sha/head_sha above, inspect the local diff and directly affected code. Read-only: do not modify files or call external services. Return only the supplied JSON review schema; finding titles must start with their [P0]..[P3] priority.
 Respect NurseConnect constraints: no PHI disclosure, no clinical/auth/schema/product behavior changes unless explicit.
@@ -81,6 +82,7 @@ function writeReceipt({ runRoot, base, baseSha, headSha, changedFiles, packetPat
   writeFileSync(markdownPath, `# Codex Senior Review\n\n\`\`\`text\n${output || "(no output)"}\n\`\`\`\n`);
   writeFileSync(jsonPath, `${JSON.stringify({
     status,
+    receiptVersion: 2, protocol: "codex-exec-jsonl-schema",
     reviewer: "codex-senior",
     command: `CODEX_SENIOR_REVIEW_PACKET=${path.relative(runRoot, packetPath)} codex exec --json --sandbox read-only < ${path.relative(runRoot, packetPath)}`,
     packetPath: path.relative(runRoot, packetPath),

@@ -1,29 +1,10 @@
-import { mkdtempSync, readFileSync, writeFileSync, mkdirSync, chmodSync, rmSync, symlinkSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { readFileSync, writeFileSync, mkdirSync, chmodSync, rmSync, symlinkSync } from "node:fs";
+import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { rootRepairContext } from "../root-repair-context.mjs";
 import { REPAIR_BASE, REPAIR_FILES } from "../root-repair-policy.mjs";
-const source = fileURLToPath(new URL("../../../", import.meta.url));
-function fixture(test) {
-  const dir = mkdtempSync(join(tmpdir(), "nc-root-context-")), cwd = join(dir, "repo");
-  const git = (args) => {
-    const result = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd: dir, encoding: "utf8" });
-    if (result.status !== 0) throw new Error("Context fixture failed.");
-  };
-  try {
-    git(["clone", "--shared", "--no-checkout", "--quiet", source, cwd]);
-    git(["-C", cwd, "checkout", "--quiet", "--detach", REPAIR_BASE]);
-    git(["-C", cwd, "update-ref", "refs/remotes/origin/main", REPAIR_BASE]);
-    for (const file of REPAIR_FILES) {
-      mkdirSync(dirname(join(cwd, file)), { recursive: true });
-      writeFileSync(join(cwd, file), readFileSync(join(source, file)));
-    }
-    test(cwd);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
-}
+import { rootRepairFixture as fixture } from "./bootstrap-fixture.mjs";
 describe("root repair real-Git/tree identity", () => {
   it("accepts regular candidate files at the fixed observed main", () => fixture((cwd) => {
     expect(rootRepairContext({}, cwd)).toEqual({ mainSha: REPAIR_BASE, errors: [] });
@@ -35,10 +16,12 @@ describe("root repair real-Git/tree identity", () => {
     expect(rootRepairContext({}, cwd).errors.join(" ")).toMatch(/mode/);
   }));
   it("rejects index mode laundering despite regular worktree mode", () => fixture((cwd) => {
-    const file = REPAIR_FILES[0];
-    const result = spawnSync("git", ["update-index", "--chmod=+x", "--", file], { cwd, encoding: "utf8" });
-    expect(result.status).toBe(0); chmodSync(join(cwd, file), 0o644);
-    expect(rootRepairContext({}, cwd).errors.join(" ")).toMatch(/index mode/);
+    for (const file of [REPAIR_FILES[0], REPAIR_FILES.at(-1)]) {
+      const result = spawnSync("git", ["update-index", "--chmod=+x", "--", file], { cwd, encoding: "utf8" });
+      expect(result.status).toBe(0); chmodSync(join(cwd, file), 0o644);
+      expect(rootRepairContext({}, cwd).errors.join(" ")).toMatch(/index mode/);
+      expect(spawnSync("git", ["update-index", "--chmod=-x", "--", file], { cwd }).status).toBe(0);
+    }
   }));
   it("rejects tracked deletion hidden by recreated regular worktree bytes", () => fixture((cwd) => {
     const file = REPAIR_FILES[0];
@@ -116,4 +99,43 @@ it("rejects a merge header whose event head object is missing", () => fixture((c
     repo: { full_name: "arbenl/nurseconnect-v3" } }, head: { sha: missing, repo: { full_name: "arbenl/nurseconnect-v3" } } } }));
   expect(rootRepairContext({ GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "pull_request",
     GITHUB_REPOSITORY: "arbenl/nurseconnect-v3", GITHUB_EVENT_PATH: event }, cwd).errors.length).toBeGreaterThan(0);
+}));
+
+it("bounds Git process work while checking the complete valid inventory", () => fixture((cwd) => {
+  const real = spawnSync("which", ["git"], { encoding: "utf8" }).stdout.trim();
+  const bin = join(cwd, "git-bin"), count = join(cwd, "git-read-count");
+  mkdirSync(bin);
+  writeFileSync(join(bin, "git"), '#!/bin/sh\nprintf . >> "$NC_CONTEXT_COUNT"\nexec "$NC_CONTEXT_GIT" "$@"\n', { mode: 0o755 });
+  const saved = Object.fromEntries(["PATH", "NC_CONTEXT_COUNT", "NC_CONTEXT_GIT"].map((name) => [name, process.env[name]]));
+  try {
+    Object.assign(process.env, { PATH: bin + ":" + saved.PATH, NC_CONTEXT_COUNT: count, NC_CONTEXT_GIT: real });
+    expect(rootRepairContext({}, cwd).errors).toEqual([]);
+    expect(readFileSync(count, "utf8").length).toBeLessThanOrEqual(10);
+  } finally {
+    for (const [name, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[name]; else process.env[name] = value;
+    }
+  }
+}));
+
+it("rejects actual unmerged index entries", () => fixture((cwd) => {
+  const file = "config/nc-governance-fixture-repair.json";
+  const object = spawnSync("git", ["hash-object", "-w", "--stdin"], { cwd, input: "synthetic\n", encoding: "utf8" });
+  expect(object.status).toBe(0);
+  const oid = object.stdout.trim();
+  const index = spawnSync("git", ["update-index", "--index-info"], { cwd, encoding: "utf8",
+    input: `100644 ${oid} 1\t${file}\n100644 ${oid} 2\t${file}\n` });
+  expect(index.status).toBe(0);
+  expect(rootRepairContext({}, cwd).errors.join(" ")).toMatch(/index mode/);
+}));
+
+it("rejects a new allowed path replaced with a HEAD directory", () => fixture((cwd) => {
+  const file = "config/nc-governance-fixture-repair.json", target = join(cwd, file), data = readFileSync(target);
+  rmSync(target); mkdirSync(target); writeFileSync(join(target, "nested"), "synthetic\n");
+  expect(spawnSync("git", ["add", "--", ...REPAIR_FILES], { cwd }).status).toBe(0);
+  expect(spawnSync("git", ["-c", "core.hooksPath=/dev/null", "-c", "user.name=Fixture", "-c",
+    "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "Synthetic directory"], { cwd }).status).toBe(0);
+  rmSync(target, { recursive: true }); writeFileSync(target, data);
+  expect(spawnSync("git", ["add", "--", file], { cwd }).status).toBe(0);
+  expect(rootRepairContext({}, cwd).errors.join(" ")).toMatch(/protected tree mode/);
 }));
