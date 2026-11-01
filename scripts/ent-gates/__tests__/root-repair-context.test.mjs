@@ -66,3 +66,54 @@ describe("root repair real-Git/tree identity", () => {
     rmSync(join(cwd, REPAIR_FILES[0])); expect(rootRepairContext({}, cwd).errors.length).toBeGreaterThan(0);
   }));
 });
+
+it("validates raw merge parent headers even at a shallow boundary", () => fixture((cwd) => {
+  const git = (args) => {
+    const p = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd, encoding: "utf8" });
+    expect(p.status, p.stderr).toBe(0); return p.stdout.trim();
+  };
+  git(["add", "--", ...REPAIR_FILES]);
+  const tree = git(["write-tree"]);
+  const identity = ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid"];
+  const head = git([...identity, "commit-tree", tree, "-p", REPAIR_BASE, "-m", "Synthetic head"]);
+  const merge = git([...identity, "commit-tree", tree, "-p", REPAIR_BASE, "-p", head, "-m", "Synthetic merge"]);
+  git(["reset", "--hard", merge]);
+  const event = join(cwd, "event.json");
+  writeFileSync(event, JSON.stringify({ pull_request: { base: { ref: "main", sha: REPAIR_BASE,
+    repo: { full_name: "arbenl/nurseconnect-v3" } }, head: { sha: head, repo: { full_name: "arbenl/nurseconnect-v3" } } } }));
+  const env = { GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "pull_request", GITHUB_REPOSITORY: "arbenl/nurseconnect-v3", GITHUB_EVENT_PATH: event };
+  expect(rootRepairContext(env, cwd).errors).toEqual([]);
+  writeFileSync(join(cwd, ".git/shallow"), merge + "\n");
+  expect(rootRepairContext(env, cwd).errors).toEqual([]);
+  writeFileSync(event, JSON.stringify({ pull_request: { base: { ref: "main", sha: REPAIR_BASE,
+    repo: { full_name: "arbenl/nurseconnect-v3" } }, head: { sha: REPAIR_BASE, repo: { full_name: "arbenl/nurseconnect-v3" } } } }));
+  expect(rootRepairContext(env, cwd).errors.join(" ")).toMatch(/expected merge/);
+}));
+
+it("rejects replace refs instead of validating substituted commit objects", () => fixture((cwd) => {
+  const git = (args) => {
+    const p = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd, encoding: "utf8" });
+    expect(p.status, p.stderr).toBe(0); return p.stdout.trim();
+  };
+  const tree = git(["rev-parse", "HEAD^{tree}"]);
+  const replacement = git(["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit-tree", tree, "-m", "Synthetic replacement"]);
+  git(["replace", REPAIR_BASE, replacement]);
+  expect(rootRepairContext({}, cwd).errors.join(" ")).toMatch(/replace refs/);
+}));
+
+it("rejects a merge header whose event head object is missing", () => fixture((cwd) => {
+  const git = (args, input) => {
+    const p = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd, input, encoding: "utf8" });
+    expect(p.status, p.stderr).toBe(0); return p.stdout.trim();
+  };
+  git(["add", "--", ...REPAIR_FILES]);
+  const tree = git(["write-tree"]), missing = "f".repeat(40);
+  const raw = `tree ${tree}\nparent ${REPAIR_BASE}\nparent ${missing}\nauthor Fixture <fixture@example.invalid> 1 +0000\ncommitter Fixture <fixture@example.invalid> 1 +0000\n\nSynthetic missing-parent fixture\n`;
+  const merge = git(["hash-object", "-t", "commit", "-w", "--stdin"], raw);
+  git(["reset", "--hard", merge]);
+  const event = join(cwd, "event.json");
+  writeFileSync(event, JSON.stringify({ pull_request: { base: { ref: "main", sha: REPAIR_BASE,
+    repo: { full_name: "arbenl/nurseconnect-v3" } }, head: { sha: missing, repo: { full_name: "arbenl/nurseconnect-v3" } } } }));
+  expect(rootRepairContext({ GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "pull_request",
+    GITHUB_REPOSITORY: "arbenl/nurseconnect-v3", GITHUB_EVENT_PATH: event }, cwd).errors.length).toBeGreaterThan(0);
+}));

@@ -1,4 +1,4 @@
-# NC-GOV-REPAIR-01: bounded governance fixture repair
+# NC-EG-09 / NC-GOV-REPAIR-01: bounded governance fixture repair
 
 Status: CANDIDATE PACKET, not owner-adopted, installed or ready for PR.
 The owner approved the operating model on 2026-11-01, not this as-yet unhashed patch.
@@ -9,7 +9,7 @@ One fixed-base amendment at 9882c8b5044d238c398dde8e0ec45b7bf039cc89,
 branch codex/governance-fixture-repair. Preserve all three canonical authority files
 byte-for-byte intentional-null. No product, tenant, schema or runtime feature work;
 03A/03B remain held and EG02/03/04 acceptance is unchanged.
-The exact 20 paths are independently listed in root-repair-policy.mjs and the
+The exact 24 paths are independently listed in root-repair-policy.mjs and the
 candidate authorization record. An external complete inventory and patch hash bind
 all bytes, including policy and record; neither file can hash/authorize itself.
 The record file-set SHA hashes sorted UTF-8 PATH STRINGS plus a final newline, not
@@ -43,7 +43,7 @@ Never bypass or disable a check; later slices use installed ordinary base policy
 ## Admission constraints
 
 Manifest mode governance-repair is distinct from standard, authority and bootstrap.
-Its unique slice/branch/base and exact 20-file regular inventory are compiled into
+Its unique slice/branch/base and exact 24-file regular inventory are compiled into
 policy and checked against the record. All six base/head authority states stay null;
 all three evidence gates are required. Tree mode/symlink/deletion/missing files,
 wrong repository/fork/event/checkout, wrong branch/base/hash and reuse are rejected.
@@ -81,10 +81,40 @@ PR for owner review. A collaborator alone cannot approve sole-owner-authored wor
 ## Verification and delivery
 
 Focused deterministic tests only during packet preparation, without credentials.
-The three historical test fixes retain their separately reviewed content hashes.
+The historical fixture assertions stay intact; the structural checkout test adds
+a regression proving the full CI history required by those pinned fixtures.
 New policy tests cover wrong identity/scope/base/null state/required gates; real-Git
 context tests cover tree modes and event provenance; collector tests cover failures
-and payload nonretention. Files remain <=150 lines; boundaries/modularity and all
+and payload nonretention. New checked files remain <=150 lines; the edited legacy workflow shrinks; boundaries/modularity and all
 full pre-PR gates are required later on the exact adopted patch.
 Do not mistake candidate unit tests for full required-gate evidence or PR readiness.
-No commit, PR, merge, source install or canonical status update occurs during prep.
+Only local verification commits may bind review evidence during preparation;
+no push, PR, merge, policy installation or canonical status update occurs here.
+
+## Revision after full verification
+
+Codex senior reproduced two Finalizer blockers: depth-one merge traversal omits
+parent edges, and the original custom band ID was rejected. Read raw commit header
+parents while retaining exact ordered base/head identity; use supported NC-EG-09
+without widening the existing Finalizer ID validator. Real-Git shallow/forged-head
+and actual Finalizer-validator regressions exercise both failures.
+The senior result classifier also misread successful review/diagnostic words as
+quota/auth failure and counted transcript examples as findings. Extract a small
+pure helper; distinguish final stdout from retained diagnostics. Preserve every
+P0/P1/explicit finding, genuine nonzero and explicit error responses, hard timeout,
+and reject empty final review. Synthetic CLI tests use no live model or secrets.
+Three helper/runner/test paths plus the Finalizer checkout correction expand the
+exact inventory to24; no product, App installation or protection setting changes.
+The existing legacy CI workflow shrinks by one line; new files stay <=150 lines.
+Finalizer fetch-depth0 supplies pinned historical objects and origin/main before
+its local tests. A real depth-configured Git checkout regression proves this.
+Raw commit parsing rejects replace refs, ignores replacement objects and resolves
+HEAD as an explicit commit. Space-prefixed signature/message lines cannot be parents.
+The event head must also exist as an actual commit object; forged missing-parent
+headers fail even when their raw SHA matches the event metadata.
+Senior verification now uses read-only Codex exec with JSON Schema, runtime JSONL
+turn completion and a matching runtime final result. Built-in exec review ignored
+output-schema in a real protocol probe, so it cannot supply this typed contract.
+Schema/protocol failures, truncation, injected markers, runtime errors and missing
+final output fail closed. Retained diagnostics never determine actual findings.
+Old frozen packet/hash and its failed/partial gate receipts remain separate.

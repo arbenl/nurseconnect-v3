@@ -1,8 +1,8 @@
-# NC-GOV-REPAIR-01 Threat Model
+# NC-EG-09 / NC-GOV-REPAIR-01 Threat Model
 
 ## Slice
 
-NC-GOV-REPAIR-01; candidate preparation, not owner-adopted or ready for PR.
+NC-EG-09; candidate preparation, not owner-adopted or ready for PR.
 
 ## Scope
 

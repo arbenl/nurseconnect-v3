@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 export const REPAIR_BASE = "9882c8b5044d238c398dde8e0ec45b7bf039cc89";
 export const REPAIR_BRANCH = "codex/governance-fixture-repair";
-export const REPAIR_SLICE = "NC-GOV-REPAIR-01";
+export const REPAIR_SLICE = "NC-EG-09";
 export const REPAIR_FILES = [
   ".github/CODEOWNERS",
+  ".github/workflows/ci.yml",
   "config/nc-governance-fixture-repair.json",
   "config/nurseconnect-sentry-target.json",
   "docs/data-lifecycle/nc-gov-repair-01.md",
@@ -20,7 +21,10 @@ export const REPAIR_FILES = [
   "scripts/ent-gates/promotion-policy.mjs",
   "scripts/ent-gates/root-repair-context.mjs",
   "scripts/ent-gates/root-repair-policy.mjs",
+  "scripts/multi-agent/__tests__/codex-senior-review-result.test.mjs",
   "scripts/multi-agent/__tests__/trusted-sentry-collector.test.mjs",
+  "scripts/multi-agent/codex-senior-review.mjs",
+  "scripts/multi-agent/lib/senior-review-result.mjs",
   "scripts/multi-agent/trusted-sentry-collector.mjs",
   "slice-gates.yaml",
 ];

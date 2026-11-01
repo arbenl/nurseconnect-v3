@@ -5,13 +5,14 @@ import { REPAIR_BASE, REPAIR_FILES } from "./root-repair-policy.mjs";
 export function rootRepairContext(env, cwd = ".") {
   const errors = [];
   const git = (args) => {
-    const result = spawnSync("git", args, { cwd, env: cleanGitEnv(), encoding: "utf8" });
+    const result = spawnSync("git", ["--no-replace-objects", ...args], { cwd, env: cleanGitEnv(), encoding: "utf8" });
     if (result.status !== 0) throw new Error("Root repair Git identity is unavailable.");
     return result.stdout.trim();
   };
   let mainSha = "";
   try {
     mainSha = git(["rev-parse", "--verify", "origin/main^{commit}"]);
+    if (git(["for-each-ref", "--format=%(refname)", "refs/replace/"])) errors.push("Root repair forbids replace refs.");
     for (const file of REPAIR_FILES) {
       const stat = lstatSync(`${cwd}/${file}`);
       if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & 0o111)) errors.push(`Root repair file mode is forbidden: ${file}`);
@@ -30,9 +31,10 @@ export function rootRepairContext(env, cwd = ".") {
       if (env.GITHUB_REPOSITORY !== "arbenl/nurseconnect-v3" || pr?.base?.repo?.full_name !== "arbenl/nurseconnect-v3"
         || pr?.head?.repo?.full_name !== "arbenl/nurseconnect-v3" || pr?.base?.sha !== REPAIR_BASE
         || pr?.base?.ref !== "main" || !/^[a-f0-9]{40}$/.test(pr?.head?.sha || "")) errors.push("Root repair PR identity is invalid.");
-      const head = git(["rev-parse", "HEAD"]);
+      const head = git(["rev-parse", "--verify", "HEAD^{commit}"]);
+      if (git(["cat-file", "-t", pr?.head?.sha || ""]) !== "commit") errors.push("Root repair event head must exist as a commit.");
       if (head !== pr?.head?.sha) {
-        const parents = git(["rev-list", "--parents", "-n", "1", "HEAD"]).split(" ").slice(1);
+        const parents = git(["cat-file", "-p", head]).split(/\r?\n\r?\n/, 1)[0].split(/\r?\n/).filter((line) => line.startsWith("parent ")).map((line) => line.slice(7));
         if (parents.length !== 2 || parents[0] !== REPAIR_BASE || parents[1] !== pr?.head?.sha) errors.push("Root repair checkout is not the event head or expected merge.");
       }
     }

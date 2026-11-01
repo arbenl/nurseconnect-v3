@@ -707,8 +707,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - { name: Checkout repo, uses: actions/checkout@v4, with: { fetch-depth: 0 } }
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4

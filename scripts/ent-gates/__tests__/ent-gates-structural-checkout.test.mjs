@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { BOOTSTRAP_FILES } from "../promotion-policy.mjs";
 import { parseManifest } from "../manifest.mjs";
@@ -51,4 +53,25 @@ describe("isolated bootstrap manifest fixtures", () => {
       expect(JSON.parse(readFileSync(join(root, "result/evidence/ent-gates.json"), "utf8")).promotion.mode).toBe("bootstrap");
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
+});
+
+it("Finalizer checkout provisions pinned fixture history and main before local tests", () => {
+  const source = fileURLToPath(new URL("../../../", import.meta.url));
+  const job = readFileSync(join(source, ".github/workflows/ci.yml"), "utf8").split("  pr-finalizer:")[1];
+  const checkout = job.split("- name: Setup Node.js")[0];
+  const depth = Number(checkout.match(/fetch-depth:\s*(\d+)/)?.[1] ?? 1);
+  const root = mkdtempSync(join(tmpdir(), "nc-finalizer-history-")), remote = join(root, "remote.git"), cwd = join(root, "checkout");
+  const git = (args, workdir = source) => {
+    const p = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd: workdir, encoding: "utf8" });
+    expect(p.status, p.stderr).toBe(0); return p.stdout.trim();
+  };
+  try {
+    git(["clone", "--bare", "--shared", "--quiet", source, remote]);
+    git(["--git-dir", remote, "update-ref", "refs/heads/fixture-ci", git(["rev-parse", "HEAD"])]);
+    git(["--git-dir", remote, "update-ref", "refs/heads/main", "9882c8b5044d238c398dde8e0ec45b7bf039cc89"]);
+    git(["clone", "--quiet", "--no-local", "--no-checkout", "--branch", "fixture-ci", ...(depth ? ["--depth", String(depth)] : []), pathToFileURL(remote).href, cwd]);
+    for (const ref of [bootstrapBase, "430dc4b48ea075b850921db56ffd87206e2a1ae5", "9882c8b5044d238c398dde8e0ec45b7bf039cc89", "origin/main"]) {
+      expect(spawnSync("git", ["cat-file", "-e", `${ref}^{commit}`], { cwd }).status, `Missing fixture ref ${ref}`).toBe(0);
+    }
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });

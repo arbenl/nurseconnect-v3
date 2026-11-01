@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validatePrSliceEvidence } from "../../lib/pr-slice-evidence.mjs";
 import { validatePromotionPolicy } from "../promotion-policy.mjs";
 import { fileSetHash, REPAIR_BASE, REPAIR_BRANCH, REPAIR_FILES, REPAIR_SLICE } from "../root-repair-policy.mjs";
 const nil = { status: "intentional-null" };
@@ -44,4 +45,9 @@ describe("owner-adopted fixed-base repair constraints, not owner adoption proof"
       expect(check({ authorityStates: { ...states, [name]: { ...states[name], [side]: { status: "promoted" } } } }).length).toBeGreaterThan(0);
     }
   });
+});
+
+it("uses a real repair band ID accepted by unchanged Finalizer validation", () => {
+  const result = validatePrSliceEvidence({ body: `## Summary\n${REPAIR_SLICE} governance repair\n\n## Evidence\nfixture`, files: [] });
+  expect(result.errors.filter((error) => error.includes("tracker ID"))).toEqual([]);
 });

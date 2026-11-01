@@ -1,4 +1,4 @@
-slice: NC-GOV-REPAIR-01
+slice: NC-EG-09
 branch: codex/governance-fixture-repair
 promotion-mode: governance-repair
 gates:
