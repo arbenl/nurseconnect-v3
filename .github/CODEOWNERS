@@ -4,10 +4,8 @@
 # protection enables CODEOWNERS enforcement.
 #
 # Keep this repo-owned. Do not depend on Interdomestik teams or tooling.
-# Current owner coverage intentionally uses @arbenl only. If @arbenl is
-# unavailable and branch protection is active, an administrator must either add
-# a backup owner here or temporarily disable CODEOWNERS enforcement with a
-# recorded reason.
+# Sole human owner. Recovery pauses publication and restores the trusted App,
+# or a real second human authors a recovery PR for owner review. Never lower gates.
 
 /.github/** @arbenl
 /AGENTS.md @arbenl
@@ -34,3 +32,13 @@
 /scripts/multi-agent/** @arbenl
 /config/reviewers/** @arbenl
 /prompts/reviewers/** @arbenl
+
+/scripts/ent-gates/** @arbenl
+/scripts/lib/pr-ent-gate-evidence.mjs @arbenl
+/config/nc-governance-fixture-repair.json @arbenl
+/config/nurseconnect-sentry-target.json @arbenl
+/slice-gates.yaml @arbenl
+
+/docs/threat-models/nc-gov-repair-01.md @arbenl
+/docs/data-lifecycle/nc-gov-repair-01.md @arbenl
+/docs/performance/nc-gov-repair-01.md @arbenl

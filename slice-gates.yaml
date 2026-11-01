@@ -1,13 +1,13 @@
-slice: NC-EG-06
-branch: codex/ent-gate-null-promotion-bootstrap
-promotion-mode: bootstrap
+slice: NC-GOV-REPAIR-01
+branch: codex/governance-fixture-repair
+promotion-mode: governance-repair
 gates:
   ent-tm:
     status: required
-    evidence: docs/threat-models/nc-eg-06.md
+    evidence: docs/threat-models/nc-gov-repair-01.md
   ent-dlv:
     status: required
-    evidence: docs/data-lifecycle/nc-eg-06.md
+    evidence: docs/data-lifecycle/nc-gov-repair-01.md
   ent-perf:
     status: required
-    evidence: docs/performance/nc-eg-06.md
+    evidence: docs/performance/nc-gov-repair-01.md
