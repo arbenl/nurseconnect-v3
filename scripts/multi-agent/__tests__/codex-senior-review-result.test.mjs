@@ -75,11 +75,25 @@ describe("senior runtime completion and structured review boundary", () => {
   });
   it("rejects incomplete schema and inconsistent priority/title", () => {
     expect(receipt({ review: { findings: [] } }).status).toBe("blocked");
+    expect(receipt({ review: { ...clean, overall_correctness: "patch is incorrect" } }).status).toBe("blocked");
     expect(receipt({ review: { ...clean, findings: [{ ...finding, priority: 2 }] } }).status).toBe("blocked");
   });
   it("fails an explicitly incorrect patch even with lower priority findings", () => {
     const review = { ...clean, findings: [{ ...finding, priority: 2, title: "[P2] Concrete regression" }], overall_correctness: "patch is incorrect" };
-    expect(receipt({ review }).status).toBe("fail");
+    const r = receipt({ review }); expect(r.status).toBe("fail"); expect(r.mustFixCount).toBe(1);
+  });
+  it.each([2, 3])("permits an audited technical rejection of an incorrect P%s verdict", (priority) => {
+    const review = { ...clean, findings: [{ ...finding, priority, title: `[P${priority}] Concrete regression` }], overall_correctness: "patch is incorrect" };
+    const r = receipt({ review }, ["--must-fix-disposition", "Rejected: independently proven false positive"]);
+    expect(r.status).toBe("pass"); expect(r.mustFixCount).toBe(1);
+  });
+  it.each(["", "none", "all fixed", "rejected:"])("keeps incorrect lower-priority verdict blocked without a valid rejection: %s", (disposition) => {
+    const review = { ...clean, findings: [{ ...finding, priority: 2, title: "[P2] Concrete regression" }], overall_correctness: "patch is incorrect" };
+    expect(receipt({ review }, ["--must-fix-disposition", disposition]).status).toBe("fail");
+  });
+  it("retains advisory P2 findings when the patch verdict is correct", () => {
+    const review = { ...clean, findings: [{ ...finding, priority: 2, title: "[P2] Advisory improvement" }] };
+    const r = receipt({ review }); expect(r.status).toBe("pass"); expect(r.mustFixCount).toBe(0);
   });
   it.each(["rejected: proven false positive", "Rejected: proven false positive", " rejected: proven false positive ", " REJECTED : proven false positive "])(
     "preserves shared technical-disposition validation: %s", (disposition) => {

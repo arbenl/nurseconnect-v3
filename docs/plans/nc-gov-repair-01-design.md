@@ -135,3 +135,12 @@ negative test. Reject a proven forbidden worktree mode immediately with its none
 errors; do not perform the remaining hundred Git reads after rejection is established.
 All valid-path identity checks, both original negative assertions and timeout remain.
 Revision3 retry results do not erase this source finding or authorize changed bytes.
+
+## Incorrect-verdict disposition consistency
+
+An overall incorrect verdict makes every reported finding blocking, including P2/P3.
+Count those findings so the shared disposition validator can accept a documented
+technical rejection without a zero-count contradiction. Correct verdicts retain
+the existing P0/P1/explicit MUST_FIX rule. Empty/none/all-fixed or incomplete reasons
+still fail incorrect verdicts; malformed results remain blocked. This repair fixes
+the actual finding and requires fresh review; no technical rejection was used.

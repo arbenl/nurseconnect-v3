@@ -56,5 +56,6 @@ export function inspectSeniorResult(result) {
     if (!isDeepStrictEqual(JSON.parse(messages.at(-1).item.text), review)) return blocked("review_channel_mismatch");
   } catch { return blocked("invalid_structured_review"); }
   return { blocker: "", review, runtimeComplete: true,
-    mustFixCount: review.findings.filter((finding) => finding.priority <= 1 || /\bMUST_FIX\b/.test(finding.title + " " + finding.body)).length };
+    mustFixCount: review.findings.filter((finding) => review.overall_correctness === "patch is incorrect"
+      || finding.priority <= 1 || /\bMUST_FIX\b/.test(finding.title + " " + finding.body)).length };
 }
