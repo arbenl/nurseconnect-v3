@@ -139,3 +139,12 @@ it("rejects a new allowed path replaced with a HEAD directory", () => fixture((c
   expect(spawnSync("git", ["add", "--", file], { cwd }).status).toBe(0);
   expect(rootRepairContext({}, cwd).errors.join(" ")).toMatch(/protected tree mode/);
 }));
+it("isolates inherited Git hook metadata from fixture Git commands", () => fixture((cwd) => {
+  const git = (args) => spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd, encoding: "utf8" });
+  expect(git(["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "--allow-empty", "--quiet", "-m", "Synthetic hook sentinel"]).status).toBe(0);
+  const head = git(["rev-parse", "HEAD"]).stdout, keys = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"], saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  try { Object.assign(process.env, { GIT_DIR: join(cwd, ".git"), GIT_WORK_TREE: cwd, GIT_INDEX_FILE: join(cwd, ".git/index") });
+    fixture((nested) => expect(rootRepairContext({}, nested).errors).toEqual([]));
+    expect(process.env.GIT_DIR).toBe(join(cwd, ".git")); expect(git(["rev-parse", "HEAD"]).stdout).toBe(head);
+  } finally { for (const [key, value] of Object.entries(saved)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } }
+}));

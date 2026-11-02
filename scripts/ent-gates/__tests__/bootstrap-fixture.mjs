@@ -47,6 +47,8 @@ export function historicalRun(root, args, env = {}, ambientMode) {
 export function rootRepairFixture(test) {
   const dir = mkdtempSync(join(tmpdir(), "nc-root-context-")), cwd = join(dir, "repo");
   const source = fileURLToPath(new URL("../../../", import.meta.url));
+  const inheritedGit = Object.fromEntries(Object.entries(process.env).filter(([key]) => key.toUpperCase().startsWith("GIT_")));
+  for (const key of Object.keys(inheritedGit)) delete process.env[key];
   const git = (args) => {
     const result = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd: dir, encoding: "utf8" });
     if (result.status !== 0) throw new Error("Context fixture failed.");
@@ -60,5 +62,9 @@ export function rootRepairFixture(test) {
       writeFileSync(join(cwd, file), readFileSync(join(source, file)));
     }
     test(cwd);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  } finally {
+    for (const key of Object.keys(process.env)) if (key.toUpperCase().startsWith("GIT_")) delete process.env[key];
+    Object.assign(process.env, inheritedGit);
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
