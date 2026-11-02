@@ -5,7 +5,7 @@ source_of_truth: false
 authority_note: "current-program.md is the singular source of truth; this tracker defers to current-program.md and current-tracker.md only. It extends nurseconnect-enterprise-architecture-tracker.md, whose pre-Phase-C rows (e.g. the unamended NC-E2-03) are superseded by the amendments recorded here."
 owner: platform
 created: 2026-06-10
-last_reviewed: 2026-07-14
+last_reviewed: 2026-11-02
 program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 current_tracker_bridge: docs/plans/current-tracker.md
 verification_command: pnpm verify-slice
@@ -32,6 +32,10 @@ verification_command: pnpm verify-slice
 Gates land first so every subsequent slice is born under them. NC-CQ-02..04
 depend on the outbox/read-model backbone (NC-E3) for event-fed projections.
 
+Current infrastructure queue: close NC-EG-09, then NC-EG-07, then separately
+reviewed NC-EG-08. Original product-band order and TB03 external holds remain;
+no 03A/03B implementation. Early classification needs its own reviewed amendment.
+
 ## Band NC-EG — Enterprise Verification Gates (ent-tm / ent-dlv / ent-perf)
 
 | ID | Status | Slice | Work | Acceptance Criteria (falsifiable) | Risk |
@@ -42,6 +46,10 @@ depend on the outbox/read-model backbone (NC-E3) for event-fed projections.
 | `NC-EG-03` | `planned` | `ent-dlv-gate` | Data-lifecycle gate: machine-readable PHI/data-class manifest (`packages/database/data-classification.json`). Gate diffs Drizzle schema vs manifest: every column must declare class (`phi\|pii\|operational`), retention, and erasure strategy (`crypto-shred\|delete\|retain-legal`). | Adding a schema column without a manifest entry fails CI; manifest entries with `phi` but no erasure strategy fail; baseline manifest covers all 16 existing schema files at merge. | High |
 | `NC-EG-04` | `planned` | `ent-perf-gate` | Performance budget gate: `perf-budgets.json` (p95 latency per critical route: create-request, lifecycle actions, /api/me; bundle-size budget for `apps/web`). Gate asserts budgets in CI against a deterministic local benchmark lane. | Budget regression fails `--required-gates`; budgets file is required for slices touching critical routes; benchmark lane is reproducible (fixed seed/dataset). | Medium |
 | `NC-EG-05` | `planned` | `lifecycle-three-planes` | Implement ADR-005 slice lifecycle automation. **Plane 1 (record):** GitHub Actions workflow on merged PRs derives closeout + `completed` status from `codex/<slice>` branch events; a bot identity is the ONLY writer of `completed` in both trackers + `current-program.md`; projection is re-runnable from git history. **Plane 2 (enforcement):** extend PR Finalizer with branch-name validation and promoted-slice matching (ent-gate evidence/sha pinning arrives via NC-EG-01). **Plane 3 (decision):** thin authority-free `start <id>` client exposed as an MCP tool (validate promotion, create branch, open promotion PR with decision provenance). **CODEOWNERS:** code-owner review required on `.github/workflows/**`, `scripts/multi-agent/**`, `scripts/ent-gates/**`, `config/ent-gate-paths.json`, `docs/plans/**`, and all three `*/skills/**` SOP paths. | ADR-005 verification suite: non-bot tracker-status edit fails finalizer; non-promoted branch merge produces no closeout + raises alert; projection replay over last N merges is byte-identical; CODEOWNERS blocks unreviewed gatekeeper edits (branch-protection evidence); plane-3 bypass loses nothing (PR from manual branch still fully gated). | Medium-High |
+
+| `NC-EG-09` | `completed` | `governance-fixture-repair` | Bounded fixture/structured-review/Sentry-collector repair and canonical closeout. | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. Canonical completion takes effect through this authority PR's green publication. | Medium-High |
+| `NC-EG-07` | `ready` | `sentry-config-isolation-delivery` | Separate owner-authorized Sentry configuration isolation; authority promotion only here. | Fresh standard-mode implementation after green authority merge/clean main; pinned NC identity, strict failures, payload-safe evidence and full gates. | High |
+| `NC-EG-08` | `planned` | `auth-delivery-01` | Separate AUTH-DELIVERY-01 after NC-EG-07. | Its own design, promotion, proof and protected closeout; no auth implementation here. | High |
 
 ## Band NC-E2 (amendment) — Platform AuthZ + Type-Level Guards
 
@@ -112,6 +120,7 @@ NC-EG-03 ──► NC-E5-01 ──► NC-E5-03 ──► NC-E5-04 ──► NC-E
 
 | Slice | PR | Merge Commit | Gate Summary |
 |---|---|---|---|
+| `NC-EG-09 / governance-fixture-repair` | https://github.com/arbenl/nurseconnect-v3/pull/119 | `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. |
 | `NC-EG-00 / constitution-deployment` | `https://github.com/arbenl/nurseconnect-v3/pull/101` | `b2baa0a80572a2eb10471dcd02c1c945928fc0ef` | Phase C governing docs and ADR-005 merged; docs-only verify-slice static + required gates passed with run root `tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`; CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, and pre-push strict release gate passed. |
 | `NC-EG-01 / ent-gate-framework` | `https://github.com/arbenl/nurseconnect-v3/pull/105` + `https://github.com/arbenl/nurseconnect-v3/pull/106` | `246b74e6f569cd20464f6ec82fce7d4bfae5c740` + `08fbced6a586353aa3884a1cfcf238bfa60bca96` | Ent-gate framework and green-check branch-protection parity merged; verify-slice static/required gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, and branch-protection audit passed. |
 | `NC-E2-03 / platform-authz` | `https://github.com/arbenl/nurseconnect-v3/pull/109` | `945b09362a786c082a71f2e4fbd77a372c7df452` | Platform authz package, branded policy decisions, `AuthorizedTransition` status proof tokens, action/resource-kind binding, raw status-write guard, CAS tests, local verify-slice static/required gates, ent-gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, bot-thread guard, and model-route blocked disposition passed. |

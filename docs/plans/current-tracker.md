@@ -4,7 +4,7 @@ status: active
 source_of_truth: false
 authority_note: "current-program.md is the singular source of truth; this tracker defers to it on conflict."
 owner: platform
-last_reviewed: 2026-07-14
+last_reviewed: 2026-11-02
 current_program_path: docs/plans/current-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
 verification_command: pnpm verify-slice
@@ -38,6 +38,10 @@ verification_command: pnpm verify-slice
 | `NC-TB-01` | `completed` | platform + database | Default org/branch bootstrap; add nullable `organization_id` plus accepted care-site scope to tenant-owned request, assignment, visit, payment, payout, and event tables; platform nurse/location/service-area, referral, audit, and identity surfaces remain deferred per data-lifecycle evidence. | PR #114 merged at `48eb6fab9bd83712245716998c0cdf9bd6bbe196`; reversible migrations, default-tenant invariants, tenant ownership constraints, forged-context regression, rollback rehearsal, local required gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke gate, reviewer/security disposition, and bot-thread audit passed. |
 | `NC-TB-02` | `completed` | platform + database + observability | Adopt tenant context across domain queries and export observe-before-enforce violation signals. | PR #116 merged at `430dc4b48ea075b850921db56ffd87206e2a1ae5`; harness `guard` mode, sanitized observer evidence, 65/65 API and 4/4 UI smoke receipts with `tenant_scope_violations=0`, full E2E UI, focused DB/type proof, reviewer/security reconciliation, required gates, CI, Sonar, GitGuardian, and PR Finalizer passed. |
 
+| `NC-EG-09` | `completed` | platform + qa | Bounded governance repair and canonical closeout. | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. Completion/promotion takes effect through this authority PR's green canonical publication. |
+| `NC-EG-07` | `ready` | platform + observability | Isolate NurseConnect Sentry configuration under the separately reviewed design. | Authority-only promotion first; fresh standard-mode implementation from clean promoted main afterwards. Pinned identity, strict failures, PHI-safe evidence, all local/remote gates and real human review required. |
+| `NC-EG-08` | `planned` | platform + security | AUTH-DELIVERY-01 after NC-EG-07, separately reviewed. | Its own design, promotion, tests, protected delivery and closeout; no auth implementation included here. |
+
 > Phase C Enterprise Upgrade bands (ent-* gates, type-level guards, tenant
 > backfill execution, outbox, CQRS repair, PHI lifecycle) are mapped in
 > `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`, which defers to this tracker and
@@ -45,23 +49,24 @@ verification_command: pnpm verify-slice
 
 ## Next Slice
 
-No implementation slice is currently promoted while the NC-TB-03 external
-gate remains open. Held candidate: `NC-TB-03 / tenant-enforce`
-(`codex/tenant-enforce`).
+NC-EG-07 / codex/sentry-config-isolation-delivery (ready)
 
-Rationale:
+## Queue Rationale
 
-- PR #116 completed `NC-TB-02 / tenant-observe` under fail-closed
-  `ent-tm`/`ent-dlv`/`ent-perf` gates with zero tenant-scope violations.
-- `NC-TB-03 / tenant-enforce` is selected next in the Phase C sequence, but it
-  remains `planned` until the representative 14-day zero window, restrictive
-  staging/two-tenant proof, and support, analytics/export, and payout access
-  classifications clear.
+This authority PR records NC-EG-09's actual green merge and promotes only the
+already authorized Sentry configuration isolation. The promotion is effective
+only after green merge/publication, applicable main Actions, clean sync, branch
+cleanup and canonical readback. Implementation starts on a fresh branch then.
+AUTH-DELIVERY-01 follows separately; the foundation sequence requires its own
+reviewed amendment after this queue. NC-TB-03 retains its representative 14-day
+zero-window, restrictive staging/two-tenant and approved access-classification
+gates. Neither 03A nor 03B is promoted or authorized to implement.
 
 ## Recent Closeout Evidence
 
 | Slice | PR | Merge Commit | Gate Summary |
 |---|---|---|---|
+| `NC-EG-09 / governance-fixture-repair` | https://github.com/arbenl/nurseconnect-v3/pull/119 | `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. |
 | `NC-E0-01 / phase-0-identity-link` | `https://github.com/arbenl/nurseconnect-v3/pull/73` | `d636a890288955c0b5a5767c05956310d4a89bfb` | `PR Finalizer`, Sonar, GitGuardian, unit, DB, E2E API, and UI smoke gates passed. |
 | `NC-E0-02 / production-email-verification` | `https://github.com/arbenl/nurseconnect-v3/pull/75` | `f534fd797378484820d42d612dcc94cbbdf48a33` | Production email verification rollout controls, runbook, required gates, Sonar, GitGuardian, PR Finalizer, E2E API, and UI smoke passed; post-merge main CI harness regression fixed by PR #76 at `308d4d255f5da976480d591825d60b23953b7a34`. |
 | `NC-E0-03 / env-secret-checks` | `https://github.com/arbenl/nurseconnect-v3/pull/78` | `ec3a0f7845b73235aaf3200528728beea873c754` | Env validation, secret-handling documentation, CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and post-merge strict release gate passed. |
