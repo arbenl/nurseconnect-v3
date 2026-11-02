@@ -108,14 +108,18 @@ Decision scope:
 
 The program executes under `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md` and the
 existing fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gates. NC-EG-09's repair is
-merged; this authority PR publishes its canonical closeout and next promotion.
+merged; PR #120 published its canonical closeout and promoted NC-EG-07.
 The next infrastructure slice is:
 
-NC-EG-07 / codex/sentry-config-isolation-delivery (ready)
+No implementation slice is currently promoted.
+NC-EG-07 is the current candidate in review; no new slice awaits promotion.
 
-Only after this authority PR merges green, applicable main Actions pass and clean
-main/branch cleanup/readback complete may a fresh implementation branch start.
-AUTH-DELIVERY-01 follows separately as NC-EG-08. No runtime change is included.
+NC-EG-07 Sentry gate isolation is under review from promoted main
+b3772a83d712bcb1efbc8fa309738d01d54c9106 on its fresh canonical branch. This
+candidate restores intentional-null; implementation completion still requires
+all gates, actual native approval, green merge/main Actions and clean closeout.
+AUTH-DELIVERY-01 remains planned separately as NC-EG-08, with its own promotion.
+Only observability gate code is included; no application telemetry is changed.
 NC-TB-03 remains held for the representative 14-day zero window, restrictive
 staging/two-tenant proof and support, analytics/export and payout classifications.
 Neither 03A nor 03B is promoted or authorized. Enterprise-foundation sequencing
