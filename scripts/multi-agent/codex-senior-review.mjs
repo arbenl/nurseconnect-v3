@@ -42,8 +42,10 @@ ${extra}`;
 
 function runCodex({ base, packetPath, schemaPath, finalPath, firstOutputTimeoutMs, totalTimeoutMs }) {
   return new Promise((resolve) => {
-    const child = spawn("codex", ["exec", "--json", "--ephemeral", "--sandbox", "read-only", "--output-schema", schemaPath, "--output-last-message", finalPath, "-"], { cwd: repoRoot, detached: true, env: { ...process.env, CODEX_SENIOR_REVIEW_PACKET: packetPath } });
+    const args = ["exec", "--json", "--ephemeral", "--sandbox", "read-only", "--output-schema", schemaPath, "--output-last-message", finalPath, "-"];
+    const child = spawn("codex", args, { cwd: repoRoot, detached: true, env: { ...process.env, CODEX_SENIOR_REVIEW_PACKET: packetPath } });
     child.unref();
+    child.stdin.on("error", (error) => { killGroup(); finish({ stdout, stderr: `${stderr}\nstdin delivery failed: ${error.code || "pipe_error"}`, status: 1, signal: null, timedOut: "" }); });
     child.stdin.end(readFileSync(packetPath, "utf8"));
     let stdout = "";
     let stderr = "";
@@ -54,7 +56,7 @@ function runCodex({ base, packetPath, schemaPath, finalPath, firstOutputTimeoutM
       done = true;
       clearTimeout(timer);
       clearTimeout(totalTimer);
-      resolve(result);
+      resolve({ ...result, args });
     };
     const killGroup = () => { try { process.kill(-child.pid, "SIGTERM"); } catch { child.kill("SIGTERM"); } };
     const timer = setTimeout(() => {
@@ -71,6 +73,7 @@ function runCodex({ base, packetPath, schemaPath, finalPath, firstOutputTimeoutM
 }
 
 function writeReceipt({ runRoot, base, baseSha, headSha, changedFiles, packetPath, result, mustFixDisposition }) {
+  const quote = (value) => "'" + value.replace(/'/g, "'\\''") + "'";
   const reviewsDir = path.join(runRoot, "reviews");
   mkdirSync(reviewsDir, { recursive: true });
   const markdownPath = path.join(reviewsDir, "codex-senior-review.md");
@@ -84,7 +87,8 @@ function writeReceipt({ runRoot, base, baseSha, headSha, changedFiles, packetPat
     status,
     receiptVersion: 2, protocol: "codex-exec-jsonl-schema",
     reviewer: "codex-senior",
-    command: `CODEX_SENIOR_REVIEW_PACKET=${path.relative(runRoot, packetPath)} codex exec --json --sandbox read-only < ${path.relative(runRoot, packetPath)}`,
+    command: `CODEX_SENIOR_REVIEW_PACKET=${quote(packetPath)} ${["codex", ...result.args].map(quote).join(" ")} < ${quote(packetPath)}`,
+    invocation: { argv: ["codex", ...result.args], cwd: repoRoot, stdinPath: packetPath, environment: { CODEX_SENIOR_REVIEW_PACKET: packetPath } },
     packetPath: path.relative(runRoot, packetPath),
     base,
     baseSha,
