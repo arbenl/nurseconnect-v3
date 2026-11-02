@@ -1,13 +1,14 @@
-slice: NC-EG-09
-branch: codex/governance-fixture-repair
-promotion-mode: governance-repair
+slice: NC-EG-07
+branch: codex/sentry-config-isolation-delivery
+promotion-mode: authority
+authority-files: docs/plans/nc-eg-07-sentry-config-isolation-design.md
 gates:
   ent-tm:
     status: required
-    evidence: docs/threat-models/nc-gov-repair-01.md
+    evidence: docs/threat-models/nc-eg-07-sentry-promotion.md
   ent-dlv:
     status: required
-    evidence: docs/data-lifecycle/nc-gov-repair-01.md
+    evidence: docs/data-lifecycle/nc-eg-07-sentry-promotion.md
   ent-perf:
     status: required
-    evidence: docs/performance/nc-gov-repair-01.md
+    evidence: docs/performance/nc-eg-07-sentry-promotion.md

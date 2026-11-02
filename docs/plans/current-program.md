@@ -3,7 +3,7 @@ plan_role: canonical_program
 status: active
 source_of_truth: true
 owner: platform
-last_reviewed: 2026-07-14
+last_reviewed: 2026-11-02
 tracker_path: docs/plans/current-tracker.md
 architecture_program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
@@ -42,65 +42,52 @@ The active architecture program is:
 
 ## Current Phase
 
-The active phase is **NC-TB: Tenant Backfill Execution**.
+The product phase remains **NC-TB: Tenant Backfill Execution**, with enforcement held.
+Current delivery priority is the separately authorized gate-infrastructure queue.
 
 Phase 0 was intentionally boring: close cheap high-assurance gaps before schema-wide tenancy, CRM, outbox, or compliance work.
 
 Completed closeout evidence:
 
 - `NC-E0-01 / phase-0-identity-link` merged in PR #73 on 2026-06-02.
-- Merge commit: `d636a890288955c0b5a5767c05956310d4a89bfb`.
-- Required checks passed: `Type Check & Lint`, `Sonar Coverage`, `Sonar Quality Gate`, `Unit Tests (jsdom)`, `DB Integration Tests (node)`, `E2E API Tests`, `E2E UI Smoke Gate`, `PR Finalizer`, and `GitGuardian Security Checks`.
+- Merge commit: `d636a890288955c0b5a5767c05956310d4a89bfb`. Required checks passed: `Type Check & Lint`, `Sonar Coverage`, `Sonar Quality Gate`, `Unit Tests (jsdom)`, `DB Integration Tests (node)`, `E2E API Tests`, `E2E UI Smoke Gate`, `PR Finalizer`, and `GitGuardian Security Checks`.
 - `NC-E0-02 / production-email-verification` merged in PR #75 on 2026-06-02.
-- Merge commit: `f534fd797378484820d42d612dcc94cbbdf48a33`.
-- Required checks passed: `Type Check & Lint`, `Sonar Coverage`, `Sonar Quality Gate`, `Unit Tests (jsdom)`, `DB Integration Tests (node)`, `E2E API Tests`, `E2E UI Smoke Gate`, `PR Finalizer`, and `GitGuardian Security Checks`.
+- Merge commit: `f534fd797378484820d42d612dcc94cbbdf48a33`. Required checks passed: `Type Check & Lint`, `Sonar Coverage`, `Sonar Quality Gate`, `Unit Tests (jsdom)`, `DB Integration Tests (node)`, `E2E API Tests`, `E2E UI Smoke Gate`, `PR Finalizer`, and `GitGuardian Security Checks`.
 - Post-merge `main` CI harness regression was fixed in PR #76 on 2026-06-02 at `308d4d255f5da976480d591825d60b23953b7a34`; [`main` CI run #261](https://github.com/arbenl/nurseconnect-v3/actions/runs/26846870192) passed.
 - `NC-E0-03 / env-secret-checks` merged in PR #78 on 2026-06-04.
-- Merge commit: `ec3a0f7845b73235aaf3200528728beea873c754`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and the post-merge strict release gate.
+- Merge commit: `ec3a0f7845b73235aaf3200528728beea873c754`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and the post-merge strict release gate.
 - `NC-E0-04 / repo-hygiene` merged in PR #80 on 2026-06-04.
-- Merge commit: `6ae17d68db4a86875b6049ddfccaedea82e15183`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke.
+- Merge commit: `6ae17d68db4a86875b6049ddfccaedea82e15183`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke.
 - `NC-E0-05 / module-boundary-guard` merged in PR #82 on 2026-06-04.
-- Merge commit: `505f8aae60cc3dbc7e19ef7384e1df94457d3b4c`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and local required release gate evidence.
+- Merge commit: `505f8aae60cc3dbc7e19ef7384e1df94457d3b4c`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, and local required release gate evidence.
 - `NC-E0-06 / dr-baseline` merged in PR #84 on 2026-06-04.
-- Merge commit: `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke; docs-only local static and required gates passed.
+- Merge commit: `d20bb12fd791f77af2f2d3b9bdfffe0e6d613811`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke; docs-only local static and required gates passed.
 - `NC-E1-01 / tenant-model-decision` merged in PR #86 on 2026-06-04.
-- Merge commit: `bb801d748c797ac94489df3a52de327ffdbdb310`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke.
+- Merge commit: `bb801d748c797ac94489df3a52de327ffdbdb310`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, and UI smoke.
 - `NC-E1-02 / rls-platform-mechanism` merged in PR #87 on 2026-06-04.
-- Merge commit: `14c522558b630eb1ff3a2760dd27cac858ea0a8c`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, focused database type/unit/DB tests, architecture boundary guard, verify-slice static, and verify-slice required gates.
+- Merge commit: `14c522558b630eb1ff3a2760dd27cac858ea0a8c`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, focused database type/unit/DB tests, architecture boundary guard, verify-slice static, and verify-slice required gates.
 - `NC-E1-03 / default-tenant-backfill-plan` merged in PR #89 on 2026-06-04.
-- Merge commit: `15a6c9ebe688a6174a1e5620e33ffd986f90e04d`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, model-review disposition, verify-slice static, and verify-slice required gates.
+- Merge commit: `15a6c9ebe688a6174a1e5620e33ffd986f90e04d`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, model-review disposition, verify-slice static, and verify-slice required gates.
 - `NC-E1-04 / tenant-isolation-tests` merged in PR #91 on 2026-06-04.
-- Merge commit: `81035fad9d1fea3e17c0d43731d8ab9fdcf31901`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, tenant-isolation readiness/guard harness checks, focused DB context tests, model-review disposition, verify-slice static, and verify-slice required gates.
+- Merge commit: `81035fad9d1fea3e17c0d43731d8ab9fdcf31901`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, tenant-isolation readiness/guard harness checks, focused DB context tests, model-review disposition, verify-slice static, and verify-slice required gates.
 - `NC-E2-01 / platform-identity` merged in PR #93 on 2026-06-04.
-- Merge commit: `b46861d353cc196ffbfaf1a456952414ff28bae0`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, central current-user resolver tests, AST current-user boundary guard, Copilot finding fixes, model-review disposition, verify-slice static, and verify-slice required gates.
+- Merge commit: `b46861d353cc196ffbfaf1a456952414ff28bae0`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, central current-user resolver tests, AST current-user boundary guard, Copilot finding fixes, model-review disposition, verify-slice static, and verify-slice required gates.
 - `NC-E2-02 / tenant-memberships` merged in PR #96 on 2026-06-05.
-- Merge commit: `b0fa47381b3daa6db2c744cbc80b20a59ffdd54f`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, focused identity unit/DB tests, tenant-isolation contract tests, model-review disposition, Copilot finding fix, verify-slice static, verify-slice required gates, and pre-push strict release gate.
+- Merge commit: `b0fa47381b3daa6db2c744cbc80b20a59ffdd54f`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, API E2E, UI smoke, focused identity unit/DB tests, tenant-isolation contract tests, model-review disposition, Copilot finding fix, verify-slice static, verify-slice required gates, and pre-push strict release gate.
 - `NC-EG-00 / constitution-deployment` merged in PR #101 on 2026-06-13.
-- Merge commit: `b2baa0a80572a2eb10471dcd02c1c945928fc0ef`.
-- Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, E2E API, UI smoke, docs-only verify-slice static, docs-only verify-slice required gates, and pre-push strict release gate. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`.
+- Merge commit: `b2baa0a80572a2eb10471dcd02c1c945928fc0ef`. Required checks passed: CI, Sonar Quality Gate, Sonar PR Summary, Sonar Coverage, GitGuardian, PR Finalizer, E2E API, UI smoke, docs-only verify-slice static, docs-only verify-slice required gates, and pre-push strict release gate. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260612T214308Z-c2ad6b`.
 - `NC-EG-01 / ent-gate-framework` merged in PR #105 and follow-up PR #106.
 - Merge commits: `246b74e6f569cd20464f6ec82fce7d4bfae5c740` and `08fbced6a586353aa3884a1cfcf238bfa60bca96`.
 - Required checks passed: CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke, ent-gates, branch-protection audit parity, and local verify-slice static/required gates.
 - `NC-E2-03 / platform-authz` merged in PR #109 on 2026-07-04.
-- Merge commit: `945b09362a786c082a71f2e4fbd77a372c7df452`.
-- Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, bot-thread guard, and subagent evidence. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260704T081621Z-0e3b9b`.
+- Merge commit: `945b09362a786c082a71f2e4fbd77a372c7df452`. Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, bot-thread guard, and subagent evidence. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260704T081621Z-0e3b9b`.
 - `NC-E2-04 / medical-evidence-brand` merged in PR #111 on 2026-07-05.
-- Merge commit: `b79a345267249fe7d431c7026dd0a44d59be486f`.
-- Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, local gate:release, and subagent evidence. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260704T112031Z-dd7b4c`.
+- Merge commit: `b79a345267249fe7d431c7026dd0a44d59be486f`. Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, local gate:release, and subagent evidence. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260704T112031Z-dd7b4c`.
 - `NC-TB-01 / tenant-expand` merged in PR #114 on 2026-07-13.
-- Merge commit: `48eb6fab9bd83712245716998c0cdf9bd6bbe196`.
-- Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, rollback rehearsal, reviewer/security disposition, and bot-thread audit. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260713T143528Z-c719ad`; blocked Sonnet/Gemini routes were recorded honestly and were not counted as approval.
+- Merge commit: `48eb6fab9bd83712245716998c0cdf9bd6bbe196`. Required checks passed: Type Check & Lint, Unit Tests, DB Integration, E2E API, E2E UI Smoke, Sonar Coverage/Quality/PR Summary, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, rollback rehearsal, reviewer/security disposition, and bot-thread audit. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260713T143528Z-c719ad`; blocked Sonnet/Gemini routes were recorded honestly and were not counted as approval.
 - `NC-TB-02 / tenant-observe` merged in PR #116 on 2026-07-14 at `430dc4b48ea075b850921db56ffd87206e2a1ae5`; Type Check & Lint, unit/DB/API/UI suites, Sonar, GitGuardian, PR Finalizer, verify-slice static/required gates, ent-gates, zero-violation receipts, reviewer/security reconciliation, and bot-thread audit passed. Evidence run root: `tmp/multi-agent/verify-slice/verify-slice-20260713T211047Z-7af7c5`; blocked model routes were not counted as approval.
+
+- `NC-EG-09 / governance-fixture-repair` closeout: PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts.
 
 Phase 0 stabilization is complete. `NC-E1-01 / tenant-model-decision` closed
 ADR-001 Decision B:
@@ -119,15 +106,20 @@ Decision scope:
 - multi-country production rollout requires regional/data-residency topology review
   before launch
 
-The program now executes under the **Phase C Enterprise Upgrade** map
-(`docs/plans/ENTERPRISE_UPGRADE_TRACKER.md`). The enterprise verification gate
-band (`NC-EG`) landed before further implementation slices, so all subsequent
-work runs under fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gating.
-`NC-TB-02 / tenant-observe` is complete. The next selected candidate,
-`NC-TB-03 / tenant-enforce`, is held until the representative 14-day observation
-window is zero, restrictive staging/two-tenant proof passes, and support,
-analytics/export, and payout access classifications are resolved. No
-implementation slice is currently promoted.
+The program executes under `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md` and the
+existing fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gates. NC-EG-09's repair is
+merged; this authority PR publishes its canonical closeout and next promotion.
+The next infrastructure slice is:
+
+NC-EG-07 / codex/sentry-config-isolation-delivery (ready)
+
+Only after this authority PR merges green, applicable main Actions pass and clean
+main/branch cleanup/readback complete may a fresh implementation branch start.
+AUTH-DELIVERY-01 follows separately as NC-EG-08. No runtime change is included.
+NC-TB-03 remains held for the representative 14-day zero window, restrictive
+staging/two-tenant proof and support, analytics/export and payout classifications.
+Neither 03A nor 03B is promoted or authorized. Enterprise-foundation sequencing
+will receive its own reviewed authority amendment; it does not bypass this queue.
 
 ## Slice Execution Contract
 
