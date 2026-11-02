@@ -88,10 +88,12 @@ require("node:module").syncBuiltinESMExports();`);
   it("classifies quota or rate-limit output as a structured blocker", () => {
     const root = makeTemp();
     try {
-      const result = run(root, "#!/usr/bin/env bash\necho '429 rate limit exceeded' >&2\nexit 1\n");
+      const result = run(root, "#!/usr/bin/env bash\ncat > \"$CODEX_SENIOR_REVIEW_PACKET.received\"\necho '429 rate limit exceeded' >&2\nexit 1\n");
 
       expect(result.status).not.toBe(0);
       expect(receipt(root)).toMatchObject({ status: "blocked", blocker: "quota_or_rate_limit" });
+      const packet = join(root, "run/reviews/codex-senior-review-packet.md");
+      expect(readFileSync(`${packet}.received`, "utf8")).toBe(readFileSync(packet, "utf8"));
     } finally {
       cleanup(root);
     }
