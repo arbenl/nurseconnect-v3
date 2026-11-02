@@ -9,6 +9,7 @@ import { BOOTSTRAP_FILES } from "../promotion-policy.mjs";
 import { parseManifest } from "../manifest.mjs";
 import { validateEntGateEvidence } from "../../lib/pr-ent-gate-evidence.mjs";
 import { bootstrapFixture, historicalRun } from "./bootstrap-fixture.mjs";
+import { cleanGitEnv } from "../evidence.mjs";
 
 const bootstrapBase = "e8b3c5c38650ed3bcc0d64de538cc4247598f49a";
 const evidenceFor = (file) => `ent-gates: PASS\nevidence/ent-gates.md\nmanifest sha256: ${createHash("sha256").update(readFileSync(file)).digest("hex")}`;
@@ -62,16 +63,21 @@ it("Finalizer checkout provisions pinned fixture history and main before local t
   const depth = Number(checkout.match(/fetch-depth:\s*(\d+)/)?.[1] ?? 1);
   const root = mkdtempSync(join(tmpdir(), "nc-finalizer-history-")), remote = join(root, "remote.git"), cwd = join(root, "checkout");
   const git = (args, workdir = source) => {
-    const p = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd: workdir, encoding: "utf8" });
+    const p = spawnSync("git", ["-c", "core.hooksPath=/dev/null", ...args], { cwd: workdir, env: cleanGitEnv(), encoding: "utf8" });
     expect(p.status, p.stderr).toBe(0); return p.stdout.trim();
   };
+  const keys = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"], saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  Object.assign(process.env, { GIT_DIR: join(root, "poisoned.git"), GIT_WORK_TREE: join(root, "poisoned-worktree"), GIT_INDEX_FILE: join(root, "poisoned-index") });
   try {
     git(["clone", "--bare", "--shared", "--quiet", source, remote]);
     git(["--git-dir", remote, "update-ref", "refs/heads/fixture-ci", git(["rev-parse", "HEAD"])]);
     git(["--git-dir", remote, "update-ref", "refs/heads/main", "9882c8b5044d238c398dde8e0ec45b7bf039cc89"]);
     git(["clone", "--quiet", "--no-local", "--no-checkout", "--branch", "fixture-ci", ...(depth ? ["--depth", String(depth)] : []), pathToFileURL(remote).href, cwd]);
     for (const ref of [bootstrapBase, "430dc4b48ea075b850921db56ffd87206e2a1ae5", "9882c8b5044d238c398dde8e0ec45b7bf039cc89", "origin/main"]) {
-      expect(spawnSync("git", ["cat-file", "-e", `${ref}^{commit}`], { cwd }).status, `Missing fixture ref ${ref}`).toBe(0);
+      expect(spawnSync("git", ["cat-file", "-e", `${ref}^{commit}`], { cwd, env: cleanGitEnv() }).status, `Missing fixture ref ${ref}`).toBe(0);
     }
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally {
+    for (const [key, value] of Object.entries(saved)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+    rmSync(root, { recursive: true, force: true });
+  }
 });
