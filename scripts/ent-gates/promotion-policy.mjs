@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-export const PROMOTION_MODES = ["authority", "bootstrap"];
+import { validateRootRepair } from "./root-repair-policy.mjs";
+export const PROMOTION_MODES = ["authority", "bootstrap", "governance-repair"];
 export const AUTHORITY_CORE_FILES = [
   "docs/plans/ENTERPRISE_UPGRADE_TRACKER.md",
   "docs/plans/current-program.md",
@@ -79,6 +80,7 @@ export function validatePromotionPolicy(input) {
   }
   if (mode === "authority") validateAuthority(input, errors);
   else if (mode === "bootstrap") validateBootstrap(input, errors);
+  else if (mode === "governance-repair") validateRootRepair(input, errors);
   else errors.push(`Unsupported special promotion mode: ${mode}.`);
   return { mode, baseSha: input.baseSha || "unresolved", sourceBranch: input.sourceBranch || "unresolved", errors };
 }

@@ -70,7 +70,7 @@ export function validateManifest({ manifest, changedFiles = [], trackerText = ""
   const changed = new Set(changedFiles);
   if (!manifest.slice) errors.push("Manifest missing slice.");
   if (!manifest.branch) errors.push("Manifest missing branch.");
-  if (manifest["promotion-mode"] && !["authority", "bootstrap"].includes(manifest["promotion-mode"])) errors.push("Invalid promotion-mode.");
+  if (manifest["promotion-mode"] && !["authority", "bootstrap", "governance-repair"].includes(manifest["promotion-mode"])) errors.push("Invalid promotion-mode.");
   if (manifest["authority-files"] && manifest["promotion-mode"] !== "authority") errors.push("authority-files requires authority promotion mode.");
   for (const gate of GATES) validateGate(errors, gate, manifest.gates[gate], changed, enforceDiffEvidence);
   if (enforcePromotion) {

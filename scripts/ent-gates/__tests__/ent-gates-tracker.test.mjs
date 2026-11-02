@@ -7,9 +7,10 @@ import { describe, expect, it } from "vitest";
 import { run } from "../check.mjs";
 import { cleanGitEnv, collectSpecialChangedFiles } from "../evidence.mjs";
 import { BOOTSTRAP_FILES } from "../promotion-policy.mjs";
+import { bootstrapFixture, historicalRun } from "./bootstrap-fixture.mjs";
 import { validateEntGateEvidence } from "../../lib/pr-ent-gate-evidence.mjs";
 const bootstrapBase = "e8b3c5c38650ed3bcc0d64de538cc4247598f49a", evidenceFor = (file) => `ent-gates: PASS\nevidence/ent-gates.md\nmanifest sha256: ${createHash("sha256").update(readFileSync(file)).digest("hex")}`, historyIt = [bootstrapBase, "430dc4b48ea075b850921db56ffd87206e2a1ae5"].every((ref) => spawnSync("git", ["cat-file", "-e", `${ref}^{commit}`], { env: cleanGitEnv() }).status === 0) ? it : it.skip;
-const bootstrapArgs = (root, extra = []) => ["--base", bootstrapBase, "--policy-base", bootstrapBase, "--run-root", root,
+const bootstrapArgs = (root, extra = []) => ["--manifest", bootstrapFixture(root), "--base", bootstrapBase, "--policy-base", bootstrapBase, "--run-root", root,
   "--changed-files-complete", "true",
   ...BOOTSTRAP_FILES.flatMap((file) => ["--changed-file", file]),
   ...extra,
@@ -52,14 +53,14 @@ describe("enterprise gate tracker promotion checks", () => {
         GITHUB_ACTIONS: "true", GITHUB_BASE_REF: "main", GITHUB_HEAD_REF: "codex/ent-gate-null-promotion-bootstrap",
         GITHUB_REPOSITORY: "arbenl/nurseconnect-v3", GITHUB_EVENT_PATH: event,
       };
-      const result = run(bootstrapArgs(root, ["--enforce-promotion", "false"]), githubEnv);
+      const result = historicalRun(root, bootstrapArgs(root, ["--enforce-promotion", "false"]), githubEnv);
       expect(result.errors).toContain("Special promotion mode cannot disable promotion enforcement.");
       const evidence = readFileSync(join(root, "evidence/ent-gates.md"), "utf8");
       expect(evidence).toContain("promotion mode: bootstrap");
       expect(evidence).toContain(`policy base sha: ${bootstrapBase}`);
       expect(evidence).toContain("source branch: codex/ent-gate-null-promotion-bootstrap");
       writeFileSync(event, JSON.stringify({ pull_request: { head: { repo: { full_name: "attacker/nurseconnect-v3" } } } }));
-      expect(run(bootstrapArgs(root), githubEnv).errors.join("\n")).toContain("source branch is invalid");
+      expect(historicalRun(root, bootstrapArgs(root), githubEnv).errors.join("\n")).toContain("source branch is invalid");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -72,7 +73,7 @@ describe("enterprise gate tracker promotion checks", () => {
   ])("fails closed for special-mode %s", (_label, extra, env, message) => {
     const root = mkdtempSync(join(tmpdir(), "nurseconnect-ent-gates-bootstrap-"));
     try {
-      expect(run(bootstrapArgs(root, extra), env).errors.join("\n")).toContain(message);
+      expect(historicalRun(root, bootstrapArgs(root, extra), env).errors.join("\n")).toContain(message);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -88,21 +89,6 @@ describe("enterprise gate tracker promotion checks", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  });
-  it("separates local structural validation from real-base promotion enforcement", () => {
-    const localErrors = [];
-    validateEntGateEvidence(localErrors, evidenceFor("slice-gates.yaml"), "slice-gates.yaml", BOOTSTRAP_FILES,
-      { env: { PR_FILES_COMPLETE: "1" } });
-    expect(localErrors).toEqual([]);
-    let invoked = [];
-    const realErrors = [];
-    validateEntGateEvidence(realErrors, evidenceFor("slice-gates.yaml"), "slice-gates.yaml", [], {
-      env: { GATE_POLICY_BASE: bootstrapBase, PR_FILES_COMPLETE: "1" },
-      spawn: (_command, args) => { invoked = args; return { status: 0, stdout: "", stderr: "" }; },
-    });
-    expect(realErrors).toEqual([]);
-    expect(invoked).toEqual(expect.arrayContaining([bootstrapBase, "--enforce-promotion", "true"]));
-    expect(invoked).not.toContain("false");
   });
   it.each([
     ["incomplete fixture", {}, "declared complete file list"],

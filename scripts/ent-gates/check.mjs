@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { classifyChangedFiles, collectChangedFiles, loadGatePaths, validateGuardedOverrides } from "./diff-classifier.mjs";
 import { cleanGitEnv, collectRegularHeadFiles, collectSpecialChangedFiles, manifestSha, writeEvidence } from "./evidence.mjs";
 import { loadManifest, validateManifest } from "./manifest.mjs";
+import { loadRepairRecord, rootRepairContext } from "./root-repair-context.mjs";
 import { parseEnterprisePromotionState, parseProgramPromotionState, parseTrackerPromotionState, resolveSourceBranch, validatePromotionPolicy } from "./promotion-policy.mjs";
 function parseArgs(argv) {
   const args = { changedFile: [] };
@@ -40,7 +41,7 @@ export function run(argv = process.argv.slice(2), env = process.env) {
     errors.push(error.message);
   }
   try {
-    const specialMode = ["authority", "bootstrap"].includes(promotion.mode);
+    const specialMode = ["authority", "bootstrap", "governance-repair"].includes(promotion.mode);
     const trackerPath = specialMode ? "docs/plans/current-tracker.md" : args.tracker || "docs/plans/current-tracker.md";
     if (specialMode && args.tracker) errors.push("Special promotion mode cannot override the canonical tracker path.");
     if (specialMode && args["enforce-promotion"] === "false") errors.push("Special promotion mode cannot disable promotion enforcement.");
@@ -80,7 +81,7 @@ function validateSpecialPromotion({ args, env, manifest, changedFiles, trackerPa
   try {
     bootstrapRecord = JSON.parse(readFileSync(args["bootstrap-record"] || "config/ent-gate-null-promotion-bootstrap.json", "utf8"));
   } catch {}
-  const authorityStates = manifest["promotion-mode"] === "authority" ? {
+  const authorityStates = ["authority", "governance-repair"].includes(manifest["promotion-mode"]) ? {
     program: authorityState("docs/plans/current-program.md", policyBase, parseProgramPromotionState),
     enterprise: authorityState("docs/plans/ENTERPRISE_UPGRADE_TRACKER.md", policyBase, parseEnterprisePromotionState),
   } : undefined;
@@ -95,7 +96,7 @@ function validateSpecialPromotion({ args, env, manifest, changedFiles, trackerPa
     trackerChanged: trackerText !== headTracker,
     authorityStates,
     regularHeadFiles: collectRegularHeadFiles(changedFiles),
-    bootstrapRecord,
+    bootstrapRecord, ...(manifest["promotion-mode"] === "governance-repair" ? { repairRecord: loadRepairRecord(), repairContext: rootRepairContext(env) } : {}),
   });
   if (resolveCommit(base) !== baseSha) promotion.errors.push("Special promotion diff base must resolve to the policy base commit.");
   return promotion;

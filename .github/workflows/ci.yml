@@ -148,7 +148,6 @@ jobs:
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || secrets.SONAR_HOST_URL || 'https://sonarcloud.io' }}
       SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || secrets.SONAR_PROJECT_KEY || 'arbenl_nurseconnect-v3' }}
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || secrets.SONAR_ORGANIZATION || 'arbenl' }}
-      SONAR_SCANNER_SKIP_JRE_PROVISIONING: "true"
       EVIDENCE_DIR: tmp/sonar-evidence/${{ github.run_id }}
 
     steps:
@@ -224,7 +223,6 @@ jobs:
             -Dsonar.pullrequest.branch=${{ github.head_ref }}
             -Dsonar.pullrequest.base=${{ github.base_ref }}
             -Dsonar.qualitygate.wait=true
-            -Dsonar.scanner.skipJreProvisioning=true
 
       - name: Write Sonar quality gate evidence
         if: always()
@@ -707,8 +705,7 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - { name: Checkout repo, uses: actions/checkout@v4, with: { fetch-depth: 0 } }
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
