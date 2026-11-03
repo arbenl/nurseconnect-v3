@@ -3,7 +3,7 @@ plan_role: canonical_program
 status: active
 source_of_truth: true
 owner: platform
-last_reviewed: 2026-11-02
+last_reviewed: 2026-11-03
 tracker_path: docs/plans/current-tracker.md
 architecture_program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
@@ -111,15 +111,17 @@ existing fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gates. NC-EG-09's repair is
 merged; PR #120 published its canonical closeout and promoted NC-EG-07.
 The next infrastructure slice is:
 
-No implementation slice is currently promoted.
-NC-EG-07 is the current candidate in review; no new slice awaits promotion.
+NC-EG-08 / codex/auth-delivery-01 (ready)
 
-NC-EG-07 Sentry gate isolation is under review from promoted main
-b3772a83d712bcb1efbc8fa309738d01d54c9106 on its fresh canonical branch. This
-candidate restores intentional-null; implementation completion still requires
-all gates, actual native approval, green merge/main Actions and clean closeout.
-AUTH-DELIVERY-01 remains planned separately as NC-EG-08, with its own promotion.
-Only observability gate code is included; no application telemetry is changed.
+NC-EG-07 closeout: PR #121 merged at `1dced12b877600515dfc6b5432b31cb972d892b3` on 2026-11-03 from reviewed HEAD `2ad40d4980d7137a081883f6f2f67338b5dfb1d3`; all eleven PR checks, including the nine required issuer-bound checks and PR Finalizer, passed. Real @arbenl CODEOWNER approval [5747374328](https://github.com/arbenl/nurseconnect-v3/pull/121#pullrequestreview-5747374328) covers that head; no unresolved threads. Merge-commit [main CI 41580156138](https://github.com/arbenl/nurseconnect-v3/actions/runs/41580156138) concluded success. Clean main, reviewed/merged tree equality and deletion of only the merged feature branch were verified. Local run root: `tmp/multi-agent/verify-slice/nc-eg-07-sentry-isolation-final2-20261102`; default/static/required gates, five pool roles, Codex senior and actual Concord/Opus advisory review have zero outstanding MUST_FIX. Legacy Sonnet/Gemini routes were not run and are not counted as approval; no strict legacy gate pass is claimed. Local ignored receipts remain in the operator packet, not hosted CI artifacts.
+
+This authority PR records NC-EG-07's completion and promotes only the existing
+AUTH-DELIVERY-01 gate-amendment design. Completion/promotion becomes canonical
+only after this PR merges green and its records are read back from GitHub.
+The design is `docs/plans/nc-eg-08-auth-delivery-01-design.md`.
+No NC-EG-08 implementation is included. A fresh standard-mode implementation
+may start only after this authority PR's green merge, applicable main Actions,
+clean main sync, own branch cleanup and canonical readback.
 NC-TB-03 remains held for the representative 14-day zero window, restrictive
 staging/two-tenant proof and support, analytics/export and payout classifications.
 Neither 03A nor 03B is promoted or authorized. Enterprise-foundation sequencing

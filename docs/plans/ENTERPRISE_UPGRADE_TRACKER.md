@@ -5,7 +5,7 @@ source_of_truth: false
 authority_note: "current-program.md is the singular source of truth; this tracker defers to current-program.md and current-tracker.md only. It extends nurseconnect-enterprise-architecture-tracker.md, whose pre-Phase-C rows (e.g. the unamended NC-E2-03) are superseded by the amendments recorded here."
 owner: platform
 created: 2026-06-10
-last_reviewed: 2026-11-02
+last_reviewed: 2026-11-03
 program_path: docs/plans/nurseconnect-enterprise-architecture-program.md
 current_tracker_bridge: docs/plans/current-tracker.md
 verification_command: pnpm verify-slice
@@ -32,8 +32,8 @@ verification_command: pnpm verify-slice
 Gates land first so every subsequent slice is born under them. NC-CQ-02..04
 depend on the outbox/read-model backbone (NC-E3) for event-fed projections.
 
-Current infrastructure queue: close NC-EG-09, then NC-EG-07, then separately
-reviewed NC-EG-08. Original product-band order and TB03 external holds remain;
+Current infrastructure queue: NC-EG-09 and NC-EG-07 are merged; this authority
+PR publishes NC-EG-07 closeout and promotes the separately reviewed NC-EG-08 design. Original product-band order and TB03 external holds remain;
 no 03A/03B implementation. Early classification needs its own reviewed amendment.
 
 ## Band NC-EG — Enterprise Verification Gates (ent-tm / ent-dlv / ent-perf)
@@ -48,8 +48,8 @@ no 03A/03B implementation. Early classification needs its own reviewed amendment
 | `NC-EG-05` | `planned` | `lifecycle-three-planes` | Implement ADR-005 slice lifecycle automation. **Plane 1 (record):** GitHub Actions workflow on merged PRs derives closeout + `completed` status from `codex/<slice>` branch events; a bot identity is the ONLY writer of `completed` in both trackers + `current-program.md`; projection is re-runnable from git history. **Plane 2 (enforcement):** extend PR Finalizer with branch-name validation and promoted-slice matching (ent-gate evidence/sha pinning arrives via NC-EG-01). **Plane 3 (decision):** thin authority-free `start <id>` client exposed as an MCP tool (validate promotion, create branch, open promotion PR with decision provenance). **CODEOWNERS:** code-owner review required on `.github/workflows/**`, `scripts/multi-agent/**`, `scripts/ent-gates/**`, `config/ent-gate-paths.json`, `docs/plans/**`, and all three `*/skills/**` SOP paths. | ADR-005 verification suite: non-bot tracker-status edit fails finalizer; non-promoted branch merge produces no closeout + raises alert; projection replay over last N merges is byte-identical; CODEOWNERS blocks unreviewed gatekeeper edits (branch-protection evidence); plane-3 bypass loses nothing (PR from manual branch still fully gated). | Medium-High |
 
 | `NC-EG-09` | `completed` | `governance-fixture-repair` | Bounded fixture/structured-review/Sentry-collector repair and canonical closeout. | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. PR #120 then published the canonical completion and promotion. | Medium-High |
-| `NC-EG-07` | `review` | `sentry-config-isolation-delivery` | Implement the owner-authorized Sentry gate isolation from promoted main; no application telemetry change. | Pinned shared client, strict failures and count-only evidence; completion pending full local/remote gates, actual native approval and clean merge closeout. Intentional-null restored in this candidate; NC-EG-08 remains planned. | High |
-| `NC-EG-08` | `planned` | `auth-delivery-01` | Separate AUTH-DELIVERY-01 after NC-EG-07. | Its own design, promotion, proof and protected closeout; no auth implementation here. | High |
+| `NC-EG-07` | `completed` | `sentry-config-isolation-delivery` | NurseConnect Sentry gate isolation; no application telemetry change. | PR #121 merged at `1dced12b877600515dfc6b5432b31cb972d892b3` on 2026-11-03 from reviewed HEAD `2ad40d4980d7137a081883f6f2f67338b5dfb1d3`; all eleven PR checks, including the nine required issuer-bound checks and PR Finalizer, passed. Real @arbenl CODEOWNER approval [5747374328](https://github.com/arbenl/nurseconnect-v3/pull/121#pullrequestreview-5747374328) covers that head; no unresolved threads. Merge-commit [main CI 41580156138](https://github.com/arbenl/nurseconnect-v3/actions/runs/41580156138) concluded success. Clean main, reviewed/merged tree equality and deletion of only the merged feature branch were verified. Local run root: `tmp/multi-agent/verify-slice/nc-eg-07-sentry-isolation-final2-20261102`; default/static/required gates, five pool roles, Codex senior and actual Concord/Opus advisory review have zero outstanding MUST_FIX. Legacy Sonnet/Gemini routes were not run and are not counted as approval; no strict legacy gate pass is claimed. Local ignored receipts remain in the operator packet, not hosted CI artifacts. Canonical completion takes effect through this authority PR. | High |
+| `NC-EG-08` | `ready` | `auth-delivery-01` | Separately reviewed null-preserving authority delivery; promotion/design only. | `docs/plans/nc-eg-08-auth-delivery-01-design.md`; fresh standard-mode installation only after this authority PR green closeout. No implementation here. | High |
 
 ## Band NC-E2 (amendment) — Platform AuthZ + Type-Level Guards
 
