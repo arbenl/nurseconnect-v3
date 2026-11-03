@@ -38,8 +38,8 @@ verification_command: pnpm verify-slice
 | `NC-TB-01` | `completed` | platform + database | Default org/branch bootstrap; add nullable `organization_id` plus accepted care-site scope to tenant-owned request, assignment, visit, payment, payout, and event tables; platform nurse/location/service-area, referral, audit, and identity surfaces remain deferred per data-lifecycle evidence. | PR #114 merged at `48eb6fab9bd83712245716998c0cdf9bd6bbe196`; reversible migrations, default-tenant invariants, tenant ownership constraints, forged-context regression, rollback rehearsal, local required gates, CI, Sonar, GitGuardian, PR Finalizer, E2E API, UI smoke gate, reviewer/security disposition, and bot-thread audit passed. |
 | `NC-TB-02` | `completed` | platform + database + observability | Adopt tenant context across domain queries and export observe-before-enforce violation signals. | PR #116 merged at `430dc4b48ea075b850921db56ffd87206e2a1ae5`; harness `guard` mode, sanitized observer evidence, 65/65 API and 4/4 UI smoke receipts with `tenant_scope_violations=0`, full E2E UI, focused DB/type proof, reviewer/security reconciliation, required gates, CI, Sonar, GitGuardian, and PR Finalizer passed. |
 
-| `NC-EG-09` | `completed` | platform + qa | Bounded governance repair and canonical closeout. | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. Completion/promotion takes effect through this authority PR's green canonical publication. |
-| `NC-EG-07` | `ready` | platform + observability | Isolate NurseConnect Sentry configuration under the separately reviewed design. | Authority-only promotion first; fresh standard-mode implementation from clean promoted main afterwards. Pinned identity, strict failures, PHI-safe evidence, all local/remote gates and real human review required. |
+| `NC-EG-09` | `completed` | platform + qa | Bounded governance repair and canonical closeout. | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. PR #120 then published the canonical completion and promotion. |
+| `NC-EG-07` | `review` | platform + observability | Implement the separately reviewed Sentry isolation from promoted main. | Candidate uses the pinned shared client and count-only evidence; completion remains pending static/senior/pool/model/required gates, real native review, green CI/merge and clean closeout. No application telemetry or tenant enforcement change. |
 | `NC-EG-08` | `planned` | platform + security | AUTH-DELIVERY-01 after NC-EG-07, separately reviewed. | Its own design, promotion, tests, protected delivery and closeout; no auth implementation included here. |
 
 > Phase C Enterprise Upgrade bands (ent-* gates, type-level guards, tenant
@@ -49,18 +49,19 @@ verification_command: pnpm verify-slice
 
 ## Next Slice
 
-NC-EG-07 / codex/sentry-config-isolation-delivery (ready)
+No implementation slice is currently promoted.
+NC-EG-07 is the current candidate in review; no new slice awaits promotion.
 
 ## Queue Rationale
 
-This authority PR records NC-EG-09's actual green merge and promotes only the
-already authorized Sentry configuration isolation. The promotion is effective
-only after green merge/publication, applicable main Actions, clean sync, branch
-cleanup and canonical readback. Implementation starts on a fresh branch then.
-AUTH-DELIVERY-01 follows separately; the foundation sequence requires its own
-reviewed amendment after this queue. NC-TB-03 retains its representative 14-day
-zero-window, restrictive staging/two-tenant and approved access-classification
-gates. Neither 03A nor 03B is promoted or authorized to implement.
+PR120 published NC-EG-09's factual closeout and promoted NC-EG-07 at
+b3772a83d712bcb1efbc8fa309738d01d54c9106; its merge-commit CI and clean closeout
+passed. This standard-mode Sentry candidate restores intentional-null while
+under review. It does not claim completion or promote NC-EG-08. AUTH-DELIVERY-01
+follows through its own design/promotion. The foundation sequence needs its own
+reviewed amendment. NC-TB-03 retains the representative 14-day zero window,
+restrictive staging/two-tenant proof and approved access classifications.
+Neither 03A nor 03B is promoted or authorized to implement.
 
 ## Recent Closeout Evidence
 

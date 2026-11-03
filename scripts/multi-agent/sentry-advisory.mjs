@@ -1,89 +1,41 @@
 #!/usr/bin/env node
 import { mkdirSync, writeFileSync } from "node:fs";
-import https from "node:https";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
 import { asString, parseArgv } from "./lib/cli.mjs";
+import { pinnedSentryIdentity, resolveSentryTarget } from "./sentry-target.mjs";
+import { readSentryState } from "./sentry-client.mjs";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
-
-function evidenceRoot(value) {
-  const chosen = value || "tmp/multi-agent/sentry-advisory";
-  return path.isAbsolute(chosen) ? chosen : path.join(root, chosen);
+const safeCodes = new Set(["MISSING_CONFIG", "FORBIDDEN_CONFIG", "CI_ADVISORY_FORBIDDEN", "SENTRY_RESPONSE_REJECTED", "SENTRY_REQUEST_FAILED", "SENTRY_INVALID_RESPONSE", "SENTRY_IDENTITY_MISMATCH"]);
+export async function runSentryAdvisory(argv = process.argv.slice(2), env = process.env, request = fetch) {
+  const args = parseArgv(argv), chosen = asString(args["run-root"], "") || "tmp/multi-agent/sentry-advisory";
+  const runRoot = path.isAbsolute(chosen) ? chosen : path.join(root, chosen);
+  const strict = args.strict === true || args.strict === "true", outDir = path.join(runRoot, "evidence/sentry");
+  let status = "ERROR", count = null, code = "", identity = null;
+  try {
+    identity = pinnedSentryIdentity();
+    const context = resolveSentryTarget(env);
+    if (context.ignoredGenericKeys.length) process.stderr.write(`[sentry-advisory] ignored local generic identity: ${context.ignoredGenericKeys.join(", ")}\n`);
+    const result = await readSentryState({ env, request });
+    count = result.unresolvedSampleCount; status = count ? "UNRESOLVED_ISSUES" : "PASS";
+  } catch (error) {
+    code = safeCodes.has(error.code) || /^SENTRY_HTTP_\d{1,3}$/.test(error.code || "") ? error.code : "SENTRY_REQUEST_FAILED";
+    status = code === "MISSING_CONFIG" ? code : ["FORBIDDEN_CONFIG", "CI_ADVISORY_FORBIDDEN"].includes(code) ? "FORBIDDEN_CONFIG" : "ERROR";
+  }
+  // Construct fresh operational evidence; provider objects and errors never enter it.
+  const evidence = { schemaVersion: 1, status, checkedAt: new Date().toISOString(), identity, unresolvedSampleCount: count };
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(path.join(outDir, "sentry-unresolved.json"), `${JSON.stringify(evidence, null, 2)}\n`, { mode: 0o600 });
+  writeFileSync(path.join(outDir, "sentry-summary.md"), ["# Sentry Advisory Summary", "", `- status: \`${status}\``, `- checked_at: \`${evidence.checkedAt}\``,
+    `- project: \`${identity ? `${identity.orgSlug}/${identity.projectSlug}` : "invalid pin"}\``, `- unresolved_sample_count: \`${count ?? "not queried"}\``].join("\n"));
+  process.stdout.write(`SENTRY_ADVISORY_STATUS: ${status}\n`);
+  if (code && code !== "MISSING_CONFIG") process.stderr.write(`[sentry-advisory] FAIL: ${code}${code === "CI_ADVISORY_FORBIDDEN" ? "; advisory mode is forbidden in CI" : ""}\n`);
+  if (status === "PASS" || (!strict && ["MISSING_CONFIG", "UNRESOLVED_ISSUES"].includes(status))) return 0;
+  return 1;
 }
-
-function writeSummary(dir, status, lines) {
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(path.join(dir, "sentry-summary.md"), ["# Sentry Advisory Summary", "", `- status: \`${status}\``, ...lines].join("\n"));
-}
-
-function fetchJson(url, token) {
-  return new Promise((resolve, reject) => {
-    const req = https.request(url, { headers: { Authorization: `Bearer ${token}` } }, (res) => {
-      let body = "";
-      res.setEncoding("utf8");
-      res.on("data", (chunk) => (body += chunk));
-      res.on("end", () => {
-        if ((res.statusCode || 0) < 200 || (res.statusCode || 0) >= 300) {
-          reject(new Error(`Sentry HTTP ${res.statusCode || "unknown"}`));
-          return;
-        }
-        resolve(JSON.parse(body || "[]"));
-      });
-    });
-    req.on("error", reject);
-    req.end();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  runSentryAdvisory().then(code => { process.exitCode = code; }).catch(() => {
+    process.stderr.write("[sentry-advisory] FAIL: evidence operation rejected\n"); process.exitCode = 1;
   });
 }
-
-async function main() {
-  const args = parseArgv(process.argv.slice(2));
-  const runRoot = evidenceRoot(asString(args["run-root"], ""));
-  const strict = args.strict === true || args.strict === "true";
-  if (process.env.CI === "1" && process.env.SENTRY_ADVISORY_MODE === "advisory") {
-    process.stderr.write("[sentry-advisory] FAIL: advisory mode is forbidden in CI\n");
-    process.exit(1);
-  }
-  const outDir = path.join(runRoot, "evidence", "sentry");
-  const token = process.env.SENTRY_AUTH_TOKEN || "";
-  const org = process.env.SENTRY_ORG || "";
-  const project = process.env.SENTRY_PROJECT || "";
-  const base = (process.env.SENTRY_BASE_URL || "https://sentry.io").replace(/\/+$/, "");
-  const target = `${org}/${project}`.toLowerCase();
-
-  if (!token || !org || !project) {
-    writeSummary(outDir, "MISSING_CONFIG", [
-      `- missing: \`${["SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT"].filter((key) => !process.env[key]).join(" ")}\``,
-      "- note: configure Sentry variables to turn this into live unresolved-issue evidence.",
-    ]);
-    process.stdout.write("SENTRY_ADVISORY_STATUS: MISSING_CONFIG\n");
-    if (strict) process.exit(1);
-    return;
-  }
-
-  if (/interdomestik|interdmestik/.test(target)) {
-    writeSummary(outDir, "FORBIDDEN_CONFIG", [
-      `- configured_project: \`${org}/${project}\``,
-      "- reason: NurseConnect must not reuse Interdomestik Sentry configuration.",
-    ]);
-    process.stderr.write("[sentry-advisory] FAIL: forbidden Interdomestik Sentry configuration\n");
-    process.exit(1);
-  }
-
-  const url = `${base}/api/0/projects/${encodeURIComponent(org)}/${encodeURIComponent(project)}/issues/?query=is%3Aunresolved&limit=5`;
-  const issues = await fetchJson(url, token);
-  mkdirSync(outDir, { recursive: true });
-  writeFileSync(path.join(outDir, "sentry-unresolved.json"), `${JSON.stringify(issues, null, 2)}\n`);
-  writeSummary(outDir, issues.length > 0 ? "UNRESOLVED_ISSUES" : "PASS", [
-    `- unresolved_sample_count: \`${issues.length}\``,
-    `- project: \`${org}/${project}\``,
-  ]);
-  process.stdout.write(`SENTRY_ADVISORY_STATUS: ${issues.length > 0 ? "UNRESOLVED_ISSUES" : "PASS"}\n`);
-  if (strict && issues.length > 0) process.exit(1);
-}
-
-main().catch((error) => {
-  process.stderr.write(`[sentry-advisory] FAIL: ${error.message}\n`);
-  process.exit(1);
-});

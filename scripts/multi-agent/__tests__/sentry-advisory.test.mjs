@@ -66,13 +66,14 @@ describe("sentry advisory", () => {
         encoding: "utf8",
         env: {
           PATH: process.env.PATH,
+          CI: "true",
           SENTRY_AUTH_TOKEN: "token",
           SENTRY_ORG: "human-p5",
           SENTRY_PROJECT: "interdmestik-nextjs",
         },
       });
       expect(result.status).not.toBe(0);
-      expect(result.stderr).toContain("forbidden Interdomestik");
+      expect(result.stderr).toContain("FORBIDDEN_CONFIG");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
