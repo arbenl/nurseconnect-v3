@@ -4,7 +4,7 @@ status: active
 source_of_truth: false
 authority_note: "current-program.md is the singular source of truth; this tracker defers to it on conflict."
 owner: platform
-last_reviewed: 2026-11-02
+last_reviewed: 2026-11-03
 current_program_path: docs/plans/current-program.md
 architecture_tracker_path: docs/plans/nurseconnect-enterprise-architecture-tracker.md
 verification_command: pnpm verify-slice
@@ -39,8 +39,8 @@ verification_command: pnpm verify-slice
 | `NC-TB-02` | `completed` | platform + database + observability | Adopt tenant context across domain queries and export observe-before-enforce violation signals. | PR #116 merged at `430dc4b48ea075b850921db56ffd87206e2a1ae5`; harness `guard` mode, sanitized observer evidence, 65/65 API and 4/4 UI smoke receipts with `tenant_scope_violations=0`, full E2E UI, focused DB/type proof, reviewer/security reconciliation, required gates, CI, Sonar, GitGuardian, and PR Finalizer passed. |
 
 | `NC-EG-09` | `completed` | platform + qa | Bounded governance repair and canonical closeout. | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. PR #120 then published the canonical completion and promotion. |
-| `NC-EG-07` | `review` | platform + observability | Implement the separately reviewed Sentry isolation from promoted main. | Candidate uses the pinned shared client and count-only evidence; completion remains pending static/senior/pool/model/required gates, real native review, green CI/merge and clean closeout. No application telemetry or tenant enforcement change. |
-| `NC-EG-08` | `planned` | platform + security | AUTH-DELIVERY-01 after NC-EG-07, separately reviewed. | Its own design, promotion, tests, protected delivery and closeout; no auth implementation included here. |
+| `NC-EG-07` | `completed` | platform + observability | Isolate the NurseConnect Sentry gate; no application telemetry change. | PR #121 merged at `1dced12b877600515dfc6b5432b31cb972d892b3` on 2026-11-03 from reviewed HEAD `2ad40d4980d7137a081883f6f2f67338b5dfb1d3`; all eleven PR checks, including the nine required issuer-bound checks and PR Finalizer, passed. Real @arbenl CODEOWNER approval [5747374328](https://github.com/arbenl/nurseconnect-v3/pull/121#pullrequestreview-5747374328) covers that head; no unresolved threads. Merge-commit [main CI 41580156138](https://github.com/arbenl/nurseconnect-v3/actions/runs/41580156138) concluded success. Clean main, reviewed/merged tree equality and deletion of only the merged feature branch were verified. Local run root: `tmp/multi-agent/verify-slice/nc-eg-07-sentry-isolation-final2-20261102`; default/static/required gates, five pool roles, Codex senior and actual Concord/Opus advisory review have zero outstanding MUST_FIX. Legacy Sonnet/Gemini routes were not run and are not counted as approval; no strict legacy gate pass is claimed. Local ignored receipts remain in the operator packet, not hosted CI artifacts. Canonical closeout takes effect through this authority PR. |
+| `NC-EG-08` | `ready` | platform + security | Separately reviewed AUTH-DELIVERY-01 null-preserving authority delivery. | Design: `docs/plans/nc-eg-08-auth-delivery-01-design.md`; promotion only here. Fresh standard-mode implementation follows green authority closeout; no auth/gate implementation in this PR. |
 
 > Phase C Enterprise Upgrade bands (ent-* gates, type-level guards, tenant
 > backfill execution, outbox, CQRS repair, PHI lifecycle) are mapped in
@@ -49,24 +49,25 @@ verification_command: pnpm verify-slice
 
 ## Next Slice
 
-No implementation slice is currently promoted.
-NC-EG-07 is the current candidate in review; no new slice awaits promotion.
+NC-EG-08 / codex/auth-delivery-01
 
 ## Queue Rationale
 
-PR120 published NC-EG-09's factual closeout and promoted NC-EG-07 at
-b3772a83d712bcb1efbc8fa309738d01d54c9106; its merge-commit CI and clean closeout
-passed. This standard-mode Sentry candidate restores intentional-null while
-under review. It does not claim completion or promote NC-EG-08. AUTH-DELIVERY-01
-follows through its own design/promotion. The foundation sequence needs its own
-reviewed amendment. NC-TB-03 retains the representative 14-day zero window,
-restrictive staging/two-tenant proof and approved access classifications.
+PR #121 merged NC-EG-07 and its exact merge-commit main CI passed. This
+existing-authority package records that completion and promotes the already
+queued AUTH-DELIVERY-01 design. It changes no admission policy or runtime.
+NC-EG-08 installation is a separate standard-mode PR after green authority
+merge/main verification, clean-main/own-branch cleanup and canonical readback.
+Existing workflow, model-policy, SRS and harmonization drafts remain separate.
+NC-TB-03 retains the representative 14-day zero window, restrictive staging/
+two-tenant proof and approved support, analytics/export and payout classifications.
 Neither 03A nor 03B is promoted or authorized to implement.
 
 ## Recent Closeout Evidence
 
 | Slice | PR | Merge Commit | Gate Summary |
 |---|---|---|---|
+| `NC-EG-07 / sentry-config-isolation-delivery` | https://github.com/arbenl/nurseconnect-v3/pull/121 | `1dced12b877600515dfc6b5432b31cb972d892b3` | PR #121 merged at `1dced12b877600515dfc6b5432b31cb972d892b3` on 2026-11-03 from reviewed HEAD `2ad40d4980d7137a081883f6f2f67338b5dfb1d3`; all eleven PR checks, including the nine required issuer-bound checks and PR Finalizer, passed. Real @arbenl CODEOWNER approval [5747374328](https://github.com/arbenl/nurseconnect-v3/pull/121#pullrequestreview-5747374328) covers that head; no unresolved threads. Merge-commit [main CI 41580156138](https://github.com/arbenl/nurseconnect-v3/actions/runs/41580156138) concluded success. Clean main, reviewed/merged tree equality and deletion of only the merged feature branch were verified. Local run root: `tmp/multi-agent/verify-slice/nc-eg-07-sentry-isolation-final2-20261102`; default/static/required gates, five pool roles, Codex senior and actual Concord/Opus advisory review have zero outstanding MUST_FIX. Legacy Sonnet/Gemini routes were not run and are not counted as approval; no strict legacy gate pass is claimed. Local ignored receipts remain in the operator packet, not hosted CI artifacts. |
 | `NC-EG-09 / governance-fixture-repair` | https://github.com/arbenl/nurseconnect-v3/pull/119 | `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. |
 | `NC-E0-01 / phase-0-identity-link` | `https://github.com/arbenl/nurseconnect-v3/pull/73` | `d636a890288955c0b5a5767c05956310d4a89bfb` | `PR Finalizer`, Sonar, GitGuardian, unit, DB, E2E API, and UI smoke gates passed. |
 | `NC-E0-02 / production-email-verification` | `https://github.com/arbenl/nurseconnect-v3/pull/75` | `f534fd797378484820d42d612dcc94cbbdf48a33` | Production email verification rollout controls, runbook, required gates, Sonar, GitGuardian, PR Finalizer, E2E API, and UI smoke passed; post-merge main CI harness regression fixed by PR #76 at `308d4d255f5da976480d591825d60b23953b7a34`. |

@@ -1,12 +1,14 @@
-slice: NC-EG-07
-branch: codex/sentry-config-isolation-delivery
+slice: NC-EG-08
+branch: codex/auth-delivery-01
+promotion-mode: authority
+authority-files: docs/plans/nc-eg-08-auth-delivery-01-design.md
 gates:
   ent-tm:
     status: required
-    evidence: docs/threat-models/nc-eg-07-sentry-isolation.md
+    evidence: docs/threat-models/nc-eg-08-auth-promotion.md
   ent-dlv:
     status: required
-    evidence: docs/data-lifecycle/nc-eg-07-sentry-isolation.md
+    evidence: docs/data-lifecycle/nc-eg-08-auth-promotion.md
   ent-perf:
     status: required
-    evidence: docs/performance/nc-eg-07-sentry-isolation.md
+    evidence: docs/performance/nc-eg-08-auth-promotion.md
