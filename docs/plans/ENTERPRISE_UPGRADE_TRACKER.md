@@ -32,9 +32,15 @@ verification_command: pnpm verify-slice
 Gates land first so every subsequent slice is born under them. NC-CQ-02..04
 depend on the outbox/read-model backbone (NC-E3) for event-fed projections.
 
-Current infrastructure queue: NC-EG-09 and NC-EG-07 are merged; this authority
-PR publishes NC-EG-07 closeout and promotes the separately reviewed NC-EG-08 design. Original product-band order and TB03 external holds remain;
-no 03A/03B implementation. Early classification needs its own reviewed amendment.
+Owner-approved repair queue (2026-11-17): NC-E0-07 / audit F07 first;
+then F03 + F09, F01 after D02, then F02/F05 and F06 as dependencies permit.
+F04/F16 precede organization two. NC-EG-08 is PARKED, not cancelled.
+Original product-band order and TB03 external holds remain; no 03A/03B
+implementation or adoption of the proposed audit guidance/SRS.
+
+| ID | Status | Slice | Acceptance Criteria (falsifiable) |
+|---|---|---|---|
+| `NC-E0-07` | `ready` | `nc-f07-db-target-safety` | Shared policy rejects remote test-named targets and divergent pool/direct URLs before connect/TRUNCATE; local test and existing disposable CI lanes remain valid. Design: `docs/plans/nc-f07-promotion-repair.md`. |
 
 ## Band NC-EG — Enterprise Verification Gates (ent-tm / ent-dlv / ent-perf)
 
@@ -49,7 +55,7 @@ no 03A/03B implementation. Early classification needs its own reviewed amendment
 
 | `NC-EG-09` | `completed` | `governance-fixture-repair` | Bounded fixture/structured-review/Sentry-collector repair and canonical closeout. | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. PR #120 then published the canonical completion and promotion. | Medium-High |
 | `NC-EG-07` | `completed` | `sentry-config-isolation-delivery` | NurseConnect Sentry gate isolation; no application telemetry change. | PR #121 merged at `1dced12b877600515dfc6b5432b31cb972d892b3` on 2026-11-03 from reviewed HEAD `2ad40d4980d7137a081883f6f2f67338b5dfb1d3`; all eleven PR checks, including the nine required issuer-bound checks and PR Finalizer, passed. Real @arbenl CODEOWNER approval [5747374328](https://github.com/arbenl/nurseconnect-v3/pull/121#pullrequestreview-5747374328) covers that head; no unresolved threads. Merge-commit [main CI 41580156138](https://github.com/arbenl/nurseconnect-v3/actions/runs/41580156138) concluded success. Clean main, reviewed/merged tree equality and deletion of only the merged feature branch were verified. Local run root: `tmp/multi-agent/verify-slice/nc-eg-07-sentry-isolation-final2-20261102`; default/static/required gates, five pool roles, Codex senior and actual Concord/Opus advisory review have zero outstanding MUST_FIX. Legacy Sonnet/Gemini routes were not run and are not counted as approval; no strict legacy gate pass is claimed. Local ignored receipts remain in the operator packet, not hosted CI artifacts. Canonical completion takes effect through this authority PR. | High |
-| `NC-EG-08` | `ready` | `auth-delivery-01` | Separately reviewed null-preserving authority delivery; promotion/design only. | `docs/plans/nc-eg-08-auth-delivery-01-design.md`; fresh standard-mode installation only after this authority PR green closeout. No implementation here. | High |
+| `NC-EG-08` | `planned` | `auth-delivery-01` | PARKED, not cancelled: separately reviewed null-preserving authority delivery. | `docs/plans/nc-eg-08-auth-delivery-01-design.md`; fresh standard-mode installation only after this authority PR green closeout. No implementation here. | High |
 
 ## Band NC-E2 (amendment) — Platform AuthZ + Type-Level Guards
 

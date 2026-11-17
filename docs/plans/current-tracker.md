@@ -40,7 +40,9 @@ verification_command: pnpm verify-slice
 
 | `NC-EG-09` | `completed` | platform + qa | Bounded governance repair and canonical closeout. | PR #119 merged at `d49dbed219be8b6e6cd83d2b5116cf82fc0b0921` on 2026-11-02 from reviewed HEAD `15e11814f9e731bfb44eaf58fc259a3c134664c2`; all nine required checks/issuers and real @arbenl CODEOWNER approval 5735970209 passed. Merge-commit CI [41438712094](https://github.com/arbenl/nurseconnect-v3/actions/runs/41438712094) passed; clean main/tree equality and own branch cleanup verified. Local run root: `tmp/multi-agent/verify-slice/pr119-finalizer-fixture-20261102`; five pool reviews and senior review: 0 MUST_FIX, one deferred Sentry advisory. Local ignored receipts are retained in the owner packet, not hosted CI artifacts. PR #120 then published the canonical completion and promotion. |
 | `NC-EG-07` | `completed` | platform + observability | Isolate the NurseConnect Sentry gate; no application telemetry change. | PR #121 merged at `1dced12b877600515dfc6b5432b31cb972d892b3` on 2026-11-03 from reviewed HEAD `2ad40d4980d7137a081883f6f2f67338b5dfb1d3`; all eleven PR checks, including the nine required issuer-bound checks and PR Finalizer, passed. Real @arbenl CODEOWNER approval [5747374328](https://github.com/arbenl/nurseconnect-v3/pull/121#pullrequestreview-5747374328) covers that head; no unresolved threads. Merge-commit [main CI 41580156138](https://github.com/arbenl/nurseconnect-v3/actions/runs/41580156138) concluded success. Clean main, reviewed/merged tree equality and deletion of only the merged feature branch were verified. Local run root: `tmp/multi-agent/verify-slice/nc-eg-07-sentry-isolation-final2-20261102`; default/static/required gates, five pool roles, Codex senior and actual Concord/Opus advisory review have zero outstanding MUST_FIX. Legacy Sonnet/Gemini routes were not run and are not counted as approval; no strict legacy gate pass is claimed. Local ignored receipts remain in the operator packet, not hosted CI artifacts. Canonical closeout takes effect through this authority PR. |
-| `NC-EG-08` | `ready` | platform + security | Separately reviewed AUTH-DELIVERY-01 null-preserving authority delivery. | Design: `docs/plans/nc-eg-08-auth-delivery-01-design.md`; promotion only here. Fresh standard-mode implementation follows green authority closeout; no auth/gate implementation in this PR. |
+| `NC-EG-08` | `planned` | platform + security | PARKED, not cancelled: separately reviewed AUTH-DELIVERY-01 null-preserving authority delivery. | Design: `docs/plans/nc-eg-08-auth-delivery-01-design.md`; Owner-directed repairs precede resumption; no credential/communication implementation is resumed. |
+
+| `NC-E0-07` | `ready` | platform + qa | Repair audit F07: shared effective destructive-test DB-target policy. | Reject remote test-named hosts and pool/direct mismatches before connect/TRUNCATE; preserve local nurseconnect_test and disposable CI lanes. Design: `docs/plans/nc-f07-promotion-repair.md`. |
 
 > Phase C Enterprise Upgrade bands (ent-* gates, type-level guards, tenant
 > backfill execution, outbox, CQRS repair, PHI lifecycle) are mapped in
@@ -49,19 +51,19 @@ verification_command: pnpm verify-slice
 
 ## Next Slice
 
-NC-EG-08 / codex/auth-delivery-01
+NC-E0-07 / codex/nc-f07-db-target-safety
 
 ## Queue Rationale
 
-PR #121 merged NC-EG-07 and its exact merge-commit main CI passed. This
-existing-authority package records that completion and promotes the already
-queued AUTH-DELIVERY-01 design. It changes no admission policy or runtime.
-NC-EG-08 installation is a separate standard-mode PR after green authority
-merge/main verification, clean-main/own-branch cleanup and canonical readback.
-Existing workflow, model-policy, SRS and harmonization drafts remain separate.
+The owner approved "Yes, fixes first" on 2026-11-17 and requested F07
+execution here. NC-E0-07 carries audit F07; next are F03 + F09, then F01
+requiring D02, then F02/F05 and F06 according to their dependencies.
+F04/F16 precede organization two. NC-EG-08 is PARKED, not cancelled.
+No further general audit or adoption of proposed guidance/SRS is required.
 NC-TB-03 retains the representative 14-day zero window, restrictive staging/
 two-tenant proof and approved support, analytics/export and payout classifications.
 Neither 03A nor 03B is promoted or authorized to implement.
+Existing gates and owner merge approval remain mandatory.
 
 ## Recent Closeout Evidence
 
