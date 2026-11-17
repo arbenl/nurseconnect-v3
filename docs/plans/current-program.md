@@ -43,7 +43,7 @@ The active architecture program is:
 ## Current Phase
 
 The product phase remains **NC-TB: Tenant Backfill Execution**, with enforcement held.
-Current delivery priority is the separately authorized gate-infrastructure queue.
+Current delivery priority is the owner-approved bounded repair queue (2026-11-17).
 
 Phase 0 was intentionally boring: close cheap high-assurance gaps before schema-wide tenancy, CRM, outbox, or compliance work.
 
@@ -109,23 +109,24 @@ Decision scope:
 The program executes under `docs/plans/ENTERPRISE_UPGRADE_TRACKER.md` and the
 existing fail-closed `ent-tm`/`ent-dlv`/`ent-perf` gates. NC-EG-09's repair is
 merged; PR #120 published its canonical closeout and promoted NC-EG-07.
-The next infrastructure slice is:
+The next delivery slice is:
 
-NC-EG-08 / codex/auth-delivery-01 (ready)
+NC-E0-07 / codex/nc-f07-db-target-safety (ready)
 
 NC-EG-07 closeout: PR #121 merged at `1dced12b877600515dfc6b5432b31cb972d892b3` on 2026-11-03 from reviewed HEAD `2ad40d4980d7137a081883f6f2f67338b5dfb1d3`; all eleven PR checks, including the nine required issuer-bound checks and PR Finalizer, passed. Real @arbenl CODEOWNER approval [5747374328](https://github.com/arbenl/nurseconnect-v3/pull/121#pullrequestreview-5747374328) covers that head; no unresolved threads. Merge-commit [main CI 41580156138](https://github.com/arbenl/nurseconnect-v3/actions/runs/41580156138) concluded success. Clean main, reviewed/merged tree equality and deletion of only the merged feature branch were verified. Local run root: `tmp/multi-agent/verify-slice/nc-eg-07-sentry-isolation-final2-20261102`; default/static/required gates, five pool roles, Codex senior and actual Concord/Opus advisory review have zero outstanding MUST_FIX. Legacy Sonnet/Gemini routes were not run and are not counted as approval; no strict legacy gate pass is claimed. Local ignored receipts remain in the operator packet, not hosted CI artifacts.
 
-This authority PR records NC-EG-07's completion and promotes only the existing
-AUTH-DELIVERY-01 gate-amendment design. Completion/promotion becomes canonical
-only after this PR merges green and its records are read back from GitHub.
-The design is `docs/plans/nc-eg-08-auth-delivery-01-design.md`.
-No NC-EG-08 implementation is included. A fresh standard-mode implementation
-may start only after this authority PR's green merge, applicable main Actions,
-clean main sync, own branch cleanup and canonical readback.
+The owner approved "Yes, fixes first" on 2026-11-17 and explicitly requested
+F07 execution in a dedicated NurseConnect chat. Implement the reviewed F07
+DB-target guard as NC-E0-07; then F03 + F09, F01 (after actual D02 flow decision),
+then F02/F05 and F06 as dependencies permit. F04/F16 precede organization two.
+Design and authority provenance: `docs/plans/nc-f07-promotion-repair.md`.
+NC-EG-08 is parked, not cancelled; its separately reviewed design remains
+`docs/plans/nc-eg-08-auth-delivery-01-design.md`. No gate amendment or
+interrupted credential/communication implementation is resumed here.
 NC-TB-03 remains held for the representative 14-day zero window, restrictive
 staging/two-tenant proof and support, analytics/export and payout classifications.
-Neither 03A nor 03B is promoted or authorized. Enterprise-foundation sequencing
-will receive its own reviewed authority amendment; it does not bypass this queue.
+Neither 03A nor 03B is promoted or authorized. The audit's proposed guidance and
+SRS remain advisory drafts. Existing gates apply; the owner retains merge approval.
 
 ## Slice Execution Contract
 
